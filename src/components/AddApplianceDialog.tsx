@@ -54,12 +54,24 @@ const applianceCategories = {
     commonWattages: [2, 5, 10, 15]
   },
   'Curtain & Blinds': {
-    subcategories: ['Curtain Motor', 'Blind Motor', 'Roller Blind', 'Venetian Blind'],
+    subcategories: ['Track', 'Motor', 'Roller Blind', 'Venetian Blind'],
     commonWattages: [15, 25, 35, 50]
   },
   'Security': {
     subcategories: ['Camera', 'DVR/NVR', 'Access Control', 'Intercom'],
     commonWattages: [5, 10, 15, 25, 50]
+  },
+  'Touch Panels': {
+    subcategories: ['2 Channel', '4 Channel', '6 Channel', '8 Channel', '12 Channel', 'Tactile Panel', 'Touch Screen', 'Dialer Knob', 'IR Blaster'],
+    commonWattages: [5, 10, 15, 20]
+  },
+  'Retrofit Relays': {
+    subcategories: ['1 Channel 10A', '2 Channel 10A', '4 Channel 10A', '1 Channel 16A', '2 Channel 16A', '1 Channel 40A', 'Dimmer Module'],
+    commonWattages: [5, 10, 15]
+  },
+  'Panel Finishes': {
+    subcategories: ['Glass', 'Acrylic', 'Plastic'],
+    commonWattages: []
   },
   'Others': {
     subcategories: ['Custom Device'],

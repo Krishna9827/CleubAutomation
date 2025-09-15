@@ -1,4 +1,3 @@
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ interface PriceTableProps {
   priceData: PriceData[];
   editingId: string | null;
   setEditingId: (id: string | null) => void;
-  onUpdateItem: (id: string, field: string, value: string | number) => void;
+  onUpdateItem: (id: string, field: string, value: string) => void;
   onDeleteItem: (id: string) => void;
 }
 
@@ -67,7 +66,7 @@ export const PriceTable = ({
                 <Input
                   type="number"
                   value={item.wattage?.toString() || ''}
-                  onChange={(e) => onUpdateItem(item.id, 'wattage', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => onUpdateItem(item.id, 'wattage', e.target.value)}
                   size="sm"
                 />
               ) : (
@@ -79,7 +78,7 @@ export const PriceTable = ({
                 <Input
                   type="number"
                   value={item.pricePerUnit?.toString() || ''}
-                  onChange={(e) => onUpdateItem(item.id, 'pricePerUnit', parseFloat(e.target.value) || 0)}
+                  onChange={(e) => onUpdateItem(item.id, 'pricePerUnit', e.target.value)}
                   size="sm"
                 />
               ) : (

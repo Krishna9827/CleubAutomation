@@ -88,10 +88,28 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
   const calculateWirelessCost = () => {
     let totalCost = 0;
     const breakdown: any[] = [];
+    const deviceOptimization: any[] = [];
 
+    // Group ON/OFF devices by room for touch panel optimization
+    const roomOnOffDevices: { [roomName: string]: number } = {};
+    
     rooms.forEach(room => {
+      let roomOnOffCount = 0;
+      
       room.appliances.forEach(appliance => {
         const unitPrice = getAppliancePrice(appliance);
+        const isOnOffDevice = appliance.category === 'Lights' && 
+          (appliance.subcategory === 'ON/OFF' || 
+           !appliance.subcategory || 
+           appliance.subcategory.toLowerCase().includes('on/off') ||
+           appliance.subcategory.toLowerCase().includes('basic'));
+        
+        const isSmallAppliance = ['Fans', 'Small Appliances'].includes(appliance.category);
+        
+        if (isOnOffDevice || isSmallAppliance) {
+          roomOnOffCount += appliance.quantity;
+        }
+        
         const totalPrice = unitPrice * appliance.quantity;
         totalCost += totalPrice;
         
@@ -101,12 +119,88 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
           category: appliance.category,
           quantity: appliance.quantity,
           unitPrice,
-          totalPrice
+          totalPrice,
+          isOnOff: isOnOffDevice || isSmallAppliance
         });
       });
+      
+      if (roomOnOffCount > 0) {
+        roomOnOffDevices[room.name] = roomOnOffCount;
+      }
     });
 
-    return { totalCost, breakdown };
+    // Calculate touch panel and relay module optimization
+    Object.entries(roomOnOffDevices).forEach(([roomName, deviceCount]) => {
+      const touchPanelOptions = [
+        { channels: 2, price: getDevicePrice('Touch Panels', '2 Channel') },
+        { channels: 4, price: getDevicePrice('Touch Panels', '4 Channel') },
+        { channels: 6, price: getDevicePrice('Touch Panels', '6 Channel') },
+        { channels: 8, price: getDevicePrice('Touch Panels', '8 Channel') },
+        { channels: 12, price: getDevicePrice('Touch Panels', '12 Channel') }
+      ];
+      
+      const relayOptions = [
+        { channels: 1, price: getDevicePrice('Retrofit Relays', '1 Channel 10A') },
+        { channels: 2, price: getDevicePrice('Retrofit Relays', '2 Channel 10A') },
+        { channels: 4, price: getDevicePrice('Retrofit Relays', '4 Channel 10A') }
+      ];
+
+      // Find optimal touch panel configuration
+      let bestTouchPanelConfig = null;
+      let minTouchPanelCost = Infinity;
+      
+      for (const panel of touchPanelOptions) {
+        if (panel.channels >= deviceCount) {
+          if (panel.price < minTouchPanelCost) {
+            minTouchPanelCost = panel.price;
+            bestTouchPanelConfig = { ...panel, quantity: 1 };
+          }
+        } else {
+          const panelsNeeded = Math.ceil(deviceCount / panel.channels);
+          const totalCost = panelsNeeded * panel.price;
+          if (totalCost < minTouchPanelCost) {
+            minTouchPanelCost = totalCost;
+            bestTouchPanelConfig = { ...panel, quantity: panelsNeeded };
+          }
+        }
+      }
+
+      // Find optimal relay configuration
+      let bestRelayConfig = null;
+      let minRelayCost = Infinity;
+      
+      for (const relay of relayOptions) {
+        const relaysNeeded = Math.ceil(deviceCount / relay.channels);
+        const totalCost = relaysNeeded * relay.price;
+        if (totalCost < minRelayCost) {
+          minRelayCost = totalCost;
+          bestRelayConfig = { ...relay, quantity: relaysNeeded };
+        }
+      }
+
+      if (bestTouchPanelConfig && bestRelayConfig) {
+        const totalOptimizedCost = minTouchPanelCost + minRelayCost;
+        totalCost += totalOptimizedCost;
+        
+        deviceOptimization.push({
+          roomName,
+          deviceCount,
+          touchPanel: bestTouchPanelConfig,
+          relayModules: bestRelayConfig,
+          totalCost: totalOptimizedCost,
+          recommendation: `${bestTouchPanelConfig.quantity}x ${bestTouchPanelConfig.channels}Ch Touch Panel + ${bestRelayConfig.quantity}x ${bestRelayConfig.channels}Ch Relay`
+        });
+      }
+    });
+
+    return { totalCost, breakdown, deviceOptimization };
+  };
+
+  const getDevicePrice = (category: string, subcategory: string): number => {
+    const priceEntry = priceData.find(price => 
+      price.category === category && price.subcategory === subcategory
+    );
+    return priceEntry?.pricePerUnit || 1000;
   };
 
   const calculateWiredCost = () => {
