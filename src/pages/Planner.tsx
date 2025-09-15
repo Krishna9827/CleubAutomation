@@ -8,7 +8,7 @@ import RoomCard from '@/components/RoomCard';
 import AddRoomDialog from '@/components/AddRoomDialog';
 import ProjectSummary from '@/components/ProjectSummary';
 import EstimatedCost from '@/components/EstimatedCost';
-import AutomationBilling from '@/components/AutomationBilling';
+// import AutomationBilling from '@/components/AutomationBilling';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProjectData {
@@ -43,7 +43,7 @@ const Planner = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
-  const [showAutomationBilling, setShowAutomationBilling] = useState(false);
+  // const [showAutomationBilling, setShowAutomationBilling] = useState(false);
 
   useEffect(() => {
     const savedProject = localStorage.getItem('projectData');
@@ -106,35 +106,46 @@ const Planner = () => {
 
   const getTotalRooms = () => rooms.length;
 
+  // Helper to generate a random serial code
+  const generateSerialCode = () => {
+    // Example: 8 uppercase letters/numbers
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
   const saveProject = () => {
     if (!projectData) return;
 
     const projectHistory = JSON.parse(localStorage.getItem('projectHistory') || '[]');
-    const existingProjectIndex = projectHistory.findIndex((p: any) => 
-      p.projectName === projectData.projectName && p.clientName === projectData.clientName
-    );
+    // Always create a new project with a unique serial code
+    let serialCode = '';
+    // Ensure uniqueness
+    let unique = false;
+    while (!unique) {
+      serialCode = generateSerialCode();
+      unique = !projectHistory.some((p: any) => p.serialCode === serialCode);
+    }
 
     const savedProject = {
-      id: existingProjectIndex >= 0 ? projectHistory[existingProjectIndex].id : Date.now().toString(),
+      id: Date.now().toString(),
+      serialCode,
       ...projectData,
       rooms,
-      createdAt: existingProjectIndex >= 0 ? projectHistory[existingProjectIndex].createdAt : new Date().toISOString(),
+      createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    if (existingProjectIndex >= 0) {
-      // Update existing project
-      projectHistory[existingProjectIndex] = savedProject;
-    } else {
-      // Add new project
-      projectHistory.unshift(savedProject);
-    }
-
+    // Add new project to history (do not overwrite any)
+    projectHistory.unshift(savedProject);
     localStorage.setItem('projectHistory', JSON.stringify(projectHistory));
-    
+
     toast({
       title: "Project Saved",
-      description: "Your project has been saved successfully and can be accessed from the history page."
+      description: `Your project has been saved with serial code: ${serialCode} and can be accessed from the history page.`
     });
   };
 
@@ -182,14 +193,7 @@ const Planner = () => {
                 Save
               </Button>
               
-              <Button
-                variant="outline"
-                onClick={() => setShowAutomationBilling(true)}
-                className="hidden sm:flex border-purple-200 text-purple-700 hover:bg-purple-50"
-              >
-                <Zap className="w-4 h-4 mr-2" />
-                Automation Billing
-              </Button>
+
               
               <Button
                 variant="outline"
@@ -270,16 +274,7 @@ const Planner = () => {
               </Button>
             </div>
             
-            <div className="sm:hidden fixed bottom-20 right-6">
-              <Button
-                onClick={() => setShowAutomationBilling(true)}
-                size="lg"
-                className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg rounded-full"
-              >
-                <Zap className="w-5 h-5 mr-2" />
-                Billing
-              </Button>
-            </div>
+
             
             <div className="sm:hidden fixed bottom-6 right-6">
               <Button
@@ -309,29 +304,7 @@ const Planner = () => {
         rooms={rooms}
       />
 
-      {showAutomationBilling && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Automation Billing</h2>
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowAutomationBilling(false)}
-                  className="p-2"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
-              <AutomationBilling
-                projectData={projectData}
-                rooms={rooms}
-                onClose={() => setShowAutomationBilling(false)}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

@@ -1,8 +1,21 @@
 
+
 export const categories = [
-  'Lights', 'Fans', 'HVAC', 'Smart Devices', 
-  'Curtain & Blinds', 'Security', 'Touch Panels', 
+  'Lights', 'Fans', 'HVAC', 'Smart Devices',
+  'Curtain & Blinds', 'Security', 'Touch Panels',
   'Retrofit Relays', 'Panel Finishes', 'Other'
+];
+
+// For touch panel configuration UI
+export const touchPanelTypes = ['Glass', 'Acrylic', 'Plastic'];
+export const touchPanelModules = [2, 4, 6, 8, 12];
+export const touchPanelChannelOptions = [
+  { value: 'Light', label: 'Light' },
+  { value: 'Fan', label: 'Fan' },
+  { value: 'TV', label: 'TV' },
+  { value: 'AC', label: 'AC' },
+  { value: 'Curtain', label: 'Curtain' },
+  { value: 'Other', label: 'Other' },
 ];
 
 export const getCategoryColor = (category: string) => {

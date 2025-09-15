@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AddItemForm } from './inventory/AddItemForm';
 import { PriceTable } from './inventory/PriceTable';
+import { ImportInventory } from './inventory/ImportInventory';
 import { defaultPrices } from './inventory/constants';
 import type { PriceData, NewItemForm } from './inventory/types';
 
@@ -23,10 +24,22 @@ const InventoryManagement = () => {
   });
 
   useEffect(() => {
-    const savedPrices = localStorage.getItem('inventoryPrices');
-    if (savedPrices) {
-      setPriceData(JSON.parse(savedPrices));
-    } else {
+    try {
+      const savedPrices = localStorage.getItem('inventoryPrices');
+      if (savedPrices) {
+        const parsed = JSON.parse(savedPrices);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPriceData(parsed);
+        } else {
+          setPriceData(defaultPrices);
+          localStorage.setItem('inventoryPrices', JSON.stringify(defaultPrices));
+        }
+      } else {
+        setPriceData(defaultPrices);
+        localStorage.setItem('inventoryPrices', JSON.stringify(defaultPrices));
+      }
+    } catch (error) {
+      console.error('Error loading price data:', error);
       setPriceData(defaultPrices);
       localStorage.setItem('inventoryPrices', JSON.stringify(defaultPrices));
     }
@@ -47,10 +60,13 @@ const InventoryManagement = () => {
       return;
     }
 
+
+    // If category is Other/Others, treat subcategory as custom name, but keep category as 'Other' and subcategory as the custom name
+    const isOther = newItem.category === 'Other' || newItem.category === 'Others';
     const newPriceItem: PriceData = {
       id: Date.now().toString(),
       category: newItem.category,
-      subcategory: newItem.subcategory || undefined,
+      subcategory: isOther ? (newItem.subcategory || undefined) : (newItem.subcategory || undefined),
       wattage: newItem.wattage ? parseInt(newItem.wattage) : undefined,
       pricePerUnit: parseFloat(newItem.pricePerUnit),
       notes: newItem.notes || undefined
@@ -100,17 +116,36 @@ const InventoryManagement = () => {
     });
   };
 
+  // Handler for importing inventory from Excel/CSV
+  const handleImport = (importedItems: any[]) => {
+    // Map imported data to PriceData format
+    const mapped = importedItems.map((row: any) => ({
+      id: Date.now().toString() + Math.random().toString(36).slice(2),
+      category: row.Category || row.category || '',
+      subcategory: row.Name || row.name || row.Subcategory || row.subcategory || '',
+      wattage: row.Wattage ? parseInt(row.Wattage) : undefined,
+      pricePerUnit: row['Price per Unit'] ? parseFloat(row['Price per Unit']) : (row.pricePerUnit ? parseFloat(row.pricePerUnit) : 0),
+      notes: row.Notes || row.notes || row['Type/Variant'] || row['type/variant'] || '',
+    }));
+    const updated = [...priceData, ...mapped];
+    savePriceData(updated);
+    toast({ title: 'Import Successful', description: `${mapped.length} items imported.` });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-slate-900">Inventory Management</h2>
-        <Button
-          onClick={() => setShowAddForm(true)}
-          className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Item
-        </Button>
+        <div className="flex gap-2">
+          <ImportInventory onImport={handleImport} />
+          <Button
+            onClick={() => setShowAddForm(true)}
+            className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Item
+          </Button>
+        </div>
       </div>
 
       {showAddForm && (

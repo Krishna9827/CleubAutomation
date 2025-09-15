@@ -6,6 +6,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, X } from 'lucide-react';
 import { categories } from './constants';
+const subcategoryOptions = [
+  'Wired',
+  'Wireless',
+  'Dali',
+  'Actuator',
+  'Smart',
+  'With Driver',
+  'Without Driver',
+];
 import type { NewItemForm } from './types';
 
 interface AddItemFormProps {
@@ -36,14 +45,44 @@ export const AddItemForm = ({ newItem, setNewItem, onSave, onCancel }: AddItemFo
               </SelectContent>
             </Select>
           </div>
+          {(newItem.category === 'Other' || newItem.category === 'Others') && (
+            <div>
+              <Label htmlFor="customName">Custom Name</Label>
+              <Input
+                id="customName"
+                value={newItem.subcategory}
+                onChange={(e) => setNewItem({ ...newItem, subcategory: e.target.value })}
+                placeholder="Enter custom item name"
+              />
+            </div>
+          )}
           <div>
             <Label htmlFor="subcategory">Type/Variant</Label>
-            <Input
-              id="subcategory"
-              value={newItem.subcategory}
-              onChange={(e) => setNewItem({...newItem, subcategory: e.target.value})}
-              placeholder="e.g., RGB, Tunable"
-            />
+            <div className="flex gap-2">
+              <div className="w-1/2">
+                <Select
+                  value={subcategoryOptions.includes(newItem.subcategory) ? newItem.subcategory : ''}
+                  onValueChange={(value) => setNewItem({ ...newItem, subcategory: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select subcategory" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subcategoryOptions.map(opt => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-1/2">
+                <Input
+                  id="subcategory"
+                  value={newItem.subcategory && !subcategoryOptions.includes(newItem.subcategory) ? newItem.subcategory : ''}
+                  onChange={(e) => setNewItem({ ...newItem, subcategory: e.target.value })}
+                  placeholder="Custom subcategory"
+                />
+              </div>
+            </div>
           </div>
           <div>
             <Label htmlFor="wattage">Wattage</Label>

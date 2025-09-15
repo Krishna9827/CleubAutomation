@@ -17,9 +17,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  touchPanelTypes,
+  touchPanelModules,
+  touchPanelChannelOptions
+} from './inventory/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+import type { TouchPanelChannelConfig } from './inventory/types';
 interface Appliance {
   name: string;
   category: string;
@@ -27,6 +33,10 @@ interface Appliance {
   quantity: number;
   wattage?: number;
   specifications: Record<string, any>;
+  // Touch panel specific fields (optional)
+  panelType?: string;
+  moduleChannels?: number;
+  channelConfig?: TouchPanelChannelConfig[];
 }
 
 interface AddApplianceDialogProps {
@@ -79,6 +89,7 @@ const applianceCategories = {
   }
 };
 
+
 const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDialogProps) => {
   const [appliance, setAppliance] = useState<Appliance>({
     name: '',
@@ -90,11 +101,16 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
   });
   const [customWattage, setCustomWattage] = useState('');
   const [notes, setNotes] = useState('');
+  // Touch panel specific state
+  const [panelType, setPanelType] = useState<string>('');
+  const [moduleChannels, setModuleChannels] = useState<number | null>(null);
+  const [channelConfig, setChannelConfig] = useState<{ label: string; details: string }[]>([]);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (appliance.name.trim() && appliance.category) {
-      const finalAppliance = {
+      let finalAppliance = {
         ...appliance,
         wattage: customWattage ? parseInt(customWattage) : appliance.wattage,
         specifications: {
@@ -102,10 +118,24 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
           notes: notes.trim() || undefined
         }
       };
+      // If Touch Panel, add extra config
+      if (appliance.category === 'Touch Panels') {
+        finalAppliance = {
+          ...finalAppliance,
+          panelType: panelType || undefined,
+          moduleChannels: moduleChannels || undefined,
+          channelConfig: channelConfig.map((c, idx) => ({
+            channelNumber: idx + 1,
+            label: c.label,
+            details: c.details
+          }))
+        };
+      }
       onAdd(finalAppliance);
       resetForm();
     }
   };
+
 
   const resetForm = () => {
     setAppliance({
@@ -118,12 +148,16 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
     });
     setCustomWattage('');
     setNotes('');
+    setPanelType('');
+    setModuleChannels(null);
+    setChannelConfig([]);
   };
 
   const handleClose = () => {
     resetForm();
     onClose();
   };
+
 
   const handleCategoryChange = (category: string) => {
     setAppliance(prev => ({
@@ -133,7 +167,14 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
       wattage: undefined
     }));
     setCustomWattage('');
+    // Reset touch panel config if switching away
+    if (category !== 'Touch Panels') {
+      setPanelType('');
+      setModuleChannels(null);
+      setChannelConfig([]);
+    }
   };
+
 
   const handleSubcategoryChange = (subcategory: string) => {
     setAppliance(prev => ({
@@ -141,9 +182,22 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
       subcategory,
       name: prev.name || `${subcategory} - ${roomName}`
     }));
+    // If subcategory is a channel module, auto-set moduleChannels
+    if (appliance.category === 'Touch Panels') {
+      const match = subcategory.match(/(\d+) Channel/);
+      if (match) {
+        const num = parseInt(match[1]);
+        setModuleChannels(num);
+        setChannelConfig(Array(num).fill({ label: '', details: '' }));
+      } else {
+        setModuleChannels(null);
+        setChannelConfig([]);
+      }
+    }
   };
 
   const currentCategory = applianceCategories[appliance.category as keyof typeof applianceCategories];
+
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -153,7 +207,6 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
             Add Appliance to {roomName}
           </DialogTitle>
         </DialogHeader>
-        
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Category Selection */}
           <Card className="border-slate-200">
@@ -177,7 +230,6 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
                     </SelectContent>
                   </Select>
                 </div>
-                
                 {appliance.category && currentCategory && (
                   <div className="space-y-2">
                     <Label className="text-slate-700 font-medium">Type</Label>
@@ -196,6 +248,87 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
                   </div>
                 )}
               </div>
+              {/* Touch Panel Extra Config */}
+              {appliance.category === 'Touch Panels' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <Label className="text-slate-700 font-medium">Panel Type</Label>
+                    <Select value={panelType} onValueChange={setPanelType}>
+                      <SelectTrigger className="border-slate-300 focus:border-teal-500">
+                        <SelectValue placeholder="Select panel type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-slate-200">
+                        {touchPanelTypes.map((type) => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-700 font-medium">Module (Channels)</Label>
+                    <Select
+                      value={moduleChannels ? String(moduleChannels) : ''}
+                      onValueChange={(val) => {
+                        const num = parseInt(val);
+                        setModuleChannels(num);
+                        setChannelConfig(Array(num).fill({ label: '', details: '' }));
+                      }}
+                    >
+                      <SelectTrigger className="border-slate-300 focus:border-teal-500">
+                        <SelectValue placeholder="Select module" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-slate-200">
+                        {touchPanelModules.map((mod) => (
+                          <SelectItem key={mod} value={String(mod)}>{mod} Channel</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+              {/* Per-Channel Config */}
+              {appliance.category === 'Touch Panels' && moduleChannels && (
+                <div className="mt-4">
+                  <Label className="text-slate-700 font-medium mb-2 block">Channel Configuration</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Array.from({ length: moduleChannels }).map((_, idx) => (
+                      <div key={idx} className="flex flex-col gap-2 border p-2 rounded-md bg-slate-50">
+                        <span className="font-semibold text-slate-700">Channel {idx + 1}</span>
+                        <Select
+                          value={channelConfig[idx]?.label || ''}
+                          onValueChange={(val) => {
+                            setChannelConfig((prev) => {
+                              const arr = [...prev];
+                              arr[idx] = { ...arr[idx], label: val };
+                              return arr;
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="border-slate-300 focus:border-teal-500">
+                            <SelectValue placeholder="Select device" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border-slate-200">
+                            {touchPanelChannelOptions.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          placeholder="Details (e.g., 12W LED, TV Brand)"
+                          value={channelConfig[idx]?.details || ''}
+                          onChange={(e) => {
+                            setChannelConfig((prev) => {
+                              const arr = [...prev];
+                              arr[idx] = { ...arr[idx], details: e.target.value };
+                              return arr;
+                            });
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -214,7 +347,6 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
                   className="border-slate-300 focus:border-teal-500"
                 />
               </div>
-              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-slate-700 font-medium">Quantity</Label>
@@ -226,7 +358,6 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
                     className="border-slate-300 focus:border-teal-500"
                   />
                 </div>
-                
                 <div className="space-y-2">
                   <Label className="text-slate-700 font-medium">Wattage (Optional)</Label>
                   <div className="space-y-2">
@@ -263,7 +394,6 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
                   </div>
                 </div>
               </div>
-              
               <div className="space-y-2">
                 <Label className="text-slate-700 font-medium">Additional Notes</Label>
                 <Textarea
@@ -288,7 +418,7 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
             </Button>
             <Button
               type="submit"
-              disabled={!appliance.name.trim() || !appliance.category}
+              disabled={!appliance.name.trim() || !appliance.category || (appliance.category === 'Touch Panels' && (!panelType || !moduleChannels || channelConfig.some(c => !c.label)))}
               className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
             >
               Add Appliance

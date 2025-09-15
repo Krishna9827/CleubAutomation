@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -25,10 +26,9 @@ const Index = () => {
     if (!formData.projectName.trim() || !formData.clientName.trim()) {
       return;
     }
-    
     localStorage.setItem('projectData', JSON.stringify(formData));
     localStorage.removeItem('projectRooms');
-    navigate('/planner');
+    navigate('/room-selection');
   };
 
   const isFormValid = formData.projectName.trim() && formData.clientName.trim();
@@ -48,16 +48,7 @@ const Index = () => {
                 <p className="text-sm text-slate-600">Professional electrical & appliance planning</p>
               </div>
             </div>
-            
             <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => navigate('/history')}
-                className="hidden sm:flex"
-              >
-                <History className="w-4 h-4 mr-2" />
-                History
-              </Button>
               <Button
                 variant="outline"
                 onClick={() => navigate('/admin')}
@@ -193,3 +184,4 @@ const Index = () => {
 };
 
 export default Index;
+// Duplicate export removed

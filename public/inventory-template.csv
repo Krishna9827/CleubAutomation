@@ -1,0 +1,4 @@
+Category,Name,Type/Variant,Wattage,Price per Unit,Notes
+Lights,Basic ON/OFF,Actuator,6,150,Actuator based
+Lights,Tunable,Dali,9,250,Dali based
+Other,Custom Lamp,Special,12,500,Custom note
