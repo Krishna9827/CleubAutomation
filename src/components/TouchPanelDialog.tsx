@@ -18,6 +18,13 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+interface ChannelAssignment {
+  channelNumber: number;
+  deviceType: string;
+  deviceName: string;
+  wattage?: number;
+}
+
 interface TouchPanel {
   id: string;
   name: string;
@@ -25,6 +32,7 @@ interface TouchPanel {
   channels?: number;
   quantity: number;
   finish?: string;
+  channelAssignments?: ChannelAssignment[];
 }
 
 interface TouchPanelDialogProps {
@@ -59,6 +67,21 @@ const touchPanelTypes = {
 
 const finishOptions = ['Glass', 'Acrylic', 'Plastic'];
 
+const deviceTypes = [
+  'Light - ON/OFF',
+  'Light - Dimmable', 
+  'Light - Tunable',
+  'Light - RGB',
+  'Light - RGBW',
+  'Fan',
+  'TV/Entertainment',
+  'HVAC',
+  'Curtain/Blinds',
+  'Security Device',
+  'Smart Device',
+  'Other'
+];
+
 const TouchPanelDialog = ({ open, onClose, onAdd, roomName }: TouchPanelDialogProps) => {
   const [touchPanel, setTouchPanel] = useState<TouchPanel>({
     id: '',
@@ -66,7 +89,8 @@ const TouchPanelDialog = ({ open, onClose, onAdd, roomName }: TouchPanelDialogPr
     type: '',
     channels: 0,
     quantity: 1,
-    finish: 'Glass'
+    finish: 'Glass',
+    channelAssignments: []
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -89,7 +113,8 @@ const TouchPanelDialog = ({ open, onClose, onAdd, roomName }: TouchPanelDialogPr
       type: '',
       channels: 0,
       quantity: 1,
-      finish: 'Glass'
+      finish: 'Glass',
+      channelAssignments: []
     });
   };
 
@@ -112,10 +137,30 @@ const TouchPanelDialog = ({ open, onClose, onAdd, roomName }: TouchPanelDialogPr
     const variantIndex = currentType?.variants.indexOf(variant);
     const channels = variantIndex !== -1 ? currentType?.channels[variantIndex] || 0 : 0;
     
+    // Initialize channel assignments for the number of channels
+    const channelAssignments = Array.from({ length: channels }, (_, index) => ({
+      channelNumber: index + 1,
+      deviceType: '',
+      deviceName: '',
+      wattage: 0
+    }));
+    
     setTouchPanel(prev => ({
       ...prev,
       name: `${variant} ${touchPanel.type} - ${roomName}`,
-      channels
+      channels,
+      channelAssignments
+    }));
+  };
+
+  const updateChannelAssignment = (channelIndex: number, field: keyof ChannelAssignment, value: string | number) => {
+    setTouchPanel(prev => ({
+      ...prev,
+      channelAssignments: prev.channelAssignments?.map((assignment, index) => 
+        index === channelIndex 
+          ? { ...assignment, [field]: value }
+          : assignment
+      ) || []
     }));
   };
 
@@ -234,6 +279,73 @@ const TouchPanelDialog = ({ open, onClose, onAdd, roomName }: TouchPanelDialogPr
               </div>
             </CardContent>
           </Card>
+
+          {/* Channel Assignments */}
+          {touchPanel.channels > 0 && touchPanel.channelAssignments && (
+            <Card className="border-slate-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg text-slate-800">Channel Assignments</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4">
+                  {touchPanel.channelAssignments.map((assignment, index) => (
+                    <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 border border-slate-200 rounded-lg">
+                      <div className="space-y-2">
+                        <Label className="text-slate-700 font-medium text-sm">
+                          Channel {assignment.channelNumber}
+                        </Label>
+                        <Badge className="bg-slate-100 text-slate-800">
+                          Ch {assignment.channelNumber}
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label className="text-slate-700 font-medium text-sm">Device Type</Label>
+                        <Select 
+                          value={assignment.deviceType} 
+                          onValueChange={(value) => updateChannelAssignment(index, 'deviceType', value)}
+                        >
+                          <SelectTrigger className="border-slate-300 focus:border-teal-500">
+                            <SelectValue placeholder="Select device" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white border-slate-200">
+                            {deviceTypes.map((device) => (
+                              <SelectItem key={device} value={device}>
+                                {device}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label className="text-slate-700 font-medium text-sm">Device Name</Label>
+                        <Input
+                          placeholder="e.g., Living Room Light"
+                          value={assignment.deviceName}
+                          onChange={(e) => updateChannelAssignment(index, 'deviceName', e.target.value)}
+                          className="border-slate-300 focus:border-teal-500"
+                        />
+                      </div>
+                      
+                      {assignment.deviceType.includes('Light') && (
+                        <div className="space-y-2">
+                          <Label className="text-slate-700 font-medium text-sm">Wattage</Label>
+                          <Input
+                            type="number"
+                            placeholder="e.g., 15"
+                            value={assignment.wattage || ''}
+                            onChange={(e) => updateChannelAssignment(index, 'wattage', parseInt(e.target.value) || 0)}
+                            className="border-slate-300 focus:border-teal-500"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
           
           <div className="flex justify-end space-x-3 pt-4">
             <Button
