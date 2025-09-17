@@ -62,7 +62,7 @@ export const PriceTable = ({
                     placeholder="Enter name"
                   />
                 ) : (
-                  <span className="font-medium text-slate-900">{item.subcategory || '-'}</span>
+                  <span className="font-medium text-slate-900 text-white">{item.subcategory || '-'}</span>
                 )}
               </TableCell>
               <TableCell>
@@ -92,7 +92,7 @@ export const PriceTable = ({
                     </div>
                   </div>
                 ) : (
-                  <span className="text-xs text-slate-500">{item.notes || '-'}</span>
+                  <span className="text-xs text-slate-500 text-white">{item.notes || '-'}</span>
                 )}
               </TableCell>
               <TableCell>
@@ -150,7 +150,7 @@ export const PriceTable = ({
                     variant="outline"
                     size="sm"
                     onClick={() => onDeleteItem(item.id)}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 hover:text-red-700 "
                   >
                     <Trash2 className="w-3 h-3" />
                   </Button>

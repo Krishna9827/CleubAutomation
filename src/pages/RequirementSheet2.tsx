@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SectionItemsDialog, { type SectionItem } from '@/components/SectionItemsDialog';
 
 const defaultRoomReq = {
   curtains: false,
@@ -29,7 +30,8 @@ const defaultRoomReq = {
     cob: '',
     accent: '',
     cylinder: ''
-  }
+  },
+  sections: [] as any[]
 };
 
 const RequirementSheet2 = () => {
@@ -38,6 +40,7 @@ const RequirementSheet2 = () => {
   const [rooms, setRooms] = useState<any[]>([]);
   // Initialize each room's requirements separately
   const [roomRequirements, setRoomRequirements] = useState<any[]>([]);
+  const [activeSection, setActiveSection] = useState<{ roomIndex: number; sectionId: string; sectionName: string } | null>(null);
 
   useEffect(() => {
     const savedProject = localStorage.getItem('projectData');
@@ -91,6 +94,48 @@ const RequirementSheet2 = () => {
     });
   };
 
+  // Section helpers
+  const addSection = (roomIndex: number) => {
+    setRoomRequirements(prev => {
+      const newReqs = [...prev];
+      const newSection = {
+        id: Date.now().toString(),
+        name: '',
+        items: [] as SectionItem[]
+      };
+      const updatedRoom = { ...newReqs[roomIndex], sections: [...(newReqs[roomIndex].sections || []), newSection] };
+      newReqs[roomIndex] = updatedRoom;
+      return newReqs;
+    });
+  };
+
+  const updateSectionField = (roomIndex: number, sectionId: string, field: string, value: any) => {
+    setRoomRequirements(prev => {
+      const newReqs = [...prev];
+      const sections = (newReqs[roomIndex].sections || []).map((s: any) => s.id === sectionId ? { ...s, [field]: value } : s);
+      newReqs[roomIndex] = { ...newReqs[roomIndex], sections };
+      return newReqs;
+    });
+  };
+
+  const removeSection = (roomIndex: number, sectionId: string) => {
+    setRoomRequirements(prev => {
+      const newReqs = [...prev];
+      const sections = (newReqs[roomIndex].sections || []).filter((s: any) => s.id !== sectionId);
+      newReqs[roomIndex] = { ...newReqs[roomIndex], sections };
+      return newReqs;
+    });
+  };
+
+  const saveSectionItems = (roomIndex: number, sectionId: string, items: SectionItem[]) => {
+    setRoomRequirements(prev => {
+      const newReqs = [...prev];
+      const sections = (newReqs[roomIndex].sections || []).map((s: any) => s.id === sectionId ? { ...s, items } : s);
+      newReqs[roomIndex] = { ...newReqs[roomIndex], sections };
+      return newReqs;
+    });
+  };
+
   const saveRequirementProject = () => {
     // Create an object mapping room IDs to their requirements
     const requirementsObj = rooms.reduce((acc, room, index) => {
@@ -105,13 +150,13 @@ const RequirementSheet2 = () => {
   if (!projectData) return <div>Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50">
-      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-40">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
+      <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-slate-900">Requirement Sheet v2</h1>
-              <p className="text-sm text-slate-600">{projectData.projectName} - {projectData.clientName}</p>
+              <h1 className="text-xl font-bold text-white">Requirement Sheet</h1>
+              <p className="text-sm text-slate-300">{projectData.projectName} - {projectData.clientName}</p>
             </div>
             <Button onClick={saveRequirementProject} className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700">
               Save
@@ -121,195 +166,73 @@ const RequirementSheet2 = () => {
       </header>
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
         {rooms.map((room, roomIndex) => (
-          <Card key={room.id} className="border-slate-200">
+          <Card key={room.id} className="border-white/10">
             <CardHeader>
-              <CardTitle className="text-lg text-slate-800">{room.name} ({room.type})</CardTitle>
+              <CardTitle className="text-lg text-slate-800 text-white">{room.name} ({room.type})</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Checkbox 
-                    checked={roomRequirements[roomIndex]?.curtains || false} 
-                    onCheckedChange={v => handleReqChange(roomIndex, 'curtains', v)} 
-                  /> Curtains
+              {/* Sections per room */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium text-slate-200">Switch Panels / Points</div>
+                  <Button variant="outline" onClick={() => addSection(roomIndex)} className="bg-teal/5 text-teal-600">Add Section</Button>
                 </div>
-                <div>
-                  <Checkbox 
-                    checked={roomRequirements[roomIndex]?.ethernet || false} 
-                    onCheckedChange={v => handleReqChange(roomIndex, 'ethernet', v)} 
-                  /> Ethernet Connection
-                </div>
-                <div>
-                  <Checkbox 
-                    checked={roomRequirements[roomIndex]?.curtainMotor || false} 
-                    onCheckedChange={v => handleReqChange(roomIndex, 'curtainMotor', v)} 
-                  /> Curtain Motor Power in Pelmet
-                </div>
-                <div>
-                  <Checkbox 
-                    checked={roomRequirements[roomIndex]?.panelChange || false} 
-                    onCheckedChange={v => handleReqChange(roomIndex, 'panelChange', v)} 
-                  /> Panel Change Required
-                </div>
-                <div>
-                  <label>No. of Lights</label>
-                  <Input 
-                    type="number" 
-                    value={roomRequirements[roomIndex]?.numLights || ''} 
-                    onChange={e => handleReqChange(roomIndex, 'numLights', e.target.value)} 
-                  />
-                  <div className="mt-2 grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs">Strip</label>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        value={roomRequirements[roomIndex]?.lightTypes?.strip || ''} 
-                        onChange={e => handleReqChange(roomIndex, 'strip', e.target.value, true)} 
-                        placeholder="0" 
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs">COB</label>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        value={roomRequirements[roomIndex]?.lightTypes?.cob || ''} 
-                        onChange={e => handleReqChange(roomIndex, 'cob', e.target.value, true)} 
-                        placeholder="0" 
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs">Accent</label>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        value={roomRequirements[roomIndex]?.lightTypes?.accent || ''} 
-                        onChange={e => handleReqChange(roomIndex, 'accent', e.target.value, true)} 
-                        placeholder="0" 
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs">Cylinder</label>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        value={roomRequirements[roomIndex]?.lightTypes?.cylinder || ''} 
-                        onChange={e => handleReqChange(roomIndex, 'cylinder', e.target.value, true)} 
-                        placeholder="0" 
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <label>Total Wattage</label>
-                  <Input 
-                    type="number" 
-                    value={roomRequirements[roomIndex]?.totalWattage || ''} 
-                    onChange={e => handleReqChange(roomIndex, 'totalWattage', e.target.value)} 
-                  />
-                </div>
-                <div>
-                  <label>Fan Type</label>
-                  <Select 
-                    value={roomRequirements[roomIndex]?.fanType || ''} 
-                    onValueChange={v => handleReqChange(roomIndex, 'fanType', v)}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="DLDC">DLDC</SelectItem>
-                      <SelectItem value="Normal">Normal</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label>Fan Control</label>
-                  <Select 
-                    value={roomRequirements[roomIndex]?.fanControl || ''} 
-                    onValueChange={v => handleReqChange(roomIndex, 'fanControl', v)}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="On/Off">On/Off</SelectItem>
-                      <SelectItem value="Speed">Speed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label>AC/TV Control</label>
-                  <Select 
-                    value={roomRequirements[roomIndex]?.acTvControl || ''} 
-                    onValueChange={v => handleReqChange(roomIndex, 'acTvControl', v)}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="On/Off Only">On/Off Only</SelectItem>
-                      <SelectItem value="App/Voice">App/Voice</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label>Smart Lighting</label>
-                  <Select 
-                    value={roomRequirements[roomIndex]?.smartLighting || ''} 
-                    onValueChange={v => handleReqChange(roomIndex, 'smartLighting', v)}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="RGB">RGB</SelectItem>
-                      <SelectItem value="CCT">CCT</SelectItem>
-                      <SelectItem value="RGB+CCT">RGB+CCT</SelectItem>
-                      <SelectItem value="On/Off Only">On/Off Only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Checkbox 
-                    checked={roomRequirements[roomIndex]?.smartSwitch || false} 
-                    onCheckedChange={v => handleReqChange(roomIndex, 'smartSwitch', v)} 
-                  /> Smart Switch Required
-                </div>
-                <div>
-                  <label>Switchboard Height</label>
-                  <Input 
-                    type="number" 
-                    value={roomRequirements[roomIndex]?.switchboardHeight || ''} 
-                    onChange={e => handleReqChange(roomIndex, 'switchboardHeight', e.target.value)} 
-                  />
-                </div>
-                <div>
-                  <label>Switchboard Module/Size</label>
-                  <Input 
-                    value={roomRequirements[roomIndex]?.switchboardModule || ''} 
-                    onChange={e => handleReqChange(roomIndex, 'switchboardModule', e.target.value)} 
-                  />
-                </div>
-                <div>
-                  <Checkbox 
-                    checked={roomRequirements[roomIndex]?.controlsInSameBoard || false} 
-                    onCheckedChange={v => handleReqChange(roomIndex, 'controlsInSameBoard', v)} 
-                  /> Controls in Same Board
-                </div>
-                <div className="col-span-2">
-                  <label>Notes</label>
-                  <Textarea 
-                    value={roomRequirements[roomIndex]?.notes || ''} 
-                    onChange={e => handleReqChange(roomIndex, 'notes', e.target.value)} 
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label>Room Video (optional)</label>
-                  <Input 
-                    type="file" 
-                    accept="video/*" 
-                    onChange={e => handleVideo(roomIndex, e.target.files?.[0] || null)} 
-                  />
+                {(roomRequirements[roomIndex]?.sections || []).length === 0 && (
+                  <div className="text-xs text-slate-500">No sections added. Use "Add Section" to describe each switch panel or point group.</div>
+                )}
+                <div className="space-y-3">
+                  {(roomRequirements[roomIndex]?.sections || []).map((section: any) => (
+                    <Card key={section.id} className="border-white/10">
+                      <CardContent className="pt-4 space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-xs text-white">Section Name</label>
+                            <Input value={section.name || ''} onChange={e => updateSectionField(roomIndex, section.id, 'name', e.target.value)} placeholder="e.g., Main Door Panel" />
+                          </div>
+                          <div className="md:col-span-2 flex items-end justify-end gap-2">
+                            <Button variant="outline" onClick={() => setActiveSection({ roomIndex, sectionId: section.id, sectionName: section.name || 'Section' })} className="text-white">Add Items</Button>
+                            <Button variant="outline" onClick={() => removeSection(roomIndex, section.id)} className="text-red-600 border-red-200 hover:bg-red-50">Remove Section</Button>
+                          </div>
+                        </div>
+                        {(section.items && section.items.length > 0) && (
+                          <div className="space-y-2">
+                            {section.items.map((it: SectionItem, i: number) => (
+                              <div key={i} className="flex items-center justify-between text-sm text-slate-200 bg-white/5 border border-white/10 rounded p-2">
+                                <div>
+                                  {it.category} — {(it.type === 'Other' ? it.customType : it.type) || '-'} • Qty: {it.quantity} {it.voltage ? `• ${it.voltage === 'Custom' ? it.customVoltage : it.voltage}` : ''}
+                                  {it.notes && <span className="ml-2 text-slate-500">({it.notes})</span>}
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button variant="outline" size="sm" onClick={() => setActiveSection({ roomIndex, sectionId: section.id, sectionName: section.name || 'Section' })}>Edit</Button>
+                                  <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => {
+                                    const filtered = (section.items || []).filter((_, idx) => idx !== i);
+                                    saveSectionItems(roomIndex, section.id, filtered);
+                                  }}>Remove</Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </div>
+              {/* Removed previous single-room fields to keep only sections */}
             </CardContent>
           </Card>
         ))}
       </div>
+      <SectionItemsDialog
+        open={!!activeSection}
+        onClose={() => setActiveSection(null)}
+        onSave={(items) => {
+          if (!activeSection) return;
+          saveSectionItems(activeSection.roomIndex, activeSection.sectionId, items);
+        }}
+        sectionName={activeSection?.sectionName || ''}
+        initialItems={activeSection ? (roomRequirements[activeSection.roomIndex]?.sections || []).find((s: any) => s.id === activeSection.sectionId)?.items || [] : []}
+      />
     </div>
   );
 };

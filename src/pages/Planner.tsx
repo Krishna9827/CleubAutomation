@@ -154,9 +154,9 @@ const Planner = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-40">
+      <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -168,8 +168,8 @@ const Planner = () => {
                 <Building2 className="w-6 h-6 text-teal-600" />
               </Button>
               <div>
-                <h1 className="text-xl font-bold text-slate-900">{projectData.projectName}</h1>
-                <p className="text-sm text-slate-600">Client: {projectData.clientName}</p>
+                <h1 className="text-xl font-bold text-white">{projectData.projectName}</h1>
+                <p className="text-sm text-slate-300">Client: {projectData.clientName}</p>
               </div>
             </div>
             
@@ -218,10 +218,10 @@ const Planner = () => {
 
       {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center text-sm text-slate-600">
+        <div className="flex items-center text-sm text-slate-300">
           <span>Projects</span>
           <ChevronRight className="w-4 h-4 mx-2" />
-          <span className="text-slate-900 font-medium">{projectData.projectName}</span>
+          <span className="text-white font-medium">{projectData.projectName}</span>
         </div>
       </div>
 
@@ -233,8 +233,8 @@ const Planner = () => {
               <div className="w-16 h-16 bg-gradient-to-br from-slate-400 to-slate-500 rounded-2xl mx-auto mb-6 flex items-center justify-center">
                 <Home className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">No Rooms Added Yet</h3>
-              <p className="text-slate-600 mb-6 max-w-md mx-auto">
+              <h3 className="text-xl font-semibold text-white mb-2">No Rooms Added Yet</h3>
+              <p className="text-slate-300 mb-6 max-w-md mx-auto">
                 Start by adding your first room or zone to begin planning your home automation setup.
               </p>
               <Button

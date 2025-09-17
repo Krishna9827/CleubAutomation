@@ -135,7 +135,7 @@ const InventoryManagement = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-900">Inventory Management</h2>
+        <h2 className="text-2xl font-bold text-slate-900 text-white">Inventory Management</h2>
         <div className="flex gap-2">
           <ImportInventory onImport={handleImport} />
           <Button
@@ -159,7 +159,7 @@ const InventoryManagement = () => {
 
       <Card className="border-slate-200">
         <CardHeader>
-          <CardTitle className="text-lg text-slate-800">Current Price List</CardTitle>
+          <CardTitle className="text-lg text-slate-800 text-white">Current Price List</CardTitle>
         </CardHeader>
         <CardContent>
           <PriceTable

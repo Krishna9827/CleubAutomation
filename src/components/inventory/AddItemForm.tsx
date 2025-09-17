@@ -28,7 +28,7 @@ export const AddItemForm = ({ newItem, setNewItem, onSave, onCancel }: AddItemFo
   return (
     <Card className="border-slate-200">
       <CardHeader>
-        <CardTitle className="text-lg text-slate-800">Add New Price Item</CardTitle>
+        <CardTitle className="text-lg text-slate-800 text-white">Add New Price Item</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -114,13 +114,13 @@ export const AddItemForm = ({ newItem, setNewItem, onSave, onCancel }: AddItemFo
             />
           </div>
         </div>
-        <div className="flex space-x-2 mt-4">
-          <Button onClick={onSave} size="sm">
-            <Save className="w-4 h-4 mr-2" />
+        <div className="flex space-x-2 mt-4 text-white">
+          <Button variant="outline" onClick={onSave} size="sm">
+            <Save className="w-4 h-4 mr-2 text-green-600 hover:text-green-700" />
             Save
           </Button>
-          <Button variant="outline" onClick={onCancel} size="sm">
-            <X className="w-4 h-4 mr-2" />
+          <Button onClick={onCancel} size="sm">
+            <X className="w-4 h-4 mr-2 text-red-600 hover:text-red-700" />
             Cancel
           </Button>
         </div>

@@ -10,8 +10,8 @@ import AdminSettings from "./pages/AdminSettings";
 import AdminLogin from "./pages/AdminLogin";
 import History from "./pages/History";
 import NotFound from "./pages/NotFound";
-import RequirementSheet from "./pages/RequirementSheet";
 import RequirementSheet2 from "./pages/RequirementSheet2";
+import PremiumLanding from "./pages/PremiumLanding";
 import RoomSelection from "./pages/RoomSelection";
 import FinalReview from "./pages/FinalReview";
 
@@ -35,9 +35,11 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<PremiumLanding />} />
           <Route path="/room-selection" element={<RoomSelection />} />
-          <Route path="/requirements" element={<RequirementSheet />} />
+          <Route path="/intake" element={<Index />} />
+          <Route path="/requirements" element={<RequirementSheet2 />} />
+          <Route path="/premium" element={<PremiumLanding />} />
           <Route path="/requirements-v2" element={<RequirementSheet2 />} />
           <Route path="/final-review" element={<FinalReview />} />
           <Route path="/planner" element={<Planner />} />

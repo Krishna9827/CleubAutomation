@@ -59,85 +59,65 @@ const RoomSelection = () => {
     setRooms(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const [useNewVersion, setUseNewVersion] = useState(false);
+  const [useNewVersion, setUseNewVersion] = useState(true);
 
   const handleContinue = () => {
     localStorage.setItem('projectRooms', JSON.stringify(rooms));
-    navigate(useNewVersion ? '/requirements-v2' : '/requirements');
+    navigate('/requirements-v2');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50 flex flex-col">
-      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-40">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black flex flex-col">
+      <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <h1 className="text-xl font-bold text-slate-900">Select Rooms</h1>
+          <h1 className="text-xl font-bold text-white">Select Rooms</h1>
         </div>
       </header>
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        <Card>
+        <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle>Add Rooms by Package</CardTitle>
+            <CardTitle className="text-white">Add Rooms by Package</CardTitle>
           </CardHeader>
           <CardContent className="flex gap-4">
             {Object.keys(ROOM_PACKAGES).map(pkg => (
-              <Button key={pkg} onClick={() => addPackage(pkg)}>{pkg}</Button>
+              <Button key={pkg} onClick={() => addPackage(pkg)} className="border-white/20 text-white bg-white/10 hover:bg-white/20" variant="outline">{pkg}</Button>
             ))}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle>Add Custom Room</CardTitle>
+            <CardTitle className="text-white">Add Custom Room</CardTitle>
           </CardHeader>
           <CardContent className="flex gap-2 items-end">
-            <Input placeholder="Room Name" value={customName} onChange={e => setCustomName(e.target.value)} />
-            <Input placeholder="Room Type" value={customType} onChange={e => setCustomType(e.target.value)} />
-            <Button onClick={addCustomRoom}><Plus className="w-4 h-4" /></Button>
+            <Input className="bg-white/10 border-white/20 text-white placeholder:text-slate-400" placeholder="Room Name" value={customName} onChange={e => setCustomName(e.target.value)} />
+            <Input className="bg-white/10 border-white/20 text-white placeholder:text-slate-400" placeholder="Room Type" value={customType} onChange={e => setCustomType(e.target.value)} />
+            <Button onClick={addCustomRoom} className="border-white/20 text-white bg-white/10 hover:bg-white/20" variant="outline"><Plus className="w-4 h-4" /></Button>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-white/5 border-white/10">
           <CardHeader>
-            <CardTitle>Selected Rooms</CardTitle>
+            <CardTitle className="text-white">Selected Rooms</CardTitle>
           </CardHeader>
           <CardContent>
-            {rooms.length === 0 ? <div className="text-slate-500">No rooms added yet.</div> : (
+            {rooms.length === 0 ? <div className="text-slate-400">No rooms added yet.</div> : (
               <ul className="space-y-2">
                 {rooms.map((room, idx) => (
-                  <li key={idx} className="flex items-center gap-2">
+                  <li key={idx} className="flex items-center gap-2 text-white">
                     <span>{room.name} ({room.type})</span>
-                    <Button variant="outline" size="sm" onClick={() => removeRoom(idx)}><Trash2 className="w-3 h-3" /></Button>
+                    <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10" onClick={() => removeRoom(idx)}><Trash2 className="w-3 h-3" /></Button>
                   </li>
                 ))}
               </ul>
             )}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Choose Requirements Sheet Version</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <Button 
-                variant={!useNewVersion ? "default" : "outline"} 
-                onClick={() => setUseNewVersion(false)}
-              >
-                Version 1 (Original)
-              </Button>
-              <Button 
-                variant={useNewVersion ? "default" : "outline"} 
-                onClick={() => setUseNewVersion(true)}
-              >
-                Version 2 (Independent Rooms)
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Requirements Sheet Version selection removed: v2 is the default */}
         <Button 
           className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700" 
           onClick={handleContinue} 
           disabled={rooms.length === 0}
         >
-          Continue to Requirements {useNewVersion ? 'v2' : 'v1'}
+          Continue to Requirements
         </Button>
       </div>
     </div>

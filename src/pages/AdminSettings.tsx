@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Sheet } from '@/components/ui/sheet';
-import { Building2, Plus, Trash2, Save, ArrowLeft, Package, User, Home, Eye } from 'lucide-react';
+import { Building2, Plus, Trash2, Save, ArrowLeft, Package, User, Home, Eye, Edit, Moon, Sun, ChevronDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import InventoryManagement from '@/components/InventoryManagement';
 import AutomationBilling from '@/components/AutomationBilling';
@@ -19,6 +20,7 @@ interface DefaultSettings {
   applianceCategories: string[];
   wattagePresets: number[];
   exportFormats: string[];
+  sheetsWebhookUrl?: string;
 }
 
 const AdminSettings = () => {
@@ -104,6 +106,23 @@ const AdminSettings = () => {
       setSelectedProjectId(projects[0].id);
     }
   }, [activeTab, projects, selectedProjectId]);
+
+  // Refresh projects when opening History tab to reflect latest saved data
+  useEffect(() => {
+    if (activeTab === 'history') {
+      try {
+        const savedProjects = localStorage.getItem('projectHistory');
+        if (savedProjects) {
+          const parsed = JSON.parse(savedProjects);
+          if (Array.isArray(parsed)) {
+            setProjects(parsed);
+          }
+        }
+      } catch (error) {
+        console.error('Error refreshing projects for history:', error);
+      }
+    }
+  }, [activeTab]);
 
   // Handle project selection changes
   const handleProjectSelect = (projectId: string) => {
@@ -215,94 +234,65 @@ const AdminSettings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/')} 
-                className="p-2"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div className="flex items-center space-x-3">
-                <Building2 className="w-6 h-6 text-teal-600" />
-                <h1 className="text-xl font-bold text-slate-900">Admin Settings</h1>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={saveSettings}
-                className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Save Settings
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleLogout}
-                className="ml-2 border-slate-300"
-              >
-                Logout
-              </Button>
-            </div>
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-black/20 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 grid grid-cols-3 items-center">
+          <div className="text-white font-semibold tracking-wide cursor-pointer" onClick={() => navigate('/')}>Cleub Automation</div>
+          <nav className="hidden md:flex items-center justify-center gap-4 text-sm">
+            <button className="text-slate-300 hover:text-white whitespace-nowrap" onClick={() => navigate('/')}>Home</button>
+            <button className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='general'?'text-white':''}`} onClick={() => setActiveTab('general')}>General Settings</button>
+            <button className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='inventory'?'text-white':''}`} onClick={() => setActiveTab('inventory')}>Inventory Management</button>
+            <button className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='history'?'text-white':''}`} onClick={() => setActiveTab('history')}>Project History</button>
+            <button className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='billing'?'text-white':''}`} onClick={() => setActiveTab('billing')}>Automation Billing</button>
+            <DropdownMenu>
+              <DropdownMenuTrigger className={`text-slate-300 hover:text-white whitespace-nowrap inline-flex items-center gap-1 ${activeTab==='finalplan' || activeTab==='planning' ? 'text-white' : ''}`}>
+                Planning <ChevronDown className="w-4 h-4 opacity-70" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-black/80 backdrop-blur-xl border-white/10 text-white">
+                <DropdownMenuItem className="focus:bg-white/10 focus:text-white" onClick={() => setActiveTab('finalplan')}>Summary → Master Plan</DropdownMenuItem>
+                <DropdownMenuItem className="focus:bg-white/10 focus:text-white" onClick={() => setActiveTab('planning')}>Project Planning</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </nav>
+          <div className="flex items-center justify-end gap-2">
+            <Button onClick={saveSettings} className="bg-white/10 text-white hover:bg-white/20"><Save className="w-4 h-4 mr-2" />Save</Button>
+            <Button variant="outline" onClick={handleLogout} className="border-white/20 text-white hover:bg-white/10">Logout</Button>
           </div>
         </div>
       </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tab Navigation */}
-  <div className="flex space-x-1 mb-8 bg-white p-1 rounded-lg border border-slate-200">
-          <Button
-            variant={activeTab === 'general' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('general')}
-            className="flex-1"
-          >
-            General Settings
-          </Button>
-          <Button
-            variant={activeTab === 'inventory' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('inventory')}
-            className="flex-1"
-          >
-            <Package className="w-4 h-4 mr-2" />
-            Inventory Management
-          </Button>
-          <Button
-            variant={activeTab === 'history' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('history')}
-            className="flex-1"
-          >
-            <span className="mr-2">📜</span>
-            Project History
-          </Button>
-          <Button
-            variant={activeTab === 'billing' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('billing')}
-            className="flex-1"
-          >
-            <span className="mr-2">⚡</span>
-            Automation Billing
-          </Button>
-          <Button
-            variant={activeTab === 'planning' ? 'default' : 'ghost'}
-            onClick={() => setActiveTab('planning')}
-            className="flex-1"
-          >
-            <span className="mr-2">🎯</span>
-            Project Planning
-          </Button>
-        </div>
 
   {activeTab === 'general' ? (
           <div className="space-y-8">
-            {/* Appliance Categories */}
-            <Card className="border-slate-200">
+            {/* Webhook / Sheets Integration */}
+            <Card className="border-white/10 bg-white/5">
               <CardHeader>
-                <CardTitle className="text-lg text-slate-800">Default Appliance Categories</CardTitle>
+                <CardTitle className="text-lg text-white">Integrations</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label className="text-slate-300">Google Sheets / Webhook URL</Label>
+                  <Input
+                    placeholder="https://script.google.com/..."
+                    value={settings.sheetsWebhookUrl || localStorage.getItem('sheetsWebhookUrl') || ''}
+                    onChange={(e) => {
+                      const url = e.target.value;
+                      setSettings(prev => ({ ...prev, sheetsWebhookUrl: url }));
+                      localStorage.setItem('sheetsWebhookUrl', url);
+                    }}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
+                  />
+                  <div className="text-xs text-slate-400 mt-1">Optional: Data will POST here on export/send.</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Appliance Categories */}
+            <Card className="border-white/10 bg-white/5">
+              <CardHeader>
+                <CardTitle className="text-lg text-white">Default Appliance Categories</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-wrap gap-2">
@@ -325,8 +315,9 @@ const AdminSettings = () => {
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addCategory()}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
                   />
-                  <Button onClick={addCategory} variant="outline">
+                  <Button onClick={addCategory} variant="outline" className="border-white/20 text-white hover:bg-white/10">
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
@@ -334,9 +325,9 @@ const AdminSettings = () => {
             </Card>
 
             {/* Wattage Presets */}
-            <Card className="border-slate-200">
+            <Card className="border-white/10 bg-white/5">
               <CardHeader>
-                <CardTitle className="text-lg text-slate-800">Default Wattage Presets</CardTitle>
+                <CardTitle className="text-lg text-white">Default Wattage Presets</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-wrap gap-2">
@@ -360,8 +351,9 @@ const AdminSettings = () => {
                     value={newWattage}
                     onChange={(e) => setNewWattage(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addWattage()}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-slate-400"
                   />
-                  <Button onClick={addWattage} variant="outline">
+                  <Button onClick={addWattage} variant="outline" className="border-white/20 text-white hover:bg-white/10">
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
@@ -369,9 +361,9 @@ const AdminSettings = () => {
             </Card>
 
             {/* Export Formats */}
-            <Card className="border-slate-200">
+            <Card className="border-white/10 bg-white/5">
               <CardHeader>
-                <CardTitle className="text-lg text-slate-800">Export Formats</CardTitle>
+                <CardTitle className="text-lg text-white">Export Formats</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
@@ -398,7 +390,7 @@ const AdminSettings = () => {
                         <Package className="w-8 h-8 text-white" />
                       </div>
                       <h3 className="text-xl font-semibold text-slate-900 mb-2">No Projects Yet</h3>
-                      <p className="text-slate-600 mb-6 max-w-md mx-auto">
+                      <p className="text-slate-300 mb-6 max-w-md mx-auto">
                         Projects will appear here once they are created and saved.
                       </p>
                     </CardContent>
@@ -406,14 +398,14 @@ const AdminSettings = () => {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {projects.map((project) => (
-                      <Card key={project.id} className="border-slate-200 hover:shadow-lg transition-shadow">
+                      <Card key={project.id} className="border-white/10 bg-white/5 hover:shadow-lg transition-shadow">
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <CardTitle className="text-lg text-slate-900 mb-1">
                                 {project.projectName}
                               </CardTitle>
-                              <div className="flex items-center text-sm text-slate-600 mb-2">
+                              <div className="flex items-center text-sm text-slate-300 mb-2">
                                 <User className="w-3 h-3 mr-1" />
                                 {project.clientName}
                               </div>
@@ -440,13 +432,13 @@ const AdminSettings = () => {
                           <div className="flex items-center justify-between">
                             <Badge variant="outline" className="bg-white">
                               <Home className="w-3 h-3 mr-1" />
-                              {project.rooms.length} Rooms
+                              {(project.rooms?.length || 0)} Rooms
                             </Badge>
                             <Badge variant="outline" className="bg-white">
-                              {project.rooms.reduce((total, room) => total + (room.appliances?.length || 0), 0)} Items
+                              {(project.rooms || []).reduce((total, room) => total + (room.appliances?.length || 0), 0)} Items
                             </Badge>
                           </div>
-                          <div className="text-xs text-slate-500">
+                          <div className="text-xs text-slate-400">
                             <div>Created: {new Date(project.createdAt).toLocaleDateString()}</div>
                             <div>Updated: {new Date(project.updatedAt).toLocaleDateString()}</div>
                           </div>
@@ -460,6 +452,25 @@ const AdminSettings = () => {
                               <Eye className="w-3 h-3 mr-1" />
                               View Details
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                localStorage.setItem('projectData', JSON.stringify({
+                                  projectName: project.projectName || '',
+                                  clientName: project.clientName || '',
+                                  architectName: project.architectName || '',
+                                  designerName: project.designerName || '',
+                                  notes: project.notes || ''
+                                }));
+                                localStorage.setItem('projectRooms', JSON.stringify(project.rooms || []));
+                                navigate('/planner');
+                              }}
+                              className="flex-1"
+                            >
+                              <Edit className="w-3 h-3 mr-1" />
+                              Edit
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -469,18 +480,18 @@ const AdminSettings = () => {
               </div>
             </div>
           </div>
-        ) : activeTab === 'planner' ? (
+        ) : activeTab === 'planning' ? (
           <div className="space-y-6">
             {/* Project Selection */}
-            <Card className="border-slate-200">
+            <Card className="border-white/10 bg-white/5">
               <CardHeader>
-                <CardTitle className="text-lg text-slate-800">Select Project to Plan</CardTitle>
+                <CardTitle className="text-lg text-white">Select Project to Plan</CardTitle>
               </CardHeader>
               <CardContent>
                 {projects.length === 0 ? (
                   <div className="text-center p-6">
                     <Building2 className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                    <div className="text-slate-500 mb-2">No projects available for planning</div>
+                    <div className="text-slate-400 mb-2">No projects available for planning</div>
                     <div className="text-sm text-slate-400">
                       Create a new project to start planning.
                     </div>
@@ -510,9 +521,33 @@ const AdminSettings = () => {
                 <div className="flex justify-between items-center">
                   <div>
                     <h2 className="text-2xl font-bold text-slate-900">{projectData.projectName}</h2>
-                    <p className="text-sm text-slate-600">Client: {projectData.clientName}</p>
+                    <p className="text-sm text-slate-300">Client: {projectData.clientName}</p>
                   </div>
                   <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const history = JSON.parse(localStorage.getItem('projectHistory') || '[]');
+                        const newProject = {
+                          id: Date.now().toString(),
+                          projectName: projectData.projectName || '',
+                          clientName: projectData.clientName || '',
+                          architectName: projectData.architectName || '',
+                          designerName: projectData.designerName || '',
+                          notes: projectData.notes || '',
+                          rooms,
+                          createdAt: new Date().toISOString(),
+                          updatedAt: new Date().toISOString(),
+                        };
+                        localStorage.setItem('projectHistory', JSON.stringify([newProject, ...history]));
+                        setProjects([newProject, ...projects]);
+                        toast({ title: 'Project Saved', description: 'Project saved to history.' });
+                      }}
+                      className="bg-white"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save
+                    </Button>
                     <Button
                       variant="outline"
                       onClick={() => setShowAddRoom(true)}
@@ -563,15 +598,15 @@ const AdminSettings = () => {
           </div>
         ) : (
           <div>
-            <Card className="mb-6 border-slate-200">
+            <Card className="mb-6 border-white/10 bg-white/5">
               <CardHeader>
-                <CardTitle className="text-lg text-slate-800">Select Project for Billing</CardTitle>
+                <CardTitle className="text-lg text-white">Select Project for Billing</CardTitle>
               </CardHeader>
               <CardContent>
                 {projects.length === 0 ? (
                   <div className="text-center p-6">
                     <Package className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-                    <div className="text-slate-500 mb-2">No saved projects found.</div>
+                    <div className="text-slate-400 mb-2">No saved projects found.</div>
                     <div className="text-sm text-slate-400">
                       Create and save some projects first to generate billing estimates.
                     </div>
@@ -590,7 +625,7 @@ const AdminSettings = () => {
                         </option>
                       ))}
                     </select>
-                    <div className="mt-2 text-sm text-slate-500">
+                    <div className="mt-2 text-sm text-slate-400">
                       {projects.length} project(s) available
                     </div>
                     {selectedProjectId && !projectData && (
@@ -620,7 +655,7 @@ const AdminSettings = () => {
                     onClose={() => setActiveTab('general')} 
                   />
                 ) : (
-                  <Card className="border-slate-200">
+                  <Card className="border-white/10 bg-white/5">
                     <CardContent className="text-center p-6">
                       <div className="text-amber-600">
                         This project doesn't have any rooms configured. Add some rooms to generate a billing estimate.
@@ -630,14 +665,159 @@ const AdminSettings = () => {
                 )}
               </div>
             ) : (
-              <Card className="border-slate-200">
+              <Card className="border-white/10 bg-white/5">
                 <CardContent className="text-center p-6">
-                  <div className="text-slate-500">
+                  <div className="text-slate-400">
                     Select a project to view its automation billing estimate.
                   </div>
                 </CardContent>
               </Card>
             )}
+          </div>
+        )}
+        {activeTab === 'finalplan' && (
+          <div className="space-y-6">
+            {/* Project Selection */}
+            <Card className="border-white/10 bg-white/5">
+              <CardHeader>
+                <CardTitle className="text-lg text-white">Select Project for Summary and Master Plan</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {projects.length === 0 ? (
+                  <div className="text-center p-6">
+                    <Building2 className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                    <div className="text-slate-400 mb-2">No projects available</div>
+                    <div className="text-sm text-slate-400">Create a project in Planning first.</div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <select
+                      className="w-full border border-slate-300 rounded-md px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      value={selectedProjectId}
+                      onChange={e => handleProjectSelect(e.target.value)}
+                    >
+                      <option value="">Select a project...</option>
+                      {projects.map((proj) => (
+                        <option key={proj.id} value={proj.id}>
+                          {proj.projectName} — {proj.clientName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Split View: Left Summary, Right Editable Plan */}
+            {projectData && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Summary (Inline) */}
+                <Card className="border-white/10 bg-white/5">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-white">Project Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-1">
+                      <div className="text-sm text-slate-300">Project Name</div>
+                      <div className="font-semibold text-slate-900">{projectData.projectName}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-sm text-slate-300">Client</div>
+                      <div className="font-semibold text-slate-900">{projectData.clientName}</div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 mt-2">
+                      <div className="text-center p-3 bg-teal-50 rounded">
+                        <div className="text-xl font-bold text-teal-700">{rooms.length}</div>
+                        <div className="text-xs text-teal-600">Rooms</div>
+                      </div>
+                      <div className="text-center p-3 bg-blue-50 rounded">
+                        <div className="text-xl font-bold text-blue-700">{rooms.reduce((t, r) => t + (r.appliances?.length || 0), 0)}</div>
+                        <div className="text-xs text-blue-600">Items</div>
+                      </div>
+                      <div className="text-center p-3 bg-purple-50 rounded">
+                        <div className="text-xl font-bold text-purple-700">{rooms.reduce((sum, r) => sum + r.appliances.reduce((s: number, a: any) => s + ((a.wattage || 0) * (a.quantity || 0)), 0), 0)}W</div>
+                        <div className="text-xs text-purple-600">Total Power</div>
+                      </div>
+                    </div>
+
+                    {/* Category Summary */}
+                    <div className="mt-4 space-y-2">
+                      {Object.keys((rooms || []).reduce((acc: Record<string, number>, room: any) => {
+                        (room.appliances || []).forEach((a: any) => { acc[a.category] = (acc[a.category] || 0) + a.quantity; });
+                        return acc;
+                      }, {} as Record<string, number>)).length > 0 && (
+                        <div className="space-y-2">
+                          {(Object.entries((rooms || []).reduce((acc: Record<string, number>, room: any) => {
+                            (room.appliances || []).forEach((a: any) => { acc[a.category] = (acc[a.category] || 0) + a.quantity; });
+                            return acc;
+                          }, {} as Record<string, number>)) as [string, number][]).map(([cat, count]) => (
+                            <div key={cat} className="flex items-center justify-between text-sm p-2 bg-slate-50 rounded border border-white/10 bg-white/5">
+                              <div className="font-medium text-white">{cat}</div>
+                              <div className="text-slate-300">{count} items</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-2">
+                      <Button
+                        onClick={() => {
+                          const history = JSON.parse(localStorage.getItem('projectHistory') || '[]');
+                          const newProject = {
+                            id: Date.now().toString(),
+                            projectName: projectData.projectName,
+                            clientName: projectData.clientName,
+                            architectName: projectData.architectName || '',
+                            designerName: projectData.designerName || '',
+                            notes: projectData.notes || '',
+                            rooms,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                            isMasterPlan: true,
+                          };
+                          localStorage.setItem('projectHistory', JSON.stringify([newProject, ...history]));
+                          setProjects([newProject, ...projects]);
+                          toast({ title: 'Master Plan Saved', description: 'Saved to history as Master Plan.' });
+                        }}
+                        className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
+                      >
+                        Save Master Plan
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Editable Plan (reuse Room UI) */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-white">Edit Rooms</h3>
+                    <Button variant="outline" onClick={() => setShowAddRoom(true)} className="bg-white">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Room
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {rooms.map((room) => (
+                      <RoomCard
+                        key={room.id}
+                        room={room}
+                        onUpdate={updateRoom}
+                        onDelete={deleteRoom}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Dialog reused */}
+            <AddRoomDialog
+              open={showAddRoom}
+              onClose={() => setShowAddRoom(false)}
+              onAdd={addRoom}
+              onAddTemplate={addRoomsFromTemplate}
+            />
           </div>
         )}
       </div>

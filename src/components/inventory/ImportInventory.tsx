@@ -38,9 +38,9 @@ export const ImportInventory: React.FC<ImportInventoryProps> = ({ onImport }) =>
       <Button
         variant="outline"
         onClick={() => fileInputRef.current?.click()}
-        className="mb-2"
+        className="mb-2 text-white"
       >
-        <Upload className="w-4 h-4 mr-2" />
+        <Upload className="w-4 h-4 mr-2 text-white" />
         Import from Excel/CSV
       </Button>
     </div>

@@ -394,24 +394,54 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Calculator className="w-6 h-6 text-teal-600" />
-          <h2 className="text-2xl font-bold text-slate-900">Automation Billing</h2>
+          <h2 className="text-2xl font-bold text-slate-900 text-white">Automation Billing</h2>
         </div>
-        <Button
-          onClick={handleDownloadPDF}
-          className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          Download PDF
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              const snapshot = {
+                id: Date.now().toString(),
+                projectName: projectData.projectName,
+                clientName: projectData.clientName,
+                architectName: projectData.architectName,
+                designerName: projectData.designerName,
+                notes: projectData.notes,
+                rooms,
+                billing: {
+                  type: automationType,
+                  result: automationType === 'wireless' ? wirelessResult : wiredResult,
+                  knxWireLength,
+                },
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                isBillingSnapshot: true,
+              };
+              const history = JSON.parse(localStorage.getItem('projectHistory') || '[]');
+              localStorage.setItem('projectHistory', JSON.stringify([snapshot, ...history]));
+              toast({ title: 'Billing Saved', description: 'Automation billing snapshot saved to history.' });
+            }}
+            className="border-slate-300 text-white"
+          >
+            Save
+          </Button>
+          <Button
+            onClick={handleDownloadPDF}
+            className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download PDF
+          </Button>
+        </div>
       </div>
 
       {/* Automation Type Selection */}
       <Card className="border-slate-200">
         <CardHeader>
-          <CardTitle className="text-lg text-slate-800">Select Automation Type</CardTitle>
+          <CardTitle className="text-lg text-slate-800 text-white">Select Automation Type</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-6 text-white">
             <div className="flex items-center space-x-2">
               <Toggle 
                 pressed={automationType === 'wireless'} 
@@ -442,7 +472,7 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
           {/* Additional ON/OFF Points Input */}
           <Card className="border-slate-200">
             <CardHeader>
-              <CardTitle className="text-lg text-slate-800">Additional Configuration</CardTitle>
+              <CardTitle className="text-lg text-slate-800 text-white">Additional Configuration</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -494,7 +524,7 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
       {automationType === 'wireless' ? (
         <Card className="border-slate-200">
           <CardHeader>
-            <CardTitle className="text-lg text-slate-800">Wireless Automation Breakdown</CardTitle>
+            <CardTitle className="text-lg text-slate-800 text-white">Wireless Automation Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -518,7 +548,7 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
           {/* Actuator Requirements Breakdown */}
           <Card className="border-slate-200">
             <CardHeader>
-              <CardTitle className="text-lg text-slate-800">Actuator Channel Requirements</CardTitle>
+              <CardTitle className="text-lg text-slate-800 text-white">Actuator Channel Requirements</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -625,7 +655,7 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
           {/* Mandatory Components */}
           <Card className="border-slate-200">
             <CardHeader>
-              <CardTitle className="text-lg text-slate-800">Mandatory System Components</CardTitle>
+              <CardTitle className="text-lg text-slate-800 text-white">Mandatory System Components</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
