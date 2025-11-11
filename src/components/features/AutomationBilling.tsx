@@ -10,7 +10,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { Download, Calculator, Zap, Wifi, AlertTriangle, CheckCircle2, Plus } from 'lucide-react';
 import { generateAutomationBillingPDF } from '@/utils/automationBillingPdfExport';
 import { useToast } from '@/hooks/use-toast';
-import { defaultPrices } from './inventory/constants';
+import { DEFAULT_INVENTORY_PRICES } from '@/constants/inventory';
 
 interface Appliance {
   id: string;
@@ -78,15 +78,15 @@ const AutomationBilling = ({ projectData, rooms, onClose }: AutomationBillingPro
           setPriceData(parsed);
         } else {
           // If the saved data is invalid, use default prices from constants
-          setPriceData(defaultPrices);
+          setPriceData(DEFAULT_INVENTORY_PRICES);
         }
       } else {
         // If no saved data exists, use default prices from constants
-        setPriceData(defaultPrices);
+        setPriceData(DEFAULT_INVENTORY_PRICES);
       }
     } catch (error) {
       console.error('Error loading price data:', error);
-      setPriceData(defaultPrices);
+      setPriceData(DEFAULT_INVENTORY_PRICES);
     }
   }, []);
 

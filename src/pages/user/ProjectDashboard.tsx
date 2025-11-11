@@ -7,9 +7,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Building2, Plus, Save, FileDown, Eye, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import RoomCard from '@/components/RoomCard';
-import AddRoomDialog from '@/components/AddRoomDialog';
-import ProjectSummary from '@/components/ProjectSummary';
+import { RoomCard } from "@/components/features";
+import { AddRoomDialog } from "@/components/features";
+import { ProjectSummary } from "@/components/features";
 import { generatePDF } from '@/utils/pdfExport';
 
 interface Room {

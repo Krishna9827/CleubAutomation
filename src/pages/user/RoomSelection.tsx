@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2 } from 'lucide-react';
-import { projectService } from '@/supabase/projectService';
+import { projectService } from '@/services/supabase/projectService';
 import { useToast } from '@/hooks/use-toast';
 
 interface Room {
@@ -121,27 +121,78 @@ const RoomSelection = () => {
       const savedProjectId = localStorage.getItem('projectId');
       
       if (!savedProjectId) {
-        console.error('No project ID found');
+        console.error('❌ No project ID found');
         toast({
           title: 'Error',
           description: 'Project ID not found. Please start from the beginning.',
           variant: 'destructive'
         });
+        setIsSaving(false);
         return;
       }
 
-      // Save rooms to Firebase
-      await projectService.saveRoomSelection(savedProjectId, rooms);
+      // Create abort controller for 30-second timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.error('⏱️ Room selection save timeout after 30s');
+      }, 30000);
 
-      // Keep localStorage in sync for backward compatibility
-      localStorage.setItem('projectRooms', JSON.stringify(rooms));
-      
-      navigate('/requirements');
-    } catch (error) {
-      console.error('Error saving project:', error);
-      // If Firebase save fails, still try to proceed with local storage
-      localStorage.setItem('projectRooms', JSON.stringify(rooms));
-      navigate('/requirements');
+      try {
+        console.log('💾 Starting room selection save...');
+        // Save rooms to Supabase
+        await projectService.saveRoomSelection(savedProjectId, rooms);
+        clearTimeout(timeoutId);
+        console.log('✅ Room selection saved successfully');
+
+        // Keep localStorage in sync for backward compatibility
+        localStorage.setItem('projectRooms', JSON.stringify(rooms));
+        
+        toast({
+          title: 'Success',
+          description: 'Room selection saved successfully'
+        });
+        
+        navigate('/requirements');
+      } catch (saveError: any) {
+        clearTimeout(timeoutId);
+        console.error('❌ Room selection save failed:', {
+          code: saveError.code,
+          message: saveError.message,
+          status: saveError.status,
+          details: saveError
+        });
+
+        // Check if it's a timeout
+        if (saveError.name === 'AbortError') {
+          toast({
+            title: 'Timeout',
+            description: 'Save operation took too long. Please check your connection and try again.',
+            variant: 'destructive'
+          });
+        } else {
+          toast({
+            title: 'Save Failed',
+            description: `Failed to save room selection: ${saveError.message || 'Unknown error'}. Retrying with local storage.`,
+            variant: 'destructive'
+          });
+        }
+
+        // Still save to localStorage as fallback
+        localStorage.setItem('projectRooms', JSON.stringify(rooms));
+        
+        // Allow proceeding with local data after showing error
+        setTimeout(() => {
+          navigate('/requirements');
+        }, 2000);
+      }
+    } catch (error: any) {
+      console.error('❌ Unexpected error in handleContinue:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive'
+      });
     } finally {
       setIsSaving(false);
     }

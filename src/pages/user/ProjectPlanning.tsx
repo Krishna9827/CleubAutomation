@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Building2, Users, Lightbulb, ChevronRight, Settings, Moon, Sun, LogOut } from 'lucide-react';
-import { projectService } from '@/supabase/projectService';
+import { projectService } from '@/services/supabase/projectService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -55,7 +55,9 @@ const ProjectPlanning = () => {
     
     setIsLoading(true);
     try {
-      // Create project with Supabase
+      console.log('🚀 Creating project for user:', user.id);
+      
+      // Create project with Supabase (using user.id not user.uid - Supabase Auth uses .id)
       const projectId = await projectService.createProject({
         client_info: {
           name: formData.clientName,
@@ -68,7 +70,7 @@ const ProjectPlanning = () => {
           size: 0,
           budget: 0,
         }
-      }, user.uid);
+      }, user.id);
 
       // Save to localStorage for backward compatibility
       localStorage.setItem('projectData', JSON.stringify(formData));

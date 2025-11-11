@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Phone, Mail, MapPin, Building2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { adminService } from '@/supabase/adminService';
+import { adminService } from '@/services/supabase/adminService';
 
 const Inquiry = () => {
   const navigate = useNavigate();

@@ -70,15 +70,12 @@ const Login = () => {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
-      toast({
-        title: 'Success',
-        description: 'Logged in with Google!',
-      });
-      navigate('/');
+      // Note: Google OAuth will redirect. No need for navigate() here
+      // The redirect will happen, and auth state will update automatically
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to sign in with Google',
         variant: 'destructive',
       });
     }
@@ -157,15 +154,15 @@ const Login = () => {
     try {
       console.log('📝 Attempting signup with email:', signupData.email);
       await signUpWithEmail(signupData.email, signupData.password, {
-        firstName: signupData.firstName,
-        lastName: signupData.lastName,
-        phoneNumber: signupData.phoneNumber,
-        dateOfBirth: signupData.dateOfBirth,
-        houseNumber: signupData.houseNumber,
+        first_name: signupData.firstName,
+        last_name: signupData.lastName,
+        phone_number: signupData.phoneNumber,
+        date_of_birth: signupData.dateOfBirth,
+        house_number: signupData.houseNumber,
         area: signupData.area,
         city: signupData.city,
         state: signupData.state,
-        postalCode: signupData.postalCode,
+        postal_code: signupData.postalCode,
       });
       toast({
         title: 'Success',

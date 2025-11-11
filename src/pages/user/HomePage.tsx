@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Building2, Users, Lightbulb, ChevronRight, Settings, History, Moon, Sun, LogOut } from 'lucide-react';
-import { projectService } from '@/supabase/projectService';
+import { projectService } from '@/services/supabase/projectService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -55,7 +55,10 @@ const Index = () => {
     
     setIsLoading(true);
     try {
-      // Create project with Supabase (note: using user_id not userId)
+      console.log('🚀 Creating project for user:', user.id);
+      console.log('🚀 Form data:', formData);
+      
+      // Create project with Supabase (using user.id not user.uid - Supabase Auth uses .id)
       const projectId = await projectService.createProject({
         client_info: {
           name: formData.clientName,
@@ -68,7 +71,9 @@ const Index = () => {
           size: 0,
           budget: 0,
         }
-      }, user.uid);
+      }, user.id);
+
+      console.log('✅ Project created successfully! ID:', projectId);
 
       // Save to localStorage for backward compatibility
       localStorage.setItem('projectData', JSON.stringify(formData));
@@ -82,10 +87,10 @@ const Index = () => {
 
       navigate('/room-selection');
     } catch (error) {
-      console.error('Error creating project:', error);
+      console.error('❌ Error creating project:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create project. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to create project. Please try again.',
         variant: 'destructive'
       });
     } finally {

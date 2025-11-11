@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { AddItemForm } from './inventory/AddItemForm';
-import { PriceTable } from './inventory/PriceTable';
-import { ImportInventory } from './inventory/ImportInventory';
-import { defaultPrices } from './inventory/constants';
-import type { PriceData, NewItemForm } from './inventory/types';
+import { AddItemForm } from '@/components/inventory/AddItemForm';
+import { PriceTable } from '@/components/inventory/PriceTable';
+import { ImportInventory } from '@/components/inventory/ImportInventory';
+import { DEFAULT_INVENTORY_PRICES } from '@/constants/inventory';
+import type { PriceData, NewItemForm } from '@/types/inventory';
 
 const InventoryManagement = () => {
   const { toast } = useToast();
@@ -31,17 +31,17 @@ const InventoryManagement = () => {
         if (Array.isArray(parsed) && parsed.length > 0) {
           setPriceData(parsed);
         } else {
-          setPriceData(defaultPrices);
-          localStorage.setItem('inventoryPrices', JSON.stringify(defaultPrices));
+          setPriceData(DEFAULT_INVENTORY_PRICES);
+          localStorage.setItem('inventoryPrices', JSON.stringify(DEFAULT_INVENTORY_PRICES));
         }
       } else {
-        setPriceData(defaultPrices);
-        localStorage.setItem('inventoryPrices', JSON.stringify(defaultPrices));
+        setPriceData(DEFAULT_INVENTORY_PRICES);
+        localStorage.setItem('inventoryPrices', JSON.stringify(DEFAULT_INVENTORY_PRICES));
       }
     } catch (error) {
       console.error('Error loading price data:', error);
-      setPriceData(defaultPrices);
-      localStorage.setItem('inventoryPrices', JSON.stringify(defaultPrices));
+      setPriceData(DEFAULT_INVENTORY_PRICES);
+      localStorage.setItem('inventoryPrices', JSON.stringify(DEFAULT_INVENTORY_PRICES));
     }
   }, []);
 

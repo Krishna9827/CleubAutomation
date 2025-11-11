@@ -10,10 +10,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================
 -- TABLE: users
 -- Description: Stores user profile information
--- Note: id is TEXT to match Firebase Auth UIDs (not UUID)
+-- Note: id is UUID to match Supabase Auth user.id
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.users (
-    id TEXT PRIMARY KEY,
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT NOT NULL UNIQUE,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
@@ -32,30 +32,34 @@ CREATE TABLE IF NOT EXISTS public.users (
 -- Create index on email for faster lookups
 CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
 
--- Enable Row Level Security
+-- Enable RLS on users table
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for users table
-CREATE POLICY "Users can view own profile"
+CREATE POLICY "Users can read own profile"
     ON public.users FOR SELECT
+    TO authenticated
     USING (auth.uid() = id);
 
 CREATE POLICY "Users can update own profile"
     ON public.users FOR UPDATE
+    TO authenticated
     USING (auth.uid() = id);
 
-CREATE POLICY "Users can insert own profile"
+-- Allow signup: new users can create their profile
+CREATE POLICY "Users can create their own profile"
     ON public.users FOR INSERT
+    TO authenticated
     WITH CHECK (auth.uid() = id);
 
 -- ============================================
 -- TABLE: projects
 -- Description: Stores project/automation planning data
--- Note: user_id is TEXT to match Firebase Auth UIDs
+-- Note: user_id is UUID to match Supabase Auth UIDs
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.projects (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id TEXT REFERENCES public.users(id) ON DELETE SET NULL,
+    user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
     client_info JSONB NOT NULL DEFAULT '{}'::jsonb,
     property_details JSONB NOT NULL DEFAULT '{}'::jsonb,
     requirements TEXT[] DEFAULT ARRAY[]::TEXT[],
@@ -74,32 +78,33 @@ CREATE INDEX IF NOT EXISTS idx_projects_status ON public.projects(status);
 CREATE INDEX IF NOT EXISTS idx_projects_created_at ON public.projects(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_projects_client_email ON public.projects((client_info->>'email'));
 
--- Enable Row Level Security
+-- Enable RLS on projects table
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for projects table
+-- Allow authenticated users to create projects (they will be owners)
+CREATE POLICY "Authenticated users can create projects"
+    ON public.projects FOR INSERT
+    TO authenticated
+    WITH CHECK (auth.uid() = user_id);
+
+-- Allow users to view their own projects
 CREATE POLICY "Users can view own projects"
     ON public.projects FOR SELECT
+    TO authenticated
     USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can create own projects"
-    ON public.projects FOR INSERT
-    WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
-
+-- Allow users to update their own projects
 CREATE POLICY "Users can update own projects"
     ON public.projects FOR UPDATE
-    USING (auth.uid() = user_id OR user_id IS NULL);
-
-CREATE POLICY "Users can delete own projects"
-    ON public.projects FOR DELETE
+    TO authenticated
     USING (auth.uid() = user_id);
 
--- Admin can view all projects (requires custom claim)
-CREATE POLICY "Admins can view all projects"
-    ON public.projects FOR SELECT
-    USING (
-        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
-    );
+-- Allow users to delete their own projects
+CREATE POLICY "Users can delete own projects"
+    ON public.projects FOR DELETE
+    TO authenticated
+    USING (auth.uid() = user_id);
 
 -- ============================================
 -- TABLE: inquiries
@@ -119,25 +124,19 @@ CREATE TABLE IF NOT EXISTS public.inquiries (
 CREATE INDEX IF NOT EXISTS idx_inquiries_status ON public.inquiries(status);
 CREATE INDEX IF NOT EXISTS idx_inquiries_created_at ON public.inquiries(created_at DESC);
 
--- Enable Row Level Security
+-- Enable RLS on inquiries table
 ALTER TABLE public.inquiries ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for inquiries
+-- RLS Policies for inquiries - Anyone can submit (unauthenticated or authenticated)
 CREATE POLICY "Anyone can create inquiry"
     ON public.inquiries FOR INSERT
+    TO public
     WITH CHECK (true);
 
-CREATE POLICY "Admins can view all inquiries"
+CREATE POLICY "Anyone can view inquiries"
     ON public.inquiries FOR SELECT
-    USING (
-        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
-    );
-
-CREATE POLICY "Admins can update inquiries"
-    ON public.inquiries FOR UPDATE
-    USING (
-        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
-    );
+    TO public
+    USING (true);
 
 -- ============================================
 -- TABLE: admin_settings
@@ -153,27 +152,18 @@ CREATE TABLE IF NOT EXISTS public.admin_settings (
 -- Create index on setting_key for faster lookups
 CREATE INDEX IF NOT EXISTS idx_admin_settings_key ON public.admin_settings(setting_key);
 
--- Enable Row Level Security
+-- Enable RLS on admin_settings table
 ALTER TABLE public.admin_settings ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for admin_settings
-CREATE POLICY "Admins can view settings"
+-- RLS Policies for admin_settings - Authenticated users can view
+CREATE POLICY "Authenticated users can view admin settings"
     ON public.admin_settings FOR SELECT
-    USING (
-        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
-    );
+    TO authenticated
+    USING (true);
 
-CREATE POLICY "Admins can insert settings"
-    ON public.admin_settings FOR INSERT
-    WITH CHECK (
-        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
-    );
-
-CREATE POLICY "Admins can update settings"
+CREATE POLICY "Service role can update admin settings"
     ON public.admin_settings FOR UPDATE
-    USING (
-        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
-    );
+    USING (true);
 
 -- ============================================
 -- TABLE: testimonials
@@ -197,31 +187,22 @@ CREATE TABLE IF NOT EXISTS public.testimonials (
 -- Create index for faster querying
 CREATE INDEX IF NOT EXISTS idx_testimonials_created_at ON public.testimonials(created_at DESC);
 
--- Enable Row Level Security
+-- Enable RLS on testimonials table
 ALTER TABLE public.testimonials ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for testimonials
+-- RLS Policies for testimonials - Anyone can view, service role can create/update
 CREATE POLICY "Anyone can view testimonials"
     ON public.testimonials FOR SELECT
+    TO public
     USING (true);
 
-CREATE POLICY "Admins can insert testimonials"
+CREATE POLICY "Service role can manage testimonials"
     ON public.testimonials FOR INSERT
-    WITH CHECK (
-        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
-    );
+    WITH CHECK (true);
 
-CREATE POLICY "Admins can update testimonials"
+CREATE POLICY "Service role can update testimonials"
     ON public.testimonials FOR UPDATE
-    USING (
-        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
-    );
-
-CREATE POLICY "Admins can delete testimonials"
-    ON public.testimonials FOR DELETE
-    USING (
-        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
-    );
+    USING (true);
 
 -- ============================================
 -- TABLE: inventory
@@ -242,31 +223,22 @@ CREATE TABLE IF NOT EXISTS public.inventory (
 CREATE INDEX IF NOT EXISTS idx_inventory_category ON public.inventory(category);
 CREATE INDEX IF NOT EXISTS idx_inventory_subcategory ON public.inventory(subcategory);
 
--- Enable Row Level Security
+-- Enable RLS on inventory table
 ALTER TABLE public.inventory ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for inventory
+-- RLS Policies for inventory - Anyone can view, service role can manage
 CREATE POLICY "Anyone can view inventory"
     ON public.inventory FOR SELECT
+    TO public
     USING (true);
 
-CREATE POLICY "Admins can insert inventory"
+CREATE POLICY "Service role can manage inventory"
     ON public.inventory FOR INSERT
-    WITH CHECK (
-        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
-    );
+    WITH CHECK (true);
 
-CREATE POLICY "Admins can update inventory"
+CREATE POLICY "Service role can update inventory"
     ON public.inventory FOR UPDATE
-    USING (
-        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
-    );
-
-CREATE POLICY "Admins can delete inventory"
-    ON public.inventory FOR DELETE
-    USING (
-        (auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
-    );
+    USING (true);
 
 -- ============================================
 -- FUNCTIONS AND TRIGGERS

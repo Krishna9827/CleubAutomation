@@ -18,14 +18,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  touchPanelTypes,
-  touchPanelModules,
-  touchPanelChannelOptions
-} from './inventory/constants';
+  getCategoryColor,
+  DEFAULT_INVENTORY_PRICES,
+  TOUCH_PANEL_TYPES,
+  TOUCH_PANEL_MODULES,
+  TOUCH_PANEL_CHANNEL_OPTIONS
+} from '@/constants/inventory';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-import type { TouchPanelChannelConfig } from './inventory/types';
+import type { TouchPanelChannelConfig } from '@/types/inventory';
 interface Appliance {
   name: string;
   category: string;
@@ -258,7 +260,7 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
                         <SelectValue placeholder="Select panel type" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-slate-200">
-                        {touchPanelTypes.map((type) => (
+                        {TOUCH_PANEL_TYPES.map((type) => (
                           <SelectItem key={type} value={type}>{type}</SelectItem>
                         ))}
                       </SelectContent>
@@ -278,7 +280,7 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
                         <SelectValue placeholder="Select module" />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-slate-200">
-                        {touchPanelModules.map((mod) => (
+                        {TOUCH_PANEL_MODULES.map((mod) => (
                           <SelectItem key={mod} value={String(mod)}>{mod} Channel</SelectItem>
                         ))}
                       </SelectContent>
@@ -308,7 +310,7 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
                             <SelectValue placeholder="Select device" />
                           </SelectTrigger>
                           <SelectContent className="bg-white border-slate-200">
-                            {touchPanelChannelOptions.map((opt) => (
+                            {TOUCH_PANEL_CHANNEL_OPTIONS.map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                             ))}
                           </SelectContent>

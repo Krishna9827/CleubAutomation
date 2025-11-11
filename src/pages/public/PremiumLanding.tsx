@@ -3,13 +3,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Film, Headphones, Cpu, Star, Quote, Phone, Mail, Sparkles, Lightbulb, Settings, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import BrandLogos from '@/components/BrandLogos';
+import { BrandLogos } from "@/components/features";
 import SiteNav from '@/components/ui/site-nav';
-import TestimonialDialog from '@/components/TestimonialDialog';
+import { TestimonialDialog } from "@/components/features";
+import { useAuth } from '@/contexts/AuthContext';
 
 
 const PremiumLanding = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [testimonials, setTestimonials] = useState(() => 
     JSON.parse(localStorage.getItem('testimonials') || '[]')
   );
@@ -51,8 +53,12 @@ const PremiumLanding = () => {
               <Button onClick={() => navigate('/inquiry')} className="bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 hover:to-teal-400 text-white">
                 Get a Consultation
               </Button>
-              <Button onClick={() => navigate('/login')} variant="outline" className="border-teal-600 text-teal-400 hover:bg-teal-600/10">
-                Sign In
+              <Button 
+                onClick={() => user ? navigate('/project-planning') : navigate('/login')} 
+                variant="outline" 
+                className="border-teal-600 text-teal-400 hover:bg-teal-600/10"
+              >
+                {user ? 'Start a Project' : 'Sign In'}
               </Button>
             </div>
           </div>

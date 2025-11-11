@@ -10,14 +10,18 @@ import { Building2, Plus, Trash2, Save, ArrowLeft, Package, User, Home, Eye, Edi
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import InventoryManagement from '@/components/InventoryManagement';
-import AutomationBilling from '@/components/AutomationBilling';
-import { defaultPrices } from '@/components/inventory/constants';
-import RoomCard from '@/components/RoomCard';
-import AddRoomDialog from '@/components/AddRoomDialog';
-import ProjectSummary from '@/components/ProjectSummary';
-import TestimonialManager from '../components/admin/TestimonialManager';
-import { db } from '@/firebase/config';
+import {
+  InventoryManagement,
+  AutomationBilling,
+  RoomCard,
+  AddRoomDialog,
+  ProjectSummary,
+  EstimatedCost,
+  AddApplianceDialog
+} from '@/components/features';
+import { DEFAULT_INVENTORY_PRICES } from '@/constants/inventory';
+import TestimonialManager from '@/components/admin/TestimonialManager';
+import { db } from '@/services/firebase/config';
 import { collection, query, orderBy, onSnapshot, updateDoc, doc, setDoc, getDoc, getDocs, addDoc } from 'firebase/firestore';
 
 interface DefaultSettings {

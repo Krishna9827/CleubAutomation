@@ -57,7 +57,7 @@ const EstimatedCost = ({ projectData, rooms, onClose }: EstimatedCostProps) => {
       setPriceData(JSON.parse(savedPrices));
     } else {
       // Default pricing data
-      const defaultPrices: PriceData[] = [
+      const DEFAULT_INVENTORY_PRICES: PriceData[] = [
         { category: 'Lights', subcategory: 'Basic ON/OFF', wattage: 6, pricePerUnit: 150 },
         { category: 'Lights', subcategory: 'Tunable', wattage: 9, pricePerUnit: 250 },
         { category: 'Lights', subcategory: 'RGB', wattage: 12, pricePerUnit: 350 },
@@ -68,7 +68,7 @@ const EstimatedCost = ({ projectData, rooms, onClose }: EstimatedCostProps) => {
         { category: 'Smart Devices', pricePerUnit: 1500, notes: 'Smart switch/sensor' },
         { category: 'Security', pricePerUnit: 3000, notes: 'Security device' }
       ];
-      setPriceData(defaultPrices);
+      setPriceData(DEFAULT_INVENTORY_PRICES);
     }
   }, []);
 

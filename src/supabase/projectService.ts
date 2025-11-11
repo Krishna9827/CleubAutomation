@@ -50,8 +50,14 @@ export const projectService = {
    */
   async createProject(initialData: Partial<ProjectData>, userId?: string): Promise<string> {
     try {
+      if (!userId) {
+        throw new Error('❌ User ID is required to create a project');
+      }
+
+      console.log('✅ Step 1: User ID received:', userId);
+
       const projectData = {
-        user_id: userId || null,
+        user_id: userId,
         client_info: initialData.client_info || {
           name: '',
           email: '',
@@ -71,16 +77,72 @@ export const projectService = {
         last_saved_page: initialData.last_saved_page || 'index',
       };
 
-      const { data, error } = await supabase
-        .from('projects')
-        .insert(projectData)
-        .select('id')
+      console.log('✅ Step 2: Project data prepared:', projectData);
+
+      // Check current session
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('✅ Step 3: Session check - User ID:', session?.user?.id);
+      console.log('✅ Step 3: Session valid:', !!session);
+      console.log('✅ Step 3: IDs match:', session?.user?.id === userId);
+      
+      if (!session) {
+        throw new Error('❌ No active session. Please log in again.');
+      }
+
+      if (session.user.id !== userId) {
+        throw new Error(`❌ User ID mismatch! Session: ${session.user.id}, Provided: ${userId}`);
+      }
+
+      console.log('✅ Step 4: Verifying user profile exists in database...');
+      
+      // Check if user profile exists before inserting project
+      const { data: userProfile, error: userError } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('id', userId)
         .single();
 
-      if (error) throw error;
-      return data.id;
+      if (userError) {
+        console.error('❌ Error checking user profile:', userError);
+        throw new Error(`❌ User profile not found! Error: ${userError.message}`);
+      }
+
+      if (!userProfile) {
+        throw new Error('❌ User profile does not exist in database. Please complete your profile first.');
+      }
+
+      console.log('✅ Step 4.5: User profile verified:', userProfile);
+      // Use insert without .single() first to see what happens
+      const { data, error, status } = await supabase
+        .from('projects')
+        .insert([projectData])
+        .select('id');
+
+      console.log('✅ Step 6: Supabase response received');
+      console.log('📊 Status:', status);
+      console.log('📊 Data:', data);
+      console.log('📊 Error:', error);
+
+      if (error) {
+        console.error('❌ Supabase Insert Error Details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        throw new Error(`Supabase Error [${error.code}]: ${error.message} - ${error.details || error.hint || ''}`);
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('❌ No data returned from insert. RLS policy may be blocking.');
+      }
+
+      const projectId = data[0].id;
+      console.log('✅ Step 7: Project created with ID:', projectId);
+      return projectId;
     } catch (error: any) {
-      console.error('Error creating project:', error);
+      console.error('❌ CRITICAL ERROR in createProject:', error);
+      console.error('❌ Error stack:', error.stack);
       throw new Error(error.message || 'Failed to create project');
     }
   },
@@ -90,14 +152,27 @@ export const projectService = {
    */
   async updateProject(projectId: string, updates: Partial<ProjectData>): Promise<void> {
     try {
+      console.log('📝 Updating project:', projectId);
+      console.log('📝 Updates:', updates);
+
       const { error } = await supabase
         .from('projects')
         .update(updates)
         .eq('id', projectId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Update Error Details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        throw new Error(`Update failed [${error.code}]: ${error.message}`);
+      }
+
+      console.log('✅ Project updated successfully');
     } catch (error: any) {
-      console.error('Error updating project:', error);
+      console.error('❌ Error updating project:', error);
       throw new Error(error.message);
     }
   },
@@ -213,7 +288,14 @@ export const projectService = {
    * Save room selection
    */
   async saveRoomSelection(projectId: string, rooms: ProjectData['rooms']): Promise<void> {
-    await this.updateProject(projectId, { rooms });
+    try {
+      console.log('🏠 Saving room selection:', rooms.length, 'rooms');
+      await this.updateProject(projectId, { rooms });
+      console.log('✅ Room selection saved');
+    } catch (error: any) {
+      console.error('❌ Error saving room selection:', error);
+      throw error;
+    }
   },
 
   /**
@@ -224,11 +306,18 @@ export const projectService = {
     requirements: string[],
     propertyDetails: ProjectData['property_details']
   ): Promise<void> {
-    await this.updateProject(projectId, {
-      requirements,
-      property_details: propertyDetails,
-      last_saved_page: 'requirements',
-    });
+    try {
+      console.log('📋 Saving requirements:', requirements);
+      await this.updateProject(projectId, {
+        requirements,
+        property_details: propertyDetails,
+        last_saved_page: 'requirements',
+      });
+      console.log('✅ Requirements saved');
+    } catch (error: any) {
+      console.error('❌ Error saving requirements:', error);
+      throw error;
+    }
   },
 
   /**
@@ -239,44 +328,63 @@ export const projectService = {
     roomId: string,
     appliances: ProjectData['rooms'][0]['appliances']
   ): Promise<void> {
-    const project = await this.getProject(projectId);
-    if (!project) return;
+    try {
+      console.log('🔌 Saving appliances for room:', roomId);
+      const project = await this.getProject(projectId);
+      if (!project) {
+        throw new Error('Project not found');
+      }
 
-    const updatedRooms = project.rooms.map((room) =>
-      room.id === roomId ? { ...room, appliances } : room
-    );
+      const updatedRooms = project.rooms.map((room) =>
+        room.id === roomId ? { ...room, appliances } : room
+      );
 
-    await this.updateProject(projectId, { rooms: updatedRooms });
+      await this.updateProject(projectId, { rooms: updatedRooms });
+      console.log('✅ Appliances saved');
+    } catch (error: any) {
+      console.error('❌ Error saving appliances:', error);
+      throw error;
+    }
   },
 
   /**
    * Calculate and update total cost
    */
   async updateTotalCost(projectId: string): Promise<void> {
-    const project = await this.getProject(projectId);
-    if (!project) return;
+    try {
+      console.log('💰 Calculating and updating total cost');
+      const project = await this.getProject(projectId);
+      if (!project) {
+        throw new Error('Project not found');
+      }
 
-    const roomCosts = project.rooms.reduce(
-      (total, room) =>
-        total +
-        room.appliances.reduce(
-          (roomTotal, appliance) => roomTotal + appliance.price * appliance.quantity,
-          0
-        ),
-      0
-    );
+      const roomCosts = project.rooms.reduce(
+        (total, room) =>
+          total +
+          room.appliances.reduce(
+            (roomTotal, appliance) => roomTotal + appliance.price * appliance.quantity,
+            0
+          ),
+        0
+      );
 
-    const sectionCosts = project.sections.reduce(
-      (total, section) =>
-        total +
-        section.items.reduce(
-          (sectionTotal, item) => sectionTotal + item.price * item.quantity,
-          0
-        ),
-      0
-    );
+      const sectionCosts = project.sections.reduce(
+        (total, section) =>
+          total +
+          section.items.reduce(
+            (sectionTotal, item) => sectionTotal + item.price * item.quantity,
+            0
+          ),
+        0
+      );
 
-    const totalCost = roomCosts + sectionCosts;
-    await this.updateProject(projectId, { total_cost: totalCost });
+      const totalCost = roomCosts + sectionCosts;
+      console.log('💰 New total cost:', totalCost);
+      await this.updateProject(projectId, { total_cost: totalCost });
+      console.log('✅ Total cost updated');
+    } catch (error: any) {
+      console.error('❌ Error updating total cost:', error);
+      throw error;
+    }
   },
 };

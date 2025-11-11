@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { projectService } from '@/supabase/projectService';
+import { projectService } from '@/services/supabase/projectService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Copy, ChevronDown } from 'lucide-react';
-import SectionItemsDialog, { type SectionItem } from '@/components/SectionItemsDialog';
+import { useToast } from '@/hooks/use-toast';
+import { SectionItemsDialog, type SectionItem } from '@/components/features';
 
 const defaultRoomReq = {
   curtains: false,
@@ -38,6 +39,7 @@ const defaultRoomReq = {
 
 const RequirementSheet2 = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [projectData, setProjectData] = useState<any>(null);
   const [rooms, setRooms] = useState<any[]>([]);
   // Initialize each room's requirements separately
@@ -198,6 +200,7 @@ const RequirementSheet2 = () => {
       let projectId = localStorage.getItem('projectId');
       
       if (!projectId) {
+        console.log('📝 Creating new project for requirements...');
         // Create a new project
         projectId = await projectService.createProject({
           client_info: {
@@ -213,6 +216,7 @@ const RequirementSheet2 = () => {
           }
         });
         localStorage.setItem('projectId', projectId);
+        console.log('✅ New project created:', projectId);
       }
 
       // Update rooms with their requirements
@@ -221,41 +225,97 @@ const RequirementSheet2 = () => {
         requirements: roomRequirements[index]
       }));
 
-      // Save to Supabase
-      await projectService.updateProject(projectId, {
-        rooms: updatedRooms,
-        last_saved_page: 'requirements'
-      });
+      // Create abort controller for 30-second timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.error('⏱️ Requirements save timeout after 30s');
+      }, 30000);
 
-      // Keep localStorage in sync for backward compatibility
-      localStorage.setItem('projectRooms', JSON.stringify(updatedRooms));
-      const requirementsObj = updatedRooms.reduce((acc: any, room: any, index: number) => {
-        acc[room.id] = roomRequirements[index];
-        return acc;
-      }, {});
-      localStorage.setItem('requirements', JSON.stringify(requirementsObj));
-
-      // Navigate to final review page
-      navigate('/final-review');
-    } catch (error) {
-      console.error('Error saving project:', error);
-      // Try to save to localStorage as fallback
       try {
-        const updatedRooms = rooms.map((room: any, index: number) => ({
-          ...room,
-          requirements: roomRequirements[index]
-        }));
+        console.log('💾 Saving requirements and rooms to Supabase...');
+        // Save to Supabase
+        await projectService.updateProject(projectId, {
+          rooms: updatedRooms,
+          last_saved_page: 'requirements'
+        });
+        clearTimeout(timeoutId);
+        console.log('✅ Requirements saved successfully');
+
+        // Keep localStorage in sync for backward compatibility
         localStorage.setItem('projectRooms', JSON.stringify(updatedRooms));
         const requirementsObj = updatedRooms.reduce((acc: any, room: any, index: number) => {
           acc[room.id] = roomRequirements[index];
           return acc;
         }, {});
         localStorage.setItem('requirements', JSON.stringify(requirementsObj));
+
+        toast({
+          title: 'Success',
+          description: 'Requirements saved successfully'
+        });
+
+        // Navigate to final review page
         navigate('/final-review');
-      } catch (localError) {
-        console.error('Error saving to localStorage:', localError);
-        alert('Failed to save project. Please try again.');
+      } catch (saveError: any) {
+        clearTimeout(timeoutId);
+        console.error('❌ Requirements save failed:', {
+          code: saveError.code,
+          message: saveError.message,
+          status: saveError.status,
+          details: saveError
+        });
+
+        // Check if it's a timeout
+        if (saveError.name === 'AbortError') {
+          toast({
+            title: 'Timeout',
+            description: 'Save operation took too long. Please check your connection and try again.',
+            variant: 'destructive'
+          });
+        } else {
+          toast({
+            title: 'Save Failed',
+            description: `Failed to save requirements: ${saveError.message || 'Unknown error'}. Retrying with local storage.`,
+            variant: 'destructive'
+          });
+        }
+
+        // Try to save to localStorage as fallback
+        try {
+          console.log('📱 Falling back to localStorage...');
+          const updatedRooms = rooms.map((room: any, index: number) => ({
+            ...room,
+            requirements: roomRequirements[index]
+          }));
+          localStorage.setItem('projectRooms', JSON.stringify(updatedRooms));
+          const requirementsObj = updatedRooms.reduce((acc: any, room: any, index: number) => {
+            acc[room.id] = roomRequirements[index];
+            return acc;
+          }, {});
+          localStorage.setItem('requirements', JSON.stringify(requirementsObj));
+          console.log('✅ Saved to localStorage as fallback');
+          
+          // Allow proceeding with local data after showing error
+          setTimeout(() => {
+            navigate('/final-review');
+          }, 2000);
+        } catch (localError) {
+          console.error('❌ Error saving to localStorage:', localError);
+          toast({
+            title: 'Error',
+            description: 'Failed to save project. Please try again.',
+            variant: 'destructive'
+          });
+        }
       }
+    } catch (error: any) {
+      console.error('❌ Unexpected error in saveRequirementProject:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive'
+      });
     } finally {
       setIsSaving(false);
     }
