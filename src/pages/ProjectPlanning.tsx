@@ -6,12 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Building2, Users, Lightbulb, ChevronRight, Settings, History, Moon, Sun, LogOut } from 'lucide-react';
+import { Building2, Users, Lightbulb, ChevronRight, Settings, Moon, Sun, LogOut } from 'lucide-react';
 import { projectService } from '@/supabase/projectService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
-const Index = () => {
+const ProjectPlanning = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, logout, loading } = useAuth();
@@ -55,7 +55,7 @@ const Index = () => {
     
     setIsLoading(true);
     try {
-      // Create project with Supabase (note: using user_id not userId)
+      // Create project with Supabase
       const projectId = await projectService.createProject({
         client_info: {
           name: formData.clientName,
@@ -106,9 +106,8 @@ const Index = () => {
             <span>Cleub Automation</span>
           </div>
           <nav className="hidden md:flex items-center justify-center gap-6 text-sm">
-            <button className="text-white hover:text-teal-400 transition-colors" onClick={() => navigate('/premium')}>Home</button>
+            <button className="text-white hover:text-teal-400 transition-colors" onClick={() => navigate('/')}>Home</button>
             <button className="text-white hover:text-teal-400 transition-colors" onClick={() => navigate('/admin')}>Admin</button>
-            <button className="text-white hover:text-teal-400 transition-colors" onClick={() => navigate('/history')}>History</button>
           </nav>
           <div className="flex items-center justify-end gap-3">
             {user ? (
@@ -307,5 +306,4 @@ const Index = () => {
   );
 };
 
-export default Index;
-// Duplicate export removed
+export default ProjectPlanning;

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { projectService } from '@/supabase/projectService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Copy, ChevronDown } from 'lucide-react';
 import SectionItemsDialog, { type SectionItem } from '@/components/SectionItemsDialog';
 
 const defaultRoomReq = {
@@ -41,27 +43,61 @@ const RequirementSheet2 = () => {
   // Initialize each room's requirements separately
   const [roomRequirements, setRoomRequirements] = useState<any[]>([]);
   const [activeSection, setActiveSection] = useState<{ roomIndex: number; sectionId: string; sectionName: string } | null>(null);
+  const [duplicateRoomIndex, setDuplicateRoomIndex] = useState<number | null>(null);
+  const [duplicateRoomName, setDuplicateRoomName] = useState('');
 
   useEffect(() => {
-    const savedProject = localStorage.getItem('projectData');
-    if (savedProject) {
-      setProjectData(JSON.parse(savedProject));
-    } else {
-      navigate('/');
-      return;
-    }
+    const loadProject = async () => {
+      try {
+        // Try to get project from Supabase first
+        const projectId = localStorage.getItem('projectId');
+        if (projectId) {
+          const project = await projectService.getProject(projectId);
+          if (project) {
+            setProjectData({
+              projectName: project.property_details.type,
+              clientName: project.client_info.name,
+              ...project
+            });
+            setRooms(project.rooms || []);
+            // Initialize requirements from saved data or defaults
+            setRoomRequirements(
+              project.rooms.map(room => ({
+                ...JSON.parse(JSON.stringify(defaultRoomReq)),
+                // Note: requirements might not exist on room type
+              }))
+            );
+            return;
+          }
+        }
 
-    const savedRooms = localStorage.getItem('projectRooms');
-    if (savedRooms) {
-      const loadedRooms = JSON.parse(savedRooms);
-      setRooms(loadedRooms);
-      // Initialize separate requirements for each room
-      setRoomRequirements(
-        loadedRooms.map(() => ({
-          ...JSON.parse(JSON.stringify(defaultRoomReq))
-        }))
-      );
-    }
+        // Fallback to localStorage if no Firebase data
+        const savedProject = localStorage.getItem('projectData');
+        if (savedProject) {
+          setProjectData(JSON.parse(savedProject));
+        } else {
+          navigate('/');
+          return;
+        }
+
+        const savedRooms = localStorage.getItem('projectRooms');
+        if (savedRooms) {
+          const loadedRooms = JSON.parse(savedRooms);
+          setRooms(loadedRooms);
+          // Initialize separate requirements for each room
+          setRoomRequirements(
+            loadedRooms.map(() => ({
+              ...JSON.parse(JSON.stringify(defaultRoomReq))
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Error loading project:', error);
+        // Fallback to localStorage or show error message
+      }
+    };
+
+    loadProject();
   }, [navigate]);
 
   const handleReqChange = (roomIndex: number, field: string, value: any, isLightType = false) => {
@@ -136,15 +172,93 @@ const RequirementSheet2 = () => {
     });
   };
 
-  const saveRequirementProject = () => {
-    // Create an object mapping room IDs to their requirements
-    const requirementsObj = rooms.reduce((acc, room, index) => {
-      acc[room.id] = roomRequirements[index];
-      return acc;
-    }, {});
-    
-    localStorage.setItem('requirements', JSON.stringify(requirementsObj));
-    navigate('/final-review');
+  const duplicateRoom = (roomIndex: number, newName: string) => {
+    // Duplicate the room in rooms array
+    const roomToDuplicate = rooms[roomIndex];
+    const newRoom = {
+      ...roomToDuplicate,
+      id: Date.now().toString(),
+      name: newName
+    };
+    setRooms(prev => [...prev, newRoom]);
+
+    // Duplicate the requirements for this room
+    const reqsToDuplicate = roomRequirements[roomIndex];
+    const newReqs = { ...reqsToDuplicate };
+    setRoomRequirements(prev => [...prev, newReqs]);
+  };
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const saveRequirementProject = async () => {
+    try {
+      setIsSaving(true);
+      
+      // Get projectId from localStorage or create a new project
+      let projectId = localStorage.getItem('projectId');
+      
+      if (!projectId) {
+        // Create a new project
+        projectId = await projectService.createProject({
+          client_info: {
+            name: projectData.clientName,
+            email: projectData.clientEmail || '',
+            phone: projectData.clientPhone || '',
+            address: projectData.clientAddress || '',
+          },
+          property_details: {
+            type: projectData.propertyType || '',
+            size: projectData.propertySize || 0,
+            budget: projectData.budget || 0,
+          }
+        });
+        localStorage.setItem('projectId', projectId);
+      }
+
+      // Update rooms with their requirements
+      const updatedRooms = rooms.map((room, index) => ({
+        ...room,
+        requirements: roomRequirements[index]
+      }));
+
+      // Save to Supabase
+      await projectService.updateProject(projectId, {
+        rooms: updatedRooms,
+        last_saved_page: 'requirements'
+      });
+
+      // Keep localStorage in sync for backward compatibility
+      localStorage.setItem('projectRooms', JSON.stringify(updatedRooms));
+      const requirementsObj = updatedRooms.reduce((acc: any, room: any, index: number) => {
+        acc[room.id] = roomRequirements[index];
+        return acc;
+      }, {});
+      localStorage.setItem('requirements', JSON.stringify(requirementsObj));
+
+      // Navigate to final review page
+      navigate('/final-review');
+    } catch (error) {
+      console.error('Error saving project:', error);
+      // Try to save to localStorage as fallback
+      try {
+        const updatedRooms = rooms.map((room: any, index: number) => ({
+          ...room,
+          requirements: roomRequirements[index]
+        }));
+        localStorage.setItem('projectRooms', JSON.stringify(updatedRooms));
+        const requirementsObj = updatedRooms.reduce((acc: any, room: any, index: number) => {
+          acc[room.id] = roomRequirements[index];
+          return acc;
+        }, {});
+        localStorage.setItem('requirements', JSON.stringify(requirementsObj));
+        navigate('/final-review');
+      } catch (localError) {
+        console.error('Error saving to localStorage:', localError);
+        alert('Failed to save project. Please try again.');
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!projectData) return <div>Loading...</div>;
@@ -158,8 +272,12 @@ const RequirementSheet2 = () => {
               <h1 className="text-xl font-bold text-white">Requirement Sheet</h1>
               <p className="text-sm text-slate-300">{projectData.projectName} - {projectData.clientName}</p>
             </div>
-            <Button onClick={saveRequirementProject} className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700">
-              Save
+            <Button 
+              onClick={saveRequirementProject} 
+              className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
+              disabled={isSaving}
+            >
+              {isSaving ? 'Saving...' : 'Save & Continue'}
             </Button>
           </div>
         </div>
@@ -168,7 +286,21 @@ const RequirementSheet2 = () => {
         {rooms.map((room, roomIndex) => (
           <Card key={room.id} className="border-white/10">
             <CardHeader>
-              <CardTitle className="text-lg text-slate-800 text-white">{room.name} ({room.type})</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg text-white">{room.name} ({room.type})</CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setDuplicateRoomIndex(roomIndex);
+                    setDuplicateRoomName(`${room.name} - Copy`);
+                  }}
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Duplicate
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Sections per room */}
@@ -223,6 +355,50 @@ const RequirementSheet2 = () => {
           </Card>
         ))}
       </div>
+
+      {/* Duplicate Room Dialog */}
+      {duplicateRoomIndex !== null && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="bg-white/95 w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Duplicate Room</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-slate-700">New Room Name</label>
+                <Input
+                  value={duplicateRoomName}
+                  onChange={(e) => setDuplicateRoomName(e.target.value)}
+                  className="mt-1"
+                  placeholder="Enter room name"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setDuplicateRoomIndex(null)}
+                  className="text-slate-700"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (duplicateRoomName.trim()) {
+                      duplicateRoom(duplicateRoomIndex, duplicateRoomName);
+                      setDuplicateRoomIndex(null);
+                      setDuplicateRoomName('');
+                    }
+                  }}
+                  className="bg-teal-600 hover:bg-teal-700 text-white"
+                >
+                  Duplicate
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
       <SectionItemsDialog
         open={!!activeSection}
         onClose={() => setActiveSection(null)}

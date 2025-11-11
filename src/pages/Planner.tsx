@@ -10,6 +10,9 @@ import ProjectSummary from '@/components/ProjectSummary';
 import EstimatedCost from '@/components/EstimatedCost';
 // import AutomationBilling from '@/components/AutomationBilling';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { db } from '@/firebase/config';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface ProjectData {
   projectName: string;
@@ -39,6 +42,7 @@ interface Appliance {
 const Planner = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [showAddRoom, setShowAddRoom] = useState(false);
@@ -117,36 +121,58 @@ const Planner = () => {
     return code;
   };
 
-  const saveProject = () => {
+  const saveProject = async () => {
     if (!projectData) return;
 
-    const projectHistory = JSON.parse(localStorage.getItem('projectHistory') || '[]');
-    // Always create a new project with a unique serial code
-    let serialCode = '';
-    // Ensure uniqueness
-    let unique = false;
-    while (!unique) {
-      serialCode = generateSerialCode();
-      unique = !projectHistory.some((p: any) => p.serialCode === serialCode);
+    try {
+      // Generate serial code
+      let serialCode = '';
+      let unique = false;
+      while (!unique) {
+        serialCode = generateSerialCode();
+        // Check against localStorage as fallback for existing projects
+        const projectHistory = JSON.parse(localStorage.getItem('projectHistory') || '[]');
+        unique = !projectHistory.some((p: any) => p.serialCode === serialCode);
+      }
+
+      const projectToSave = {
+        ...projectData,
+        rooms,
+        serialCode,
+        userId: user?.uid || 'guest',
+        status: 'draft',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      // Save to Firebase
+      const projectsCollection = collection(db, 'projects');
+      const docRef = await addDoc(projectsCollection, projectToSave);
+      
+      console.log('✅ Project saved to Firebase:', docRef.id);
+
+      // Also save to localStorage for offline access
+      const projectHistory = JSON.parse(localStorage.getItem('projectHistory') || '[]');
+      projectHistory.unshift({
+        id: docRef.id,
+        ...projectToSave,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      localStorage.setItem('projectHistory', JSON.stringify(projectHistory));
+
+      toast({
+        title: "Project Saved",
+        description: `Your project has been saved with serial code: ${serialCode}`
+      });
+    } catch (error: any) {
+      console.error('Error saving project:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save project",
+        variant: "destructive"
+      });
     }
-
-    const savedProject = {
-      id: Date.now().toString(),
-      serialCode,
-      ...projectData,
-      rooms,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    // Add new project to history (do not overwrite any)
-    projectHistory.unshift(savedProject);
-    localStorage.setItem('projectHistory', JSON.stringify(projectHistory));
-
-    toast({
-      title: "Project Saved",
-      description: `Your project has been saved with serial code: ${serialCode} and can be accessed from the history page.`
-    });
   };
 
   if (!projectData) {
@@ -156,14 +182,14 @@ const Planner = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
       {/* Header */}
-      <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl sticky top-0 z-40">
+      <header className="border-b border-white/10 bg-black sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
                 variant="ghost"
                 onClick={() => navigate('/')}
-                className="p-2"
+                className="p-2 text-white hover:text-white"
               >
                 <Building2 className="w-6 h-6 text-teal-600" />
               </Button>
@@ -175,11 +201,11 @@ const Planner = () => {
             
             <div className="flex items-center space-x-3">
               <div className="hidden sm:flex items-center space-x-4 mr-4">
-                <Badge variant="outline" className="bg-white">
+                <Badge variant="outline" className="text-white border-white/50">
                   <Home className="w-3 h-3 mr-1" />
                   {getTotalRooms()} Rooms
                 </Badge>
-                <Badge variant="outline" className="bg-white">
+                <Badge variant="outline" className="text-white border-white/50">
                   {getTotalAppliances()} Items
                 </Badge>
               </div>
@@ -187,7 +213,7 @@ const Planner = () => {
               <Button
                 variant="outline"
                 onClick={saveProject}
-                className="hidden sm:flex border-green-200 text-green-700 hover:bg-green-50"
+                className="hidden sm:flex border-green-200/50 text-white hover:bg-green-900/50"
               >
                 <Save className="w-4 h-4 mr-2" />
                 Save
@@ -198,7 +224,7 @@ const Planner = () => {
               <Button
                 variant="outline"
                 onClick={() => setShowSummary(true)}
-                className="hidden sm:flex"
+                className="hidden sm:flex text-white border-white/50 hover:bg-white/10"
               >
                 <Eye className="w-4 h-4 mr-2" />
                 Preview

@@ -6,15 +6,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Sheet } from '@/components/ui/sheet';
-import { Building2, Plus, Trash2, Save, ArrowLeft, Package, User, Home, Eye, Edit, Moon, Sun, ChevronDown } from 'lucide-react';
+import { Building2, Plus, Trash2, Save, ArrowLeft, Package, User, Home, Eye, Edit, Moon, Sun, ChevronDown, MessageSquare } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import InventoryManagement from '@/components/InventoryManagement';
 import AutomationBilling from '@/components/AutomationBilling';
 import { defaultPrices } from '@/components/inventory/constants';
 import RoomCard from '@/components/RoomCard';
 import AddRoomDialog from '@/components/AddRoomDialog';
 import ProjectSummary from '@/components/ProjectSummary';
+import TestimonialManager from '../components/admin/TestimonialManager';
+import { db } from '@/firebase/config';
+import { collection, query, orderBy, onSnapshot, updateDoc, doc, setDoc, getDoc, getDocs, addDoc } from 'firebase/firestore';
 
 interface DefaultSettings {
   applianceCategories: string[];
@@ -23,10 +27,37 @@ interface DefaultSettings {
   sheetsWebhookUrl?: string;
 }
 
+interface Inquiry {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  propertyType: string;
+  propertySize: string;
+  location: string;
+  budget: string;
+  requirements: string;
+  timeline: string;
+  status: 'new' | 'contacted' | 'proposal_sent' | 'closed';
+  createdAt: any;
+  updatedAt: any;
+}
+
 const AdminSettings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('general');
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+
+  // Check if user is logged in, if not redirect to admin login
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log('⚠️ User not logged in, redirecting to admin login');
+      navigate('/admin-login');
+    }
+  }, [user, loading, navigate]);
   // Project selection and management state
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -81,21 +112,71 @@ const AdminSettings = () => {
     saveRooms(updatedRooms);
   };
 
-  // Load projects on component mount
+  // Track activeTab changes
   useEffect(() => {
-    try {
-      console.log('Loading projects from localStorage');
-      const savedProjects = localStorage.getItem('projectHistory');
-      console.log('Saved projects:', savedProjects);
-      if (savedProjects) {
-        const parsed = JSON.parse(savedProjects);
-        if (Array.isArray(parsed)) {
-          console.log('Setting projects:', parsed);
-          setProjects(parsed);
+    console.log('activeTab changed to:', activeTab);
+  }, [activeTab]);
+
+  // Load projects from Firebase instead of localStorage
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        console.log('Loading projects from Firebase...');
+        const projectsCol = collection(db, 'projects');
+        const projectsSnapshot = await getDocs(projectsCol);
+        const projectsList = projectsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        console.log('✅ Loaded projects from Firebase:', projectsList.length);
+        setProjects(projectsList);
+      } catch (error) {
+        console.error('❌ Error loading projects from Firebase:', error);
+        
+        // Fallback to localStorage
+        try {
+          console.log('🔄 Falling back to localStorage');
+          const savedProjects = localStorage.getItem('projectHistory');
+          if (savedProjects) {
+            const parsed = JSON.parse(savedProjects);
+            if (Array.isArray(parsed)) {
+              console.log('Setting projects from localStorage:', parsed.length);
+              setProjects(parsed);
+            }
+          }
+        } catch (localError) {
+          console.error('Error loading from localStorage:', localError);
         }
       }
+    };
+
+    loadProjects();
+  }, []);
+
+  // Load inquiries from Firebase in real-time
+  useEffect(() => {
+    try {
+      const inquiriesQuery = query(
+        collection(db, 'inquiries'),
+        orderBy('createdAt', 'desc')
+      );
+
+      const unsubscribe = onSnapshot(inquiriesQuery, (snapshot) => {
+        const inquiriesList: Inquiry[] = [];
+        snapshot.forEach((doc) => {
+          inquiriesList.push({
+            id: doc.id,
+            ...doc.data(),
+          } as Inquiry);
+        });
+        console.log('✅ Loaded inquiries from Firebase:', inquiriesList.length);
+        setInquiries(inquiriesList);
+      });
+
+      return () => unsubscribe();
     } catch (error) {
-      console.error('Error loading projects:', error);
+      console.error('Error loading inquiries:', error);
     }
   }, []);
 
@@ -178,19 +259,61 @@ const AdminSettings = () => {
   const [newCategory, setNewCategory] = useState('');
   const [newWattage, setNewWattage] = useState('');
 
+  // Load admin settings from Firebase
   useEffect(() => {
-    const savedSettings = localStorage.getItem('adminSettings');
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
-    }
+    const loadAdminSettings = async () => {
+      try {
+        const settingsDoc = await getDoc(doc(db, 'adminSettings', 'general'));
+        if (settingsDoc.exists()) {
+          console.log('✅ Loaded admin settings from Firebase');
+          setSettings({ ...settings, ...settingsDoc.data() });
+        } else {
+          console.log('🔄 No admin settings found, using defaults');
+          // Save default settings to Firebase
+          await setDoc(doc(db, 'adminSettings', 'general'), settings);
+        }
+      } catch (error) {
+        console.error('Error loading admin settings:', error);
+        // Fallback to localStorage
+        const savedSettings = localStorage.getItem('adminSettings');
+        if (savedSettings) {
+          setSettings(JSON.parse(savedSettings));
+        }
+      }
+    };
+
+    loadAdminSettings();
   }, []);
 
-  const saveSettings = () => {
-    localStorage.setItem('adminSettings', JSON.stringify(settings));
-    toast({
-      title: "Settings Saved",
-      description: "Admin settings have been updated successfully."
-    });
+  const saveSettings = async () => {
+    try {
+      // Save to Firebase
+      await setDoc(doc(db, 'adminSettings', 'general'), {
+        ...settings,
+        updatedAt: new Date().toISOString()
+      });
+      
+      console.log('✅ Admin settings saved to Firebase');
+      
+      // Also save to localStorage as backup
+      localStorage.setItem('adminSettings', JSON.stringify(settings));
+      
+      toast({
+        title: "Settings Saved",
+        description: "Admin settings have been updated successfully."
+      });
+    } catch (error: any) {
+      console.error('Error saving admin settings:', error);
+      
+      // Fallback to localStorage only
+      localStorage.setItem('adminSettings', JSON.stringify(settings));
+      
+      toast({
+        title: "Settings Saved Locally",
+        description: "Settings saved to browser storage (Firebase error).",
+        variant: "destructive"
+      });
+    }
   };
 
   const addCategory = () => {
@@ -237,34 +360,150 @@ const AdminSettings = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
       {/* Header */}
       <header className="sticky top-0 z-40 backdrop-blur-xl bg-black/20 border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 grid grid-cols-3 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
           <div className="text-white font-semibold tracking-wide cursor-pointer" onClick={() => navigate('/')}>Cleub Automation</div>
-          <nav className="hidden md:flex items-center justify-center gap-4 text-sm">
+          <nav className="flex-1 flex items-center justify-center gap-4 text-sm z-50 relative">
             <button className="text-slate-300 hover:text-white whitespace-nowrap" onClick={() => navigate('/')}>Home</button>
             <button className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='general'?'text-white':''}`} onClick={() => setActiveTab('general')}>General Settings</button>
             <button className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='inventory'?'text-white':''}`} onClick={() => setActiveTab('inventory')}>Inventory Management</button>
-            <button className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='history'?'text-white':''}`} onClick={() => setActiveTab('history')}>Project History</button>
+            <button className="text-slate-300 hover:text-white whitespace-nowrap" onClick={() => navigate('/admin/projects')}>Project History</button>
             <button className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='billing'?'text-white':''}`} onClick={() => setActiveTab('billing')}>Automation Billing</button>
+            <button 
+              className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='testimonials'?'text-white':''}`} 
+              onClick={() => {
+                console.log('Setting activeTab to testimonials');
+                setActiveTab('testimonials');
+                console.log('New activeTab value:', 'testimonials');
+              }}
+            >
+              Testimonials
+            </button>
+            <button 
+              className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='inquiries'?'text-white':''}`} 
+              onClick={() => setActiveTab('inquiries')}
+            >
+              <MessageSquare className="w-4 h-4 mr-1 inline" />
+              Inquiries
+            </button>
             <DropdownMenu>
-              <DropdownMenuTrigger className={`text-slate-300 hover:text-white whitespace-nowrap inline-flex items-center gap-1 ${activeTab==='finalplan' || activeTab==='planning' ? 'text-white' : ''}`}>
+              <DropdownMenuTrigger className={`text-slate-300 hover:text-white whitespace-nowrap inline-flex items-center gap-1 z-50 ${activeTab==='finalplan' || activeTab==='planning' ? 'text-white' : ''}`}>
                 Planning <ChevronDown className="w-4 h-4 opacity-70" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-black/80 backdrop-blur-xl border-white/10 text-white">
+              <DropdownMenuContent className="bg-black/80 backdrop-blur-xl border-white/10 text-white z-50">
                 <DropdownMenuItem className="focus:bg-white/10 focus:text-white" onClick={() => setActiveTab('finalplan')}>Summary → Master Plan</DropdownMenuItem>
                 <DropdownMenuItem className="focus:bg-white/10 focus:text-white" onClick={() => setActiveTab('planning')}>Project Planning</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </nav>
-          <div className="flex items-center justify-end gap-2">
-            <Button onClick={saveSettings} className="bg-white/10 text-white hover:bg-white/20"><Save className="w-4 h-4 mr-2" />Save</Button>
-            <Button variant="outline" onClick={handleLogout} className="border-white/20 text-white hover:bg-white/10">Logout</Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={saveSettings} className="bg-white/10 text-white hover:bg-white/20 z-40"><Save className="w-4 h-4 mr-2" />Save</Button>
+            <Button variant="outline" onClick={handleLogout} className="border-white/20 text-white hover:bg-white/10 z-40">Logout</Button>
           </div>
         </div>
       </header>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-  {activeTab === 'general' ? (
+  {activeTab === 'inquiries' ? (
+          <div className="space-y-6">
+            <Card className="border-white/10 bg-white/5">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg text-white">Customer Inquiries ({inquiries.length})</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {inquiries.length === 0 ? (
+                  <div className="text-center p-8">
+                    <MessageSquare className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                    <div className="text-slate-400">No inquiries yet</div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {inquiries.map((inquiry) => (
+                      <Card key={inquiry.id} className="border-white/10 bg-black/20">
+                        <CardContent className="p-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <div className="text-sm text-slate-400 mb-1">Contact</div>
+                              <div className="font-semibold text-white">
+                                {inquiry.firstName} {inquiry.lastName}
+                              </div>
+                              <div className="text-sm text-slate-300">{inquiry.email}</div>
+                              <div className="text-sm text-slate-300">{inquiry.phone}</div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-slate-400 mb-1">Property Details</div>
+                              <div className="text-white">{inquiry.propertyType} • {inquiry.propertySize || 'Size not specified'} sq ft</div>
+                              <div className="text-sm text-slate-300">{inquiry.location}</div>
+                              <div className="text-sm text-slate-300">Budget: {inquiry.budget}</div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <div className="text-sm text-slate-400 mb-1">Requirements</div>
+                              <div className="text-sm text-slate-300 bg-black/30 p-2 rounded max-h-16 overflow-y-auto">
+                                {inquiry.requirements || 'No specific requirements'}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-slate-400 mb-1">Timeline & Status</div>
+                              <div className="text-sm text-slate-300 mb-2">Timeline: {inquiry.timeline}</div>
+                              <select
+                                value={inquiry.status}
+                                onChange={(e) => {
+                                  const newStatus = e.target.value as Inquiry['status'];
+                                  updateDoc(doc(db, 'inquiries', inquiry.id), { status: newStatus })
+                                    .then(() => {
+                                      toast({
+                                        title: 'Status Updated',
+                                        description: `Inquiry marked as ${newStatus}`,
+                                      });
+                                    });
+                                }}
+                                className="w-full text-sm bg-slate-700 text-white border border-slate-600 rounded px-2 py-1"
+                              >
+                                <option value="new">New</option>
+                                <option value="contacted">Contacted</option>
+                                <option value="proposal_sent">Proposal Sent</option>
+                                <option value="closed">Closed</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-slate-400">
+                            <div>Submitted: {inquiry.createdAt?.toDate?.().toLocaleDateString() || 'N/A'}</div>
+                            <Badge 
+                              variant="outline"
+                              className={`${
+                                inquiry.status === 'new' ? 'bg-blue-500/20 text-blue-300' :
+                                inquiry.status === 'contacted' ? 'bg-yellow-500/20 text-yellow-300' :
+                                inquiry.status === 'proposal_sent' ? 'bg-purple-500/20 text-purple-300' :
+                                'bg-green-500/20 text-green-300'
+                              }`}
+                            >
+                              {inquiry.status}
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        ) : activeTab === 'testimonials' ? (
+          <div className="space-y-6">
+            <Card className="border-white/10 bg-white/5">
+              <CardHeader>
+                <CardTitle className="text-lg text-white">Testimonials Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TestimonialManager />
+              </CardContent>
+            </Card>
+          </div>
+        ) : activeTab === 'general' ? (
           <div className="space-y-8">
             {/* Webhook / Sheets Integration */}
             <Card className="border-white/10 bg-white/5">
@@ -526,22 +765,60 @@ const AdminSettings = () => {
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      onClick={() => {
-                        const history = JSON.parse(localStorage.getItem('projectHistory') || '[]');
-                        const newProject = {
-                          id: Date.now().toString(),
-                          projectName: projectData.projectName || '',
-                          clientName: projectData.clientName || '',
-                          architectName: projectData.architectName || '',
-                          designerName: projectData.designerName || '',
-                          notes: projectData.notes || '',
-                          rooms,
-                          createdAt: new Date().toISOString(),
-                          updatedAt: new Date().toISOString(),
-                        };
-                        localStorage.setItem('projectHistory', JSON.stringify([newProject, ...history]));
-                        setProjects([newProject, ...projects]);
-                        toast({ title: 'Project Saved', description: 'Project saved to history.' });
+                      onClick={async () => {
+                        try {
+                          // Save to Firebase
+                          const newProject = {
+                            projectName: projectData.projectName || '',
+                            clientName: projectData.clientName || '',
+                            architectName: projectData.architectName || '',
+                            designerName: projectData.designerName || '',
+                            notes: projectData.notes || '',
+                            rooms,
+                            userId: 'admin',
+                            status: 'draft',
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                          };
+
+                          const projectsCol = collection(db, 'projects');
+                          const docRef = await addDoc(projectsCol, newProject);
+                          
+                          // Also save to localStorage as backup
+                          const history = JSON.parse(localStorage.getItem('projectHistory') || '[]');
+                          localStorage.setItem('projectHistory', JSON.stringify([{ id: docRef.id, ...newProject }, ...history]));
+                          
+                          setProjects([{ id: docRef.id, ...newProject }, ...projects]);
+                          
+                          toast({ 
+                            title: 'Project Saved', 
+                            description: 'Project saved to Firebase successfully.' 
+                          });
+                        } catch (error: any) {
+                          console.error('Error saving project:', error);
+                          
+                          // Fallback to localStorage only
+                          const newProject = {
+                            id: Date.now().toString(),
+                            projectName: projectData.projectName || '',
+                            clientName: projectData.clientName || '',
+                            architectName: projectData.architectName || '',
+                            designerName: projectData.designerName || '',
+                            notes: projectData.notes || '',
+                            rooms,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                          };
+                          const history = JSON.parse(localStorage.getItem('projectHistory') || '[]');
+                          localStorage.setItem('projectHistory', JSON.stringify([newProject, ...history]));
+                          setProjects([newProject, ...projects]);
+                          
+                          toast({ 
+                            title: 'Project Saved Locally', 
+                            description: 'Saved to browser storage (Firebase error).',
+                            variant: 'destructive'
+                          });
+                        }
                       }}
                       className="bg-white"
                     >
@@ -762,23 +1039,62 @@ const AdminSettings = () => {
 
                     <div className="pt-2">
                       <Button
-                        onClick={() => {
-                          const history = JSON.parse(localStorage.getItem('projectHistory') || '[]');
-                          const newProject = {
-                            id: Date.now().toString(),
-                            projectName: projectData.projectName,
-                            clientName: projectData.clientName,
-                            architectName: projectData.architectName || '',
-                            designerName: projectData.designerName || '',
-                            notes: projectData.notes || '',
-                            rooms,
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString(),
-                            isMasterPlan: true,
-                          };
-                          localStorage.setItem('projectHistory', JSON.stringify([newProject, ...history]));
-                          setProjects([newProject, ...projects]);
-                          toast({ title: 'Master Plan Saved', description: 'Saved to history as Master Plan.' });
+                        onClick={async () => {
+                          try {
+                            const newProject = {
+                              projectName: projectData.projectName,
+                              clientName: projectData.clientName,
+                              architectName: projectData.architectName || '',
+                              designerName: projectData.designerName || '',
+                              notes: projectData.notes || '',
+                              rooms,
+                              userId: 'admin',
+                              status: 'master_plan',
+                              isMasterPlan: true,
+                              createdAt: new Date().toISOString(),
+                              updatedAt: new Date().toISOString(),
+                            };
+
+                            // Save to Firebase
+                            const projectsCol = collection(db, 'projects');
+                            const docRef = await addDoc(projectsCol, newProject);
+                            
+                            // Also save to localStorage as backup
+                            const history = JSON.parse(localStorage.getItem('projectHistory') || '[]');
+                            localStorage.setItem('projectHistory', JSON.stringify([{ id: docRef.id, ...newProject }, ...history]));
+                            
+                            setProjects([{ id: docRef.id, ...newProject }, ...projects]);
+                            
+                            toast({ 
+                              title: 'Master Plan Saved', 
+                              description: 'Saved to Firebase as Master Plan.' 
+                            });
+                          } catch (error) {
+                            console.error('Error saving master plan:', error);
+                            
+                            // Fallback to localStorage
+                            const newProject = {
+                              id: Date.now().toString(),
+                              projectName: projectData.projectName,
+                              clientName: projectData.clientName,
+                              architectName: projectData.architectName || '',
+                              designerName: projectData.designerName || '',
+                              notes: projectData.notes || '',
+                              rooms,
+                              createdAt: new Date().toISOString(),
+                              updatedAt: new Date().toISOString(),
+                              isMasterPlan: true,
+                            };
+                            const history = JSON.parse(localStorage.getItem('projectHistory') || '[]');
+                            localStorage.setItem('projectHistory', JSON.stringify([newProject, ...history]));
+                            setProjects([newProject, ...projects]);
+                            
+                            toast({ 
+                              title: 'Master Plan Saved Locally', 
+                              description: 'Saved to browser storage (Firebase error).',
+                              variant: 'destructive'
+                            });
+                          }
                         }}
                         className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
                       >

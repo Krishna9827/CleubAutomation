@@ -1,0 +1,64 @@
+// Firestore Security Rules for Cleub Automation
+// Go to Firebase Console → Firestore Database → Rules and paste this
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Allow admins to read/write anything (HIGHEST PRIORITY)
+    match /{document=**} {
+      allow read, write: if request.auth.token.admin == true;
+    }
+
+    // User profiles - only users can read/write their own
+    match /users/{userId} {
+      allow read: if request.auth.uid == userId || request.auth.token.admin == true;
+      allow write: if request.auth.uid == userId;
+      allow create: if request.auth.uid == userId;
+      allow delete: if request.auth.uid == userId || request.auth.token.admin == true;
+    }
+
+    // Projects - users can read/write their own, admins can read all
+    match /projects/{projectId} {
+      allow read: if request.auth.uid == resource.data.userId || request.auth.token.admin == true;
+      allow create: if request.auth.uid != null && request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth.uid == resource.data.userId || request.auth.token.admin == true;
+      allow delete: if request.auth.uid == resource.data.userId || request.auth.token.admin == true;
+    }
+
+    // Inquiries - anyone can create, admins can read/write
+    match /inquiries/{inquiryId} {
+      allow create: if request.auth != null || true;
+      allow read: if request.auth.token.admin == true;
+      allow update: if request.auth.token.admin == true;
+      allow delete: if request.auth.token.admin == true;
+    }
+
+    // Admin Settings - only admins can read/write
+    match /adminSettings/{document=**} {
+      allow read, write: if request.auth.token.admin == true;
+    }
+
+    // Inventory Management - only admins can read/write
+    match /inventory/{document=**} {
+      allow read, write: if request.auth.token.admin == true;
+    }
+
+    // Public testimonials - anyone can read, admins can write
+    match /testimonials/{document=**} {
+      allow read: if true;
+      allow write: if request.auth.token.admin == true;
+    }
+
+    // Settings - anyone can read, admins can write
+    match /settings/{document=**} {
+      allow read: if true;
+      allow write: if request.auth.token.admin == true;
+    }
+
+    // Admin data - only admins can read/write
+    match /admin/{document=**} {
+      allow read, write: if request.auth.token.admin == true;
+    }
+  }
+}
