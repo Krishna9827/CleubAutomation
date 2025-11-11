@@ -10,12 +10,14 @@ Please be respectful and professional in all interactions.
 
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/CleubAutomation.git
    cd CleubAutomation
    ```
 
 3. **Create a feature branch**:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -23,6 +25,7 @@ Please be respectful and professional in all interactions.
 4. **Make your changes** and test thoroughly
 
 5. **Commit with clear messages**:
+
    ```bash
    git commit -m "feat: add new feature"
    git commit -m "fix: resolve issue"
@@ -30,6 +33,7 @@ Please be respectful and professional in all interactions.
    ```
 
 6. **Push to your fork**:
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -50,6 +54,7 @@ Use conventional commits format:
 - `chore:` - Maintenance tasks
 
 Example:
+
 ```
 feat: add profile menu dropdown component
 
@@ -71,6 +76,7 @@ feat: add profile menu dropdown component
 ## Testing
 
 Before submitting a PR:
+
 - Test your changes locally: `npm run dev`
 - Build for production: `npm run build`
 - Check for TypeScript errors
@@ -87,6 +93,7 @@ Before submitting a PR:
 ## Reporting Issues
 
 When reporting bugs, include:
+
 - Clear description of the issue
 - Steps to reproduce
 - Expected vs actual behavior

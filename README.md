@@ -109,6 +109,7 @@ Obtain these from your Supabase project settings.
 ## Authentication
 
 The app uses Supabase Authentication with:
+
 - Email/password login
 - Google OAuth integration
 - Automatic user profile creation on signup
@@ -118,6 +119,7 @@ The app uses Supabase Authentication with:
 Database schema is managed through Supabase migrations in `supabase/migrations/`.
 
 Key tables:
+
 - `users` - User profiles and information
 - `projects` - Automation projects
 - `project_items` - Individual items in projects
@@ -125,22 +127,24 @@ Key tables:
 
 ## Key Pages
 
-| Page | Route | Description |
-|------|-------|-------------|
-| Landing | `/` | Premium landing page with services overview |
-| Login | `/login` | User authentication |
-| Project Planning | `/project-planning` | Start new automation project |
-| Room Selection | `/room-selection` | Select rooms for automation |
-| Requirements | `/requirements` | Detailed project requirements form |
-| Final Review | `/final-review` | Review and confirm project details |
-| Planner | `/planner` | Interactive project planning tool |
-| My Projects | `/my-projects` | View user's saved projects |
-| Admin | `/admin` | Admin dashboard (protected) |
+| Page             | Route               | Description                                 |
+| ---------------- | ------------------- | ------------------------------------------- |
+| Landing          | `/`                 | Premium landing page with services overview |
+| Login            | `/login`            | User authentication                         |
+| Project Planning | `/project-planning` | Start new automation project                |
+| Room Selection   | `/room-selection`   | Select rooms for automation                 |
+| Requirements     | `/requirements`     | Detailed project requirements form          |
+| Final Review     | `/final-review`     | Review and confirm project details          |
+| Planner          | `/planner`          | Interactive project planning tool           |
+| My Projects      | `/my-projects`      | View user's saved projects                  |
+| Admin            | `/admin`            | Admin dashboard (protected)                 |
 
 ## Components
 
 ### ProfileMenu
+
 Dropdown menu showing logged-in user profile with options:
+
 - View Profile (shows name, email, address info)
 - Settings (navigate to profile settings)
 - Sign Out
@@ -148,7 +152,9 @@ Dropdown menu showing logged-in user profile with options:
 Located in: `src/components/ui/profile-menu.tsx`
 
 ### Navigation (SiteNav)
+
 Sticky header with:
+
 - Brand logo
 - Navigation links
 - Profile menu (when authenticated)
@@ -159,6 +165,7 @@ Sticky header with:
 See `GIT_WORKFLOW.md` for detailed GitHub collaboration guidelines.
 
 Quick commands:
+
 ```bash
 # Create a feature branch
 git checkout -b feature/feature-name
@@ -176,12 +183,14 @@ git push origin feature/feature-name
 ## Deployment
 
 The project is ready to be deployed to:
+
 - **Netlify** (recommended)
 - **Vercel**
 - **GitHub Pages**
 - **Any Node.js hosting provider**
 
 For Netlify:
+
 1. Connect your GitHub repo to Netlify
 2. Set build command: `npm run build`
 3. Set publish directory: `dist`
@@ -198,6 +207,7 @@ For Netlify:
 ## Troubleshooting
 
 ### Module not found errors
+
 ```bash
 # Clear node_modules and reinstall
 rm -rf node_modules
@@ -205,11 +215,13 @@ npm install
 ```
 
 ### Supabase connection issues
+
 - Verify `.env.local` has correct Supabase credentials
 - Check Supabase project is active and not paused
 - Ensure API key has proper permissions
 
 ### Build errors
+
 ```bash
 # Clear Vite cache
 rm -rf dist
@@ -219,6 +231,7 @@ npm run build
 ## Support
 
 For issues and questions:
+
 - Open an issue on GitHub
 - Contact: support@cleub.com
 - Phone: +91 9667603999
@@ -236,5 +249,7 @@ This project is proprietary and confidential.
 
 **Live URL**: https://cleubautomation.com
 **Repository**: https://github.com/Krishna9827/CleubAutomation
+
+```
 
 ```
