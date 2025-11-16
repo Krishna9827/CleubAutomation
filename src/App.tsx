@@ -10,6 +10,10 @@ import PremiumLanding from "./pages/public/PremiumLanding"
 import Login from "./pages/public/Login"
 import Inquiry from "./pages/public/Inquiry"
 import NotFound from "./pages/public/NotFound"
+import AboutUs from "./pages/public/AboutUs"
+import PrivacyPolicy from "./pages/public/PrivacyPolicy"
+import CookiePolicy from "./pages/public/CookiePolicy"
+import TermsAndConditions from "./pages/public/TermsAndConditions"
 // User pages
 import HomePage from "./pages/user/HomePage"
 import ProjectPlanning from "./pages/user/ProjectPlanning"
@@ -62,6 +66,10 @@ const App = () => (
             <Route path="/" element={<PremiumLanding />} />
             <Route path="/login" element={<Login />} />
             <Route path="/inquiry" element={<Inquiry />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
+            <Route path="/terms" element={<TermsAndConditions />} />
             <Route path="/project-planning" element={<ProjectPlanning />} />
             <Route path="/room-selection" element={<RoomSelection />} />
             <Route path="/requirements" element={<RequirementsForm />} />

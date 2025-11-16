@@ -234,8 +234,26 @@ const PremiumLanding = () => {
         </section>
       </main>
       <footer className="border-t border-white/10 bg-black/20 backdrop-blur-xl py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-400">
-          &copy; {new Date().getFullYear()} Home Automation Planning System. All rights reserved.
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-slate-400">
+              &copy; {new Date().getFullYear()} Cleub Automation. All rights reserved.
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+              <button onClick={() => navigate('/about')} className="text-slate-400 hover:text-teal-400 transition-colors">
+                About Us
+              </button>
+              <button onClick={() => navigate('/privacy-policy')} className="text-slate-400 hover:text-teal-400 transition-colors">
+                Privacy Policy
+              </button>
+              <button onClick={() => navigate('/cookie-policy')} className="text-slate-400 hover:text-teal-400 transition-colors">
+                Cookie Policy
+              </button>
+              <button onClick={() => navigate('/terms')} className="text-slate-400 hover:text-teal-400 transition-colors">
+                Terms & Conditions
+              </button>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

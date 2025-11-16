@@ -1,9 +1,15 @@
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ProfileMenu from '@/components/ui/profile-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface NavLink {
   label: string;
@@ -82,6 +88,41 @@ const SiteNav = ({ brand, links, rightActions }: SiteNavProps) => {
                 {l.label}
               </button>
             ))}
+            
+            {/* About Us Link */}
+            <button
+              onClick={() => navigate('/about')}
+              className="text-slate-300 hover:text-white transition-colors whitespace-nowrap"
+            >
+              About Us
+            </button>
+            
+            {/* Legal Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors whitespace-nowrap">
+                Legal <ChevronDown className="w-4 h-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-slate-900 border-slate-800">
+                <DropdownMenuItem 
+                  onClick={() => navigate('/privacy-policy')}
+                  className="text-slate-300 hover:text-white cursor-pointer"
+                >
+                  Privacy Policy
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => navigate('/cookie-policy')}
+                  className="text-slate-300 hover:text-white cursor-pointer"
+                >
+                  Cookie Policy
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => navigate('/terms')}
+                  className="text-slate-300 hover:text-white cursor-pointer"
+                >
+                  Terms & Conditions
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </nav>
           
           {/* Right Actions */}
@@ -104,6 +145,49 @@ const SiteNav = ({ brand, links, rightActions }: SiteNavProps) => {
                   {l.label}
                 </button>
               ))}
+              
+              {/* About Us Link - Mobile */}
+              <button
+                onClick={() => {
+                  navigate('/about');
+                  setIsMenuOpen(false);
+                }}
+                className="text-slate-300 hover:text-white transition-colors text-left py-2 px-2 hover:bg-white/5 rounded"
+              >
+                About Us
+              </button>
+              
+              {/* Legal Links - Mobile (expanded, no dropdown) */}
+              <div className="border-t border-white/5 pt-3 mt-2">
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 px-2">Legal</p>
+                <button
+                  onClick={() => {
+                    navigate('/privacy-policy');
+                    setIsMenuOpen(false);
+                  }}
+                  className="text-slate-300 hover:text-white transition-colors text-left py-2 px-2 hover:bg-white/5 rounded w-full"
+                >
+                  Privacy Policy
+                </button>
+                <button
+                  onClick={() => {
+                    navigate('/cookie-policy');
+                    setIsMenuOpen(false);
+                  }}
+                  className="text-slate-300 hover:text-white transition-colors text-left py-2 px-2 hover:bg-white/5 rounded w-full"
+                >
+                  Cookie Policy
+                </button>
+                <button
+                  onClick={() => {
+                    navigate('/terms');
+                    setIsMenuOpen(false);
+                  }}
+                  className="text-slate-300 hover:text-white transition-colors text-left py-2 px-2 hover:bg-white/5 rounded w-full"
+                >
+                  Terms & Conditions
+                </button>
+              </div>
               
               {/* Mobile Right Actions */}
               {rightActions && (
