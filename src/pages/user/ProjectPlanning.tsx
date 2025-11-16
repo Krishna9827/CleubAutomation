@@ -72,11 +72,6 @@ const ProjectPlanning = () => {
         }
       }, user.id);
 
-      // Save to localStorage for backward compatibility
-      localStorage.setItem('projectData', JSON.stringify(formData));
-      localStorage.setItem('projectId', projectId);
-      localStorage.removeItem('projectRooms');
-
       toast({
         title: 'Success',
         description: 'Project created successfully'

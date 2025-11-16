@@ -51,56 +51,19 @@ const RequirementSheet2 = () => {
   useEffect(() => {
     const loadProject = async () => {
       try {
-        // Try to get project from Supabase first
-        const projectId = localStorage.getItem('projectId');
-        if (projectId) {
-          const project = await projectService.getProject(projectId);
-          if (project) {
-            setProjectData({
-              projectName: project.property_details.type,
-              clientName: project.client_info.name,
-              ...project
-            });
-            setRooms(project.rooms || []);
-            // Initialize requirements from saved data or defaults
-            setRoomRequirements(
-              project.rooms.map(room => ({
-                ...JSON.parse(JSON.stringify(defaultRoomReq)),
-                // Note: requirements might not exist on room type
-              }))
-            );
-            return;
-          }
-        }
-
-        // Fallback to localStorage if no Supabase data available
-        const savedProject = localStorage.getItem('projectData');
-        if (savedProject) {
-          setProjectData(JSON.parse(savedProject));
-        } else {
+        // Project ID should be available from router state or context
+        // For now, redirect if not available
+        if (!projectData) {
           navigate('/');
-          return;
-        }
-
-        const savedRooms = localStorage.getItem('projectRooms');
-        if (savedRooms) {
-          const loadedRooms = JSON.parse(savedRooms);
-          setRooms(loadedRooms);
-          // Initialize separate requirements for each room
-          setRoomRequirements(
-            loadedRooms.map(() => ({
-              ...JSON.parse(JSON.stringify(defaultRoomReq))
-            }))
-          );
         }
       } catch (error) {
         console.error('Error loading project:', error);
-        // Fallback to localStorage or show error message
+        navigate('/');
       }
     };
 
     loadProject();
-  }, [navigate]);
+  }, [navigate, projectData]);
 
   const handleReqChange = (roomIndex: number, field: string, value: any, isLightType = false) => {
     setRoomRequirements(prev => {
@@ -196,8 +159,8 @@ const RequirementSheet2 = () => {
     try {
       setIsSaving(true);
       
-      // Get projectId from localStorage or create a new project
-      let projectId = localStorage.getItem('projectId');
+      // Get projectId from state or create a new project
+      let projectId = projectData?.id;
       
       if (!projectId) {
         console.log('📝 Creating new project for requirements...');
@@ -215,7 +178,6 @@ const RequirementSheet2 = () => {
             budget: projectData.budget || 0,
           }
         });
-        localStorage.setItem('projectId', projectId);
         console.log('✅ New project created:', projectId);
       }
 
@@ -241,14 +203,6 @@ const RequirementSheet2 = () => {
         });
         clearTimeout(timeoutId);
         console.log('✅ Requirements saved successfully');
-
-        // Keep localStorage in sync for backward compatibility
-        localStorage.setItem('projectRooms', JSON.stringify(updatedRooms));
-        const requirementsObj = updatedRooms.reduce((acc: any, room: any, index: number) => {
-          acc[room.id] = roomRequirements[index];
-          return acc;
-        }, {});
-        localStorage.setItem('requirements', JSON.stringify(requirementsObj));
 
         toast({
           title: 'Success',
@@ -276,38 +230,12 @@ const RequirementSheet2 = () => {
         } else {
           toast({
             title: 'Save Failed',
-            description: `Failed to save requirements: ${saveError.message || 'Unknown error'}. Retrying with local storage.`,
+            description: `Failed to save requirements: ${saveError.message || 'Unknown error'}.`,
             variant: 'destructive'
           });
         }
-
-        // Try to save to localStorage as fallback
-        try {
-          console.log('📱 Falling back to localStorage...');
-          const updatedRooms = rooms.map((room: any, index: number) => ({
-            ...room,
-            requirements: roomRequirements[index]
-          }));
-          localStorage.setItem('projectRooms', JSON.stringify(updatedRooms));
-          const requirementsObj = updatedRooms.reduce((acc: any, room: any, index: number) => {
-            acc[room.id] = roomRequirements[index];
-            return acc;
-          }, {});
-          localStorage.setItem('requirements', JSON.stringify(requirementsObj));
-          console.log('✅ Saved to localStorage as fallback');
-          
-          // Allow proceeding with local data after showing error
-          setTimeout(() => {
-            navigate('/final-review');
-          }, 2000);
-        } catch (localError) {
-          console.error('❌ Error saving to localStorage:', localError);
-          toast({
-            title: 'Error',
-            description: 'Failed to save project. Please try again.',
-            variant: 'destructive'
-          });
-        }
+        
+        // Navigate after showing error
       }
     } catch (error: any) {
       console.error('❌ Unexpected error in saveRequirementProject:', error);

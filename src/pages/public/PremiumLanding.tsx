@@ -7,23 +7,29 @@ import { BrandLogos } from "@/components/features";
 import SiteNav from '@/components/ui/site-nav';
 import { TestimonialDialog } from "@/components/features";
 import { useAuth } from '@/contexts/AuthContext';
+import { adminService } from '@/supabase/adminService';
 
 
 const PremiumLanding = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [testimonials, setTestimonials] = useState(() => 
-    JSON.parse(localStorage.getItem('testimonials') || '[]')
-  );
+  const [testimonials, setTestimonials] = useState([]);
+  const [isLoadingTestimonials, setIsLoadingTestimonials] = useState(true);
 
   useEffect(() => {
-    const handleStorageChange = () => {
-      const updatedTestimonials = JSON.parse(localStorage.getItem('testimonials') || '[]');
-      setTestimonials(updatedTestimonials);
+    const loadTestimonials = async () => {
+      try {
+        const data = await adminService.getAllTestimonials();
+        setTestimonials(data);
+      } catch (error) {
+        console.error('Error loading testimonials:', error);
+        setTestimonials([]);
+      } finally {
+        setIsLoadingTestimonials(false);
+      }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    loadTestimonials();
   }, []);
 
   return (
@@ -146,7 +152,14 @@ const PremiumLanding = () => {
               <h3 className="text-xl font-semibold text-white">Featured Case Studies</h3>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {(testimonials.length > 0 ? testimonials : [
+              {isLoadingTestimonials ? (
+                <div className="col-span-full text-center text-slate-400">Loading testimonials...</div>
+              ) : testimonials.length > 0 ? (
+                testimonials.map((testimonial, index) => (
+                  <TestimonialDialog key={index} testimonial={testimonial} />
+                ))
+              ) : (
+                [
                   {
                     clientName: "A. Sharma, Luxury Villa Owner",
                     propertyType: "Smart Luxury Villa",
@@ -193,9 +206,10 @@ const PremiumLanding = () => {
                     ],
                     videoUrl: "/videos/setup.mp4"
                   }
-                ]).map((testimonial, index) => (
-                <TestimonialDialog key={index} testimonial={testimonial} />
-              ))}
+                ].map((testimonial, index) => (
+                  <TestimonialDialog key={index} testimonial={testimonial} />
+                ))
+              )}
             </div>
           </div>
         </section>

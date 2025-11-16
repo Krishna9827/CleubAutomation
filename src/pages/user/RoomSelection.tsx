@@ -64,25 +64,9 @@ const RoomSelection = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const loadProject = async () => {
-      try {
-        // Try to get existing project ID from localStorage
-        const savedProjectId = localStorage.getItem('projectId');
-        if (savedProjectId) {
-          const project = await projectService.getProject(savedProjectId);
-          if (project) {
-            setProjectId(savedProjectId);
-            setRooms(project.rooms || []);
-          }
-        }
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error loading project:', error);
-        setIsLoading(false);
-      }
-    };
-
-    loadProject();
+    // Project ID and rooms should be passed via navigation or fetched from context
+    // For now, just mark as loaded
+    setIsLoading(false);
   }, []);
 
   const addPackage = (pkg: keyof typeof ROOM_PACKAGES) => {
@@ -118,9 +102,8 @@ const RoomSelection = () => {
 
     try {
       setIsSaving(true);
-      const savedProjectId = localStorage.getItem('projectId');
       
-      if (!savedProjectId) {
+      if (!projectId) {
         console.error('❌ No project ID found');
         toast({
           title: 'Error',
@@ -141,12 +124,9 @@ const RoomSelection = () => {
       try {
         console.log('💾 Starting room selection save...');
         // Save rooms to Supabase
-        await projectService.saveRoomSelection(savedProjectId, rooms);
+        await projectService.saveRoomSelection(projectId, rooms);
         clearTimeout(timeoutId);
         console.log('✅ Room selection saved successfully');
-
-        // Keep localStorage in sync for backward compatibility
-        localStorage.setItem('projectRooms', JSON.stringify(rooms));
         
         toast({
           title: 'Success',
@@ -173,15 +153,12 @@ const RoomSelection = () => {
         } else {
           toast({
             title: 'Save Failed',
-            description: `Failed to save room selection: ${saveError.message || 'Unknown error'}. Retrying with local storage.`,
+            description: `Failed to save room selection: ${saveError.message || 'Unknown error'}.`,
             variant: 'destructive'
           });
         }
-
-        // Still save to localStorage as fallback
-        localStorage.setItem('projectRooms', JSON.stringify(rooms));
         
-        // Allow proceeding with local data after showing error
+        // Allow proceeding after showing error
         setTimeout(() => {
           navigate('/requirements');
         }, 2000);

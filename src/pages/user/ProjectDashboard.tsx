@@ -36,11 +36,8 @@ const MasterPlan = () => {
 
   // Load projects on mount
   useEffect(() => {
-    const savedProjects = localStorage.getItem('projectHistory');
-    if (savedProjects) {
-      const parsed = JSON.parse(savedProjects);
-      setProjects(parsed);
-    }
+    // Projects are loaded from Supabase in the actual component
+    // This is a fallback component - should fetch from Supabase service
   }, []);
 
   const addRoom = (name: string, type: string) => {
@@ -92,9 +89,8 @@ const MasterPlan = () => {
       isMasterPlan: true
     };
 
-    // Update projects list
+    // Update projects list  
     const updatedProjects = [newProject, ...projects];
-    localStorage.setItem('projectHistory', JSON.stringify(updatedProjects));
     setProjects(updatedProjects);
 
     toast({

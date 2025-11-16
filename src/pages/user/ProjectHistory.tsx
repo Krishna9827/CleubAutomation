@@ -106,16 +106,9 @@ const UserHistory = () => {
   };
 
   const continueProject = (project: LocalProjectData) => {
-    // Save project data to localStorage for editing
-    localStorage.setItem('projectId', project.id);
-    localStorage.setItem('projectData', JSON.stringify({
-      projectName: project.client_info?.name || 'Untitled',
-      clientName: project.client_info?.name || '',
-      clientEmail: project.client_info?.email || '',
-      clientPhone: project.client_info?.phone || '',
-      clientAddress: project.client_info?.address || '',
-    }));
-    navigate('/room-selection');
+    // Navigate to room selection with project data
+    // Project is already in Supabase, just navigate
+    navigate('/room-selection', { state: { projectId: project.id } });
   };
 
   const handleViewDetails = (project: LocalProjectData) => {

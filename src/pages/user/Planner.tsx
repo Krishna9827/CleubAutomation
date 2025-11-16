@@ -49,22 +49,15 @@ const Planner = () => {
   // const [showAutomationBilling, setShowAutomationBilling] = useState(false);
 
   useEffect(() => {
-    const savedProject = localStorage.getItem('projectData');
-    if (savedProject) {
-      setProjectData(JSON.parse(savedProject));
-    } else {
+    // Load project data from Supabase via router state or fetch
+    // For now, redirect to home if no project data
+    if (!projectData) {
       navigate('/');
     }
-
-    const savedRooms = localStorage.getItem('projectRooms');
-    if (savedRooms) {
-      setRooms(JSON.parse(savedRooms));
-    }
-  }, [navigate]);
+  }, [navigate, projectData]);
 
   const saveRooms = (updatedRooms: Room[]) => {
     setRooms(updatedRooms);
-    localStorage.setItem('projectRooms', JSON.stringify(updatedRooms));
   };
 
   const addRoom = (name: string, type: string) => {
@@ -144,16 +137,6 @@ const Planner = () => {
       const projectId = await projectService.createProject(projectToSave, user.id);
       
       console.log('✅ Project saved to Supabase:', projectId);
-
-      // Also save to localStorage for offline access
-      const projectHistory = JSON.parse(localStorage.getItem('projectHistory') || '[]');
-      projectHistory.unshift({
-        id: projectId,
-        ...projectToSave,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-      localStorage.setItem('projectHistory', JSON.stringify(projectHistory));
 
       toast({
         title: "Project Saved",

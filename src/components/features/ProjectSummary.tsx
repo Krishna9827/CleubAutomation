@@ -107,26 +107,13 @@ const ProjectSummary = ({ open, onClose, projectData, rooms }: ProjectSummaryPro
   };
 
   const handleExport = () => {
-    // Save project to history
-    const projectHistory = JSON.parse(localStorage.getItem('projectHistory') || '[]');
-    const projectId = Date.now().toString();
-    const newProject = {
-      id: projectId,
-      ...projectData,
-      rooms,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    const updatedHistory = [newProject, ...projectHistory];
-    localStorage.setItem('projectHistory', JSON.stringify(updatedHistory));
-    
+    // Project data is automatically saved to Supabase in the planner
     // Generate PDF
     generatePDF(projectData, rooms);
     
     toast({
-      title: "Project Saved & Exported",
-      description: "Project saved to history and PDF generated successfully."
+      title: "Project Exported",
+      description: "Project summary PDF has been generated successfully."
     });
   };
 

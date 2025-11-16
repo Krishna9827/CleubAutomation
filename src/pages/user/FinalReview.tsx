@@ -11,56 +11,19 @@ const FinalReview = () => {
   const [requirements, setRequirements] = useState({});
 
   useEffect(() => {
-    const pd = localStorage.getItem('projectData');
-    const pr = localStorage.getItem('projectRooms');
-    const req = localStorage.getItem('requirements');
-    if (pd) setProjectData(JSON.parse(pd));
-    if (pr) setRooms(JSON.parse(pr));
-    if (req) setRequirements(JSON.parse(req));
-  }, []);
+    // Project data should be fetched from Supabase or passed via navigation state
+    // For now, redirect if no data available
+    if (!projectData) {
+      navigate('/');
+    }
+  }, [navigate, projectData]);
 
   const handleEdit = () => {
     navigate('/requirements');
   };
 
   const handleFinalSave = () => {
-    // optional webhook auto-send
-    const webhookUrl = localStorage.getItem('sheetsWebhookUrl');
-    if (webhookUrl) {
-      try {
-        fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ projectData, rooms, requirements, event: 'final_save', timestamp: new Date().toISOString() })
-        });
-      } catch (e) { /* ignore */ }
-    }
-    const projectHistory = JSON.parse(localStorage.getItem('projectHistory') || '[]');
-    // Serial code logic (same as before)
-    const generateSerialCode = () => {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let code = '';
-      for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-      return code;
-    };
-    let serialCode = '';
-    let unique = false;
-    while (!unique) {
-      serialCode = generateSerialCode();
-      unique = !projectHistory.some((p) => p.serialCode === serialCode);
-    }
-    const savedProject = {
-      id: Date.now().toString(),
-      serialCode,
-      ...projectData,
-      rooms,
-      requirements,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      type: 'requirement',
-    };
-    projectHistory.unshift(savedProject);
-    localStorage.setItem('projectHistory', JSON.stringify(projectHistory));
+    // Data is saved to Supabase in previous steps
     navigate('/');
   };
 
@@ -105,17 +68,8 @@ const FinalReview = () => {
   };
 
   const sendToWebhook = async () => {
-    const webhookUrl = localStorage.getItem('sheetsWebhookUrl');
-    if (!webhookUrl) return;
-    try {
-      await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectData, rooms, requirements, timestamp: new Date().toISOString() })
-      });
-    } catch (e) {
-      // ignore
-    }
+    // Webhooks are now handled server-side in Supabase
+    // No need to store URL in localStorage
   };
 
   if (!projectData) return <div>Loading...</div>;

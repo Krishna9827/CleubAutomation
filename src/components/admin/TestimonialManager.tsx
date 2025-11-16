@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { adminService } from '@/supabase/adminService';
+import { useToast } from '@/hooks/use-toast';
 
 interface Testimonial {
   id: string;
@@ -19,10 +21,9 @@ interface Testimonial {
 }
 
 const TestimonialManager = () => {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>(() => {
-    const saved = localStorage.getItem('testimonials');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const { toast } = useToast();
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Testimonial>>({
     clientName: '',
@@ -36,6 +37,26 @@ const TestimonialManager = () => {
     videoUrl: ''
   });
 
+  useEffect(() => {
+    loadTestimonials();
+  }, []);
+
+  const loadTestimonials = async () => {
+    try {
+      const data = await adminService.getAllTestimonials();
+      setTestimonials(data as any);
+    } catch (error) {
+      console.error('Error loading testimonials:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load testimonials',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleInputChange = (field: keyof Testimonial, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -45,34 +66,42 @@ const TestimonialManager = () => {
     setFormData(prev => ({ ...prev, [field]: items }));
   };
 
-  const handleSubmit = () => {
-    if (editingId) {
-      const updatedTestimonials = testimonials.map(t => 
-        t.id === editingId ? { ...formData, id: editingId } as Testimonial : t
-      );
-      setTestimonials(updatedTestimonials);
-      localStorage.setItem('testimonials', JSON.stringify(updatedTestimonials));
+  const handleSubmit = async () => {
+    try {
+      if (editingId) {
+        await adminService.updateTestimonial(editingId, formData as any);
+        toast({
+          title: 'Success',
+          description: 'Testimonial updated successfully'
+        });
+      } else {
+        await adminService.createTestimonial(formData as any);
+        toast({
+          title: 'Success',
+          description: 'Testimonial created successfully'
+        });
+      }
+      await loadTestimonials();
       setEditingId(null);
-    } else {
-      const newTestimonial = {
-        ...formData,
-        id: Math.random().toString(36).substr(2, 9)
-      } as Testimonial;
-      const updatedTestimonials = [...testimonials, newTestimonial];
-      setTestimonials(updatedTestimonials);
-      localStorage.setItem('testimonials', JSON.stringify(updatedTestimonials));
+      setFormData({
+        clientName: '',
+        propertyType: '',
+        location: '',
+        date: '',
+        quote: '',
+        projectDetails: '',
+        features: [],
+        results: [],
+        videoUrl: ''
+      });
+    } catch (error) {
+      console.error('Error saving testimonial:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save testimonial',
+        variant: 'destructive'
+      });
     }
-    setFormData({
-      clientName: '',
-      propertyType: '',
-      location: '',
-      date: '',
-      quote: '',
-      projectDetails: '',
-      features: [],
-      results: [],
-      videoUrl: ''
-    });
   };
 
   const handleEdit = (testimonial: Testimonial) => {
@@ -84,10 +113,22 @@ const TestimonialManager = () => {
     });
   };
 
-  const handleDelete = (id: string) => {
-    const updatedTestimonials = testimonials.filter(t => t.id !== id);
-    setTestimonials(updatedTestimonials);
-    localStorage.setItem('testimonials', JSON.stringify(updatedTestimonials));
+  const handleDelete = async (id: string) => {
+    try {
+      await adminService.deleteTestimonial(id);
+      toast({
+        title: 'Success',
+        description: 'Testimonial deleted successfully'
+      });
+      await loadTestimonials();
+    } catch (error) {
+      console.error('Error deleting testimonial:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete testimonial',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (

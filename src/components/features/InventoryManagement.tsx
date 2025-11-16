@@ -8,6 +8,7 @@ import { AddItemForm } from '@/components/inventory/AddItemForm';
 import { PriceTable } from '@/components/inventory/PriceTable';
 import { ImportInventory } from '@/components/inventory/ImportInventory';
 import { DEFAULT_INVENTORY_PRICES } from '@/constants/inventory';
+import { adminService } from '@/supabase/adminService';
 import type { PriceData, NewItemForm } from '@/types/inventory';
 
 const InventoryManagement = () => {
@@ -15,6 +16,7 @@ const InventoryManagement = () => {
   const [priceData, setPriceData] = useState<PriceData[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [newItem, setNewItem] = useState<NewItemForm>({
     category: '',
     subcategory: '',
@@ -24,33 +26,40 @@ const InventoryManagement = () => {
   });
 
   useEffect(() => {
-    try {
-      const savedPrices = localStorage.getItem('inventoryPrices');
-      if (savedPrices) {
-        const parsed = JSON.parse(savedPrices);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setPriceData(parsed);
-        } else {
-          setPriceData(DEFAULT_INVENTORY_PRICES);
-          localStorage.setItem('inventoryPrices', JSON.stringify(DEFAULT_INVENTORY_PRICES));
-        }
-      } else {
-        setPriceData(DEFAULT_INVENTORY_PRICES);
-        localStorage.setItem('inventoryPrices', JSON.stringify(DEFAULT_INVENTORY_PRICES));
-      }
-    } catch (error) {
-      console.error('Error loading price data:', error);
-      setPriceData(DEFAULT_INVENTORY_PRICES);
-      localStorage.setItem('inventoryPrices', JSON.stringify(DEFAULT_INVENTORY_PRICES));
-    }
+    loadInventory();
   }, []);
 
-  const savePriceData = (data: PriceData[]) => {
-    setPriceData(data);
-    localStorage.setItem('inventoryPrices', JSON.stringify(data));
+  const loadInventory = async () => {
+    try {
+      const data = await adminService.getAllInventory();
+      // Map InventoryItem to PriceData format
+      const mappedData = data.map((item: any) => ({
+        id: item.id,
+        category: item.category,
+        subcategory: item.subcategory,
+        wattage: item.wattage,
+        pricePerUnit: item.price_per_unit,
+        notes: item.notes
+      }));
+      setPriceData(mappedData);
+    } catch (error) {
+      console.error('Error loading inventory:', error);
+      setPriceData(DEFAULT_INVENTORY_PRICES);
+      toast({
+        title: 'Error',
+        description: 'Failed to load inventory from database',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleAddItem = () => {
+  const savePriceData = async (data: PriceData[]) => {
+    setPriceData(data);
+  };
+
+  const handleAddItem = async () => {
     if (!newItem.category || !newItem.pricePerUnit) {
       toast({
         title: "Error",
@@ -60,34 +69,39 @@ const InventoryManagement = () => {
       return;
     }
 
+    try {
+      const newPriceItem: any = {
+        category: newItem.category,
+        subcategory: newItem.subcategory || undefined,
+        wattage: newItem.wattage ? parseInt(newItem.wattage) : undefined,
+        price_per_unit: parseFloat(newItem.pricePerUnit),
+        notes: newItem.notes || undefined
+      };
 
-    // If category is Other/Others, treat subcategory as custom name, but keep category as 'Other' and subcategory as the custom name
-    const isOther = newItem.category === 'Other' || newItem.category === 'Others';
-    const newPriceItem: PriceData = {
-      id: Date.now().toString(),
-      category: newItem.category,
-      subcategory: isOther ? (newItem.subcategory || undefined) : (newItem.subcategory || undefined),
-      wattage: newItem.wattage ? parseInt(newItem.wattage) : undefined,
-      pricePerUnit: parseFloat(newItem.pricePerUnit),
-      notes: newItem.notes || undefined
-    };
+      await adminService.createInventoryItem(newPriceItem);
+      await loadInventory();
+      
+      setNewItem({
+        category: '',
+        subcategory: '',
+        wattage: '',
+        pricePerUnit: '',
+        notes: ''
+      });
+      setShowAddForm(false);
 
-    const updatedData = [...priceData, newPriceItem];
-    savePriceData(updatedData);
-    
-    setNewItem({
-      category: '',
-      subcategory: '',
-      wattage: '',
-      pricePerUnit: '',
-      notes: ''
-    });
-    setShowAddForm(false);
-
-    toast({
-      title: "Item Added",
-      description: "New price item has been added successfully."
-    });
+      toast({
+        title: "Item Added",
+        description: "New price item has been added successfully."
+      });
+    } catch (error) {
+      console.error('Error adding item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add item",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleUpdateItem = (id: string, field: string, value: string) => {

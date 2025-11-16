@@ -36,15 +36,15 @@ export interface AdminSettings {
 
 export interface Testimonial {
   id: string;
-  client_name: string;
-  property_type: string;
+  clientName: string;
+  propertyType: string;
   location: string;
   date: string;
   quote: string;
-  project_details: string;
+  projectDetails: string;
   features: string[];
   results: string[];
-  video_url: string | null;
+  videoUrl: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -382,7 +382,22 @@ export const adminService = {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Convert snake_case from database to camelCase for UI
+      return (data || []).map((item: any) => ({
+        id: item.id,
+        clientName: item.client_name,
+        propertyType: item.property_type,
+        location: item.location,
+        date: item.date,
+        quote: item.quote,
+        projectDetails: item.project_details,
+        features: item.features,
+        results: item.results,
+        videoUrl: item.video_url,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
     } catch (error: any) {
       console.error('Error fetching testimonials:', error);
       return [];
@@ -394,9 +409,22 @@ export const adminService = {
    */
   async createTestimonial(testimonial: Omit<Testimonial, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
     try {
+      // Convert camelCase to snake_case for database
+      const dbTestimonial = {
+        client_name: testimonial.clientName,
+        property_type: testimonial.propertyType,
+        location: testimonial.location,
+        date: testimonial.date,
+        quote: testimonial.quote,
+        project_details: testimonial.projectDetails,
+        features: testimonial.features,
+        results: testimonial.results,
+        video_url: testimonial.videoUrl
+      };
+
       const { data, error } = await supabase
         .from('testimonials')
-        .insert(testimonial as any)
+        .insert(dbTestimonial as any)
         .select('id')
         .single();
 
@@ -412,9 +440,21 @@ export const adminService = {
    */
   async updateTestimonial(testimonialId: string, updates: Partial<Testimonial>): Promise<void> {
     try {
+      // Convert camelCase to snake_case for database
+      const dbUpdates: any = {};
+      if (updates.clientName) dbUpdates.client_name = updates.clientName;
+      if (updates.propertyType) dbUpdates.property_type = updates.propertyType;
+      if (updates.location) dbUpdates.location = updates.location;
+      if (updates.date) dbUpdates.date = updates.date;
+      if (updates.quote) dbUpdates.quote = updates.quote;
+      if (updates.projectDetails) dbUpdates.project_details = updates.projectDetails;
+      if (updates.features) dbUpdates.features = updates.features;
+      if (updates.results) dbUpdates.results = updates.results;
+      if (updates.videoUrl) dbUpdates.video_url = updates.videoUrl;
+
       const { error } = await (supabase
         .from('testimonials') as any)
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', testimonialId);
 
       if (error) throw error;
