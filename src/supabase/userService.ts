@@ -114,16 +114,30 @@ export const userService = {
    */
   async getUserProfile(uid: string): Promise<UserProfile | null> {
     try {
+      if (!uid) {
+        console.log('⚠️ No UID provided to getUserProfile');
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', uid)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.log('ℹ️ Could not fetch user profile:', error.message);
+        return null;
+      }
+
+      if (!data) {
+        console.log('ℹ️ No profile data found for user:', uid);
+        return null;
+      }
+
       return data;
     } catch (error: any) {
-      console.error('Error fetching user profile:', error);
+      console.log('ℹ️ Error fetching user profile:', error.message);
       return null;
     }
   },

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Building2, Plus, Trash2, Save, ArrowLeft, Package, User, Home, Eye, Edi
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import AdminLayout from '@/components/admin/AdminLayout';
 import {
   InventoryManagement,
   AutomationBilling,
@@ -23,7 +24,7 @@ import { DEFAULT_INVENTORY_PRICES } from '@/constants/inventory';
 import TestimonialManager from '@/components/admin/TestimonialManager';
 import { projectService } from '@/supabase/projectService';
 import { adminService } from '@/supabase/adminService';
-import { userService } from '@/supabase/userService';
+import { supabase } from '@/supabase/config';
 
 interface DefaultSettings {
   applianceCategories: string[];
@@ -48,6 +49,7 @@ const AdminSettings = () => {
   const { user, isAdmin, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('general');
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const realtimeChannelRef = useRef<any>(null);
 
   // Check if user is admin, if not redirect to home
   useEffect(() => {
@@ -165,12 +167,56 @@ const AdminSettings = () => {
         console.log('✅ Loaded inquiries from Supabase:', inquiriesList.length);
         setInquiries(inquiriesList);
       } catch (error) {
-        console.error('Error loading inquiries:', error);
+        console.error('❌ Error loading inquiries:', error);
       }
     };
 
+    // Load initial inquiries
     loadInquiries();
-  }, []);
+
+    // Subscribe to realtime changes on inquiries table
+    const channel = supabase
+      .channel('inquiries-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'inquiries' },
+        (payload: any) => {
+          console.log('📨 Inquiry change detected:', payload.eventType);
+          if (payload.eventType === 'INSERT') {
+            // Add new inquiry to the list
+            const newInquiry = payload.new as Inquiry;
+            setInquiries((prev) => [newInquiry, ...prev]);
+            toast({
+              title: 'New Inquiry',
+              description: `New inquiry from ${newInquiry.name}`,
+              duration: 3000,
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            // Update inquiry in the list
+            const updatedInquiry = payload.new as Inquiry;
+            setInquiries((prev) =>
+              prev.map((inq) => (inq.id === updatedInquiry.id ? updatedInquiry : inq))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            // Remove deleted inquiry
+            const deletedId = payload.old.id;
+            setInquiries((prev) => prev.filter((inq) => inq.id !== deletedId));
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log(`🔗 Inquiries realtime subscription: ${status}`);
+      });
+
+    realtimeChannelRef.current = channel;
+
+    // Cleanup: unsubscribe when component unmounts
+    return () => {
+      if (realtimeChannelRef.current) {
+        supabase.removeChannel(realtimeChannelRef.current);
+      }
+    };
+  }, [toast]);
 
   // Reset project selection when switching to automation tab
   useEffect(() => {
@@ -343,70 +389,10 @@ const AdminSettings = () => {
     }));
   };
 
-  const handleLogout = async () => {
-    try {
-      await userService.signOut();
-      console.log('✅ Admin signed out successfully');
-      navigate('/admin-login');
-    } catch (error) {
-      console.error('❌ Error signing out:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to sign out. Please try again.',
-        variant: 'destructive'
-      });
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
-      {/* Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-black/20 border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
-          <div className="text-white font-semibold tracking-wide cursor-pointer" onClick={() => navigate('/')}>Cleub Automation</div>
-          <nav className="flex-1 flex items-center justify-center gap-4 text-sm z-50 relative">
-            <button className="text-slate-300 hover:text-white whitespace-nowrap" onClick={() => navigate('/')}>Home</button>
-            <button className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='general'?'text-white':''}`} onClick={() => setActiveTab('general')}>General Settings</button>
-            <button className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='inventory'?'text-white':''}`} onClick={() => setActiveTab('inventory')}>Inventory Management</button>
-            <button className="text-slate-300 hover:text-white whitespace-nowrap" onClick={() => navigate('/admin/projects')}>Project History</button>
-            <button className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='billing'?'text-white':''}`} onClick={() => setActiveTab('billing')}>Automation Billing</button>
-            <button 
-              className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='testimonials'?'text-white':''}`} 
-              onClick={() => {
-                console.log('Setting activeTab to testimonials');
-                setActiveTab('testimonials');
-                console.log('New activeTab value:', 'testimonials');
-              }}
-            >
-              Testimonials
-            </button>
-            <button 
-              className={`text-slate-300 hover:text-white whitespace-nowrap ${activeTab==='inquiries'?'text-white':''}`} 
-              onClick={() => setActiveTab('inquiries')}
-            >
-              <MessageSquare className="w-4 h-4 mr-1 inline" />
-              Inquiries
-            </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger className={`text-slate-300 hover:text-white whitespace-nowrap inline-flex items-center gap-1 z-50 ${activeTab==='finalplan' || activeTab==='planning' ? 'text-white' : ''}`}>
-                Planning <ChevronDown className="w-4 h-4 opacity-70" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-black/80 backdrop-blur-xl border-white/10 text-white z-50">
-                <DropdownMenuItem className="focus:bg-white/10 focus:text-white" onClick={() => setActiveTab('finalplan')}>Summary → Master Plan</DropdownMenuItem>
-                <DropdownMenuItem className="focus:bg-white/10 focus:text-white" onClick={() => setActiveTab('planning')}>Project Planning</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Button onClick={saveSettings} className="bg-white/10 text-white hover:bg-white/20 z-40"><Save className="w-4 h-4 mr-2" />Save</Button>
-            <Button variant="outline" onClick={handleLogout} className="border-white/20 text-white hover:bg-white/10 z-40">Logout</Button>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-  {activeTab === 'inquiries' ? (
+    <AdminLayout>
+      <div className="space-y-6">
+        {activeTab === 'inquiries' ? (
           <div className="space-y-6">
             <Card className="border-white/10 bg-white/5">
               <CardHeader>
@@ -1153,7 +1139,7 @@ const AdminSettings = () => {
           </div>
         )}
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 

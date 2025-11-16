@@ -4,6 +4,8 @@ import { cva } from "class-variance-authority"
 import { ChevronDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/contexts/AuthContext"
+import ProfileMenu from "@/components/ui/profile-menu"
 
 const NavigationMenu = React.forwardRef<
   React.ElementRef<typeof NavigationMenuPrimitive.Root>,
@@ -26,16 +28,23 @@ NavigationMenu.displayName = NavigationMenuPrimitive.Root.displayName
 const NavigationMenuList = React.forwardRef<
   React.ElementRef<typeof NavigationMenuPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.List>
->(({ className, ...props }, ref) => (
-  <NavigationMenuPrimitive.List
-    ref={ref}
-    className={cn(
-      "group flex flex-1 list-none items-center justify-center space-x-1",
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, ...props }, ref) => {
+  const { user, loading } = useAuth();
+  
+  return (
+    <NavigationMenuPrimitive.List
+      ref={ref}
+      className={cn(
+        "group flex flex-1 list-none items-center justify-center space-x-1",
+        className
+      )}
+      {...props}
+    >
+      {props.children}
+      {!loading && user && <ProfileMenu />}
+    </NavigationMenuPrimitive.List>
+  );
+})
 NavigationMenuList.displayName = NavigationMenuPrimitive.List.displayName
 
 const NavigationMenuItem = NavigationMenuPrimitive.Item

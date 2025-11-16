@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Building2, Users, Lightbulb, ChevronRight, Settings, LogOut } from 'lucide-react';
+import { Building2, Users, Lightbulb, ChevronRight, Settings } from 'lucide-react';
 import { projectService } from '@/supabase/projectService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import SiteNav from '@/components/ui/site-nav';
 
 const ProjectPlanning = () => {
   const navigate = useNavigate();
@@ -99,45 +100,12 @@ const ProjectPlanning = () => {
   return (
     <div>
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black flex flex-col transition-colors">
-      {/* Header minimal/nav */}
-      <header className="sticky top-0 z-40 bg-black border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 grid grid-cols-3 items-center">
-          <div className="text-white font-semibold tracking-wide cursor-pointer flex items-center gap-2" onClick={() => navigate('/')}>
-            <Building2 className="w-6 h-6 text-teal-600" />
-            <span>Cleub Automation</span>
-          </div>
-          <nav className="hidden md:flex items-center justify-center gap-6 text-sm">
-            <button className="text-white hover:text-teal-400 transition-colors" onClick={() => navigate('/')}>Home</button>
-          </nav>
-          <div className="flex items-center justify-end gap-3">
-            {user ? (
-              <>
-                <span className="text-sm text-slate-300">{user.email}</span>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="border-red-500/30 text-red-500 hover:bg-red-500/10"
-                  onClick={async () => {
-                    await logout();
-                    navigate('/');
-                  }}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <Button 
-                size="sm"
-                className="bg-teal-600 hover:bg-teal-700"
-                onClick={() => navigate('/login')}
-              >
-                Login
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
+      <SiteNav
+        brand="Cleub Automation"
+        links={[
+          { label: 'Home', href: '/' },
+        ]}
+      />
 
       {/* Hero Section */}
       <div className="flex-grow flex items-center justify-center">

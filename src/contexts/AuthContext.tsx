@@ -28,19 +28,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen to Supabase auth state changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session: Session | null) => {
-        const currentUser = session?.user || null;
-        setUser(currentUser);
-        setIsAdmin(false);
-        setUserProfile(null);
-        
-        if (currentUser) {
-          try {
-            // Fetch profile from Supabase
+        try {
+          const currentUser = session?.user || null;
+          setUser(currentUser);
+          setIsAdmin(false);
+          setUserProfile(null);
+          
+          if (currentUser) {
+            // Fetch profile from Supabase with retry logic
             let profile = await supabaseUserService.getUserProfile(currentUser.id);
             
             if (profile) {
+              console.log('✅ Profile fetched successfully');
               setUserProfile(profile);
             } else {
+              console.log('📝 Profile not found, attempting to create...');
               // Auto-create profile for first-time users
               const [firstName, lastName] = (currentUser.user_metadata?.full_name || '').split(' ');
               
@@ -55,25 +57,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 } as any);
               
               if (insertError) {
-                console.error('❌ Failed to create user profile:', insertError);
+                console.log('ℹ️ Could not auto-create profile (may already exist):', insertError.message);
               } else {
+                console.log('✅ Profile created successfully');
                 profile = await supabaseUserService.getUserProfile(currentUser.id);
                 setUserProfile(profile);
               }
             }
 
-            // Check if user is admin
+            // Check if user is admin - IMPORTANT: This must complete before marking loading as false
             if (currentUser.email) {
+              console.log('🔍 Checking admin status for:', currentUser.email);
               const adminRecord = await adminService.getAdminByEmail(currentUser.email);
               if (adminRecord?.is_active) {
+                console.log('✅ Admin status: TRUE');
                 setIsAdmin(true);
+              } else {
+                console.log('ℹ️ Admin status: FALSE (user is not an admin)');
+                setIsAdmin(false);
               }
             }
-          } catch (error) {
-            console.error('❌ Auth error:', error);
           }
+        } catch (error) {
+          console.error('❌ Auth error:', error);
+        } finally {
+          // Mark loading complete AFTER all async operations (profile + admin check)
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 

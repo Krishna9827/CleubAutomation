@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { userService } from '@/supabase/userService';
+import { useAuth } from '@/contexts/AuthContext';
+import ProfileMenu from '@/components/ui/profile-menu';
 import {
   LayoutDashboard,
   MessageSquareQuote,
   Settings,
-  Users,
-  LogOut
+  Home,
+  MessageSquare,
+  Building2,
+  Package
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -17,59 +19,36 @@ interface AdminLayoutProps {
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { user, loading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
-  const handleLogout = async () => {
-    try {
-      await userService.signOut();
-      console.log('✅ Admin signed out successfully');
-      navigate('/admin-login');
-    } catch (error) {
-      console.error('❌ Error signing out:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to sign out. Please try again.',
-        variant: 'destructive'
-      });
-    }
-  };
 
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    { name: 'Inquiries', href: '/admin/inquiries', icon: MessageSquare },
+    { name: 'Projects', href: '/admin/projects', icon: Building2 },
+    { name: 'Inventory', href: '/admin/inventory', icon: Package },
     { name: 'Testimonials', href: '/admin/testimonials', icon: MessageSquareQuote },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
+    { name: 'Back to Home', href: '/', icon: Home },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
-      {/* Top Navigation */}
+      {/* Top Navigation - Clean */}
       <header className="border-b border-white/10 bg-black/20 backdrop-blur-xl sticky top-0 z-40">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <span className="text-xl font-bold text-white">Admin Panel</span>
-              </div>
+              <h1 className="text-xl font-bold text-white">Admin Panel</h1>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-slate-300">Admin User</span>
-              <button 
-                onClick={handleLogout}
-                className="p-2 text-slate-300 hover:text-white hover:bg-red-500/10 rounded-lg transition-colors"
-                title="Sign out"
-              >
-                <LogOut className="h-5 w-5" />
-              </button>
-            </div>
+            {user && !loading && <ProfileMenu />}
           </div>
         </div>
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 min-h-[calc(100vh-4rem)] bg-black/20 backdrop-blur-xl border-r border-white/10">
+        {/* Fixed Sidebar - Desktop Only */}
+        <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-16 md:left-0 md:bg-black/20 md:backdrop-blur-xl md:border-r md:border-white/10">
           <nav className="flex flex-col gap-1 p-4">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
@@ -80,20 +59,20 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                   className={cn(
                     'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-white/10 text-white'
+                      ? 'bg-teal-600/20 text-teal-400 border-l-2 border-teal-400'
                       : 'text-slate-300 hover:bg-white/5 hover:text-white'
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  <span>{item.name}</span>
                 </Link>
               );
             })}
           </nav>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 p-8">
+        {/* Main Content - Offset for sidebar */}
+        <div className="w-full md:ml-64 p-4 md:p-8">
           {children}
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -14,17 +14,20 @@ import { LogOut, Settings, User, Shield, Loader } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export const ProfileMenu = () => {
-  const { user, userProfile, isAdmin, logout } = useAuth();
+  const { user, userProfile, isAdmin, logout, loading } = useAuth();
   const navigate = useNavigate();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  if (!user) return null;
+  if (!user || loading) return null;
 
-  const initials = (
-    (userProfile?.first_name?.[0] || '') +
-    (userProfile?.last_name?.[0] || '')
-  ).toUpperCase() || 'U';
+  // Memoize initials to prevent unnecessary recalculations
+  const initials = useMemo(() => {
+    return (
+      (userProfile?.first_name?.[0] || '') +
+      (userProfile?.last_name?.[0] || '')
+    ).toUpperCase() || 'U';
+  }, [userProfile?.first_name, userProfile?.last_name]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -55,7 +58,7 @@ export const ProfileMenu = () => {
         <DropdownMenuContent align="end" className="w-56 bg-slate-900 border-slate-700">
           <DropdownMenuLabel className="text-white">
             <div className="font-semibold">
-              {userProfile?.first_name} {userProfile?.last_name}
+              {userProfile?.first_name || 'User'} {userProfile?.last_name || ''}
             </div>
             <div className="text-xs text-slate-400">{user.email}</div>
             {isAdmin && <div className="text-xs text-amber-400 mt-1">🔐 Admin User</div>}
@@ -119,7 +122,7 @@ export const ProfileMenu = () => {
               </Avatar>
               <div>
                 <div className="font-semibold text-lg">
-                  {userProfile?.first_name} {userProfile?.last_name}
+                  {userProfile?.first_name || 'User'} {userProfile?.last_name || ''}
                 </div>
                 <div className="text-sm text-slate-400">{user.email}</div>
               </div>

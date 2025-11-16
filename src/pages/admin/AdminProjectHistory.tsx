@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ArrowLeft, Trash2, Eye, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import AdminLayout from '@/components/admin/AdminLayout';
 import { AdminTable, ColumnDef, ActionButton } from '@/components/admin/AdminTable';
 import { projectService, ProjectData } from '@/supabase/projectService';
 import { userService, UserProfile } from '@/supabase/userService';
@@ -231,25 +232,15 @@ const AdminProjectHistory = () => {
   const searchKeys: (keyof ProjectWithUser)[] = ['user_email', 'user_name'];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-black border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/admin')} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
-              <ArrowLeft className="w-5 h-5 text-slate-300" />
-            </button>
-            <h1 className="text-xl font-bold text-white">Project History</h1>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AdminLayout>
+      <div>
         {/* Loading State */}
         {loading ? (
           <div className="text-center text-slate-400 py-12">Checking authentication...</div>
         ) : (
           <>
+            <h2 className="text-2xl font-bold text-white mb-6">Project History</h2>
+            
             {/* Projects Table */}
             <AdminTable<ProjectWithUser>
               data={projects}
@@ -417,8 +408,8 @@ const AdminProjectHistory = () => {
             )}
           </>
         )}
-      </main>
-    </div>
+      </div>
+    </AdminLayout>
   );
 };
 

@@ -6,31 +6,52 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { adminService } from '@/supabase/adminService';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signInWithEmail, isAdmin, user, loading } = useAuth();
 
-  // If already logged in as admin, redirect to admin panel
+  // Check if user is already logged in and is an active admin
   useEffect(() => {
-    if (!loading && user && isAdmin) {
-      console.log('✅ User is already logged in as admin, redirecting to /admin');
-      navigate('/admin');
-    }
-  }, [user, isAdmin, loading, navigate]);
+    const checkAdminStatus = async () => {
+      try {
+        if (loading) {
+          console.log('⏳ Waiting for auth context to load...');
+          return;
+        }
 
-  // If not admin but logged in, redirect to login
-  useEffect(() => {
-    if (!loading && user && !isAdmin) {
-      console.log('⚠️ User is logged in but not an admin');
-      navigate('/admin-login');
-    }
-  }, [user, isAdmin, loading, navigate]);
+        if (!user) {
+          console.log('ℹ️ User not logged in, showing login form');
+          setIsCheckingAdmin(false);
+          return;
+        }
+
+        // User is logged in, check if they're an active admin
+        console.log('🔍 Checking admin status for:', user.email);
+        const adminRecord = await adminService.getAdminByEmail(user.email!);
+        
+        if (adminRecord && adminRecord.is_active) {
+          console.log('✅ User is an active admin, redirecting to /admin');
+          navigate('/admin');
+        } else {
+          console.log('❌ User is not an active admin, showing login form');
+          setIsCheckingAdmin(false);
+        }
+      } catch (error) {
+        console.error('⚠️ Error checking admin status:', error);
+        setIsCheckingAdmin(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user, loading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,17 +68,30 @@ const AdminLogin = () => {
       console.log('🔐 Attempting admin login with email:', email);
       await signInWithEmail(email, password);
       
-      // Wait for auth context to update
+      // Check if the user is an admin after login
+      console.log('🔍 Verifying admin status after login...');
+      const adminRecord = await adminService.getAdminByEmail(email);
+      
+      if (!adminRecord || !adminRecord.is_active) {
+        console.log('❌ User logged in but is not an active admin');
+        setError('Your account is not authorized as an admin. Please contact the system administrator.');
+        toast({
+          title: 'Access Denied',
+          description: 'You do not have admin privileges.',
+          variant: 'destructive'
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('✅ Admin verified, redirecting to admin panel');
       toast({
         title: 'Success',
-        description: 'Logging in...',
+        description: 'Welcome back, Admin!',
       });
       
-      // The AuthContext will handle admin check and redirect
-      // Give it a moment to process
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
+      navigate('/admin');
+      setIsLoading(false);
     } catch (error: any) {
       console.error('❌ Login failed:', error);
       setError(error.message || 'Invalid email or password');
@@ -70,7 +104,7 @@ const AdminLogin = () => {
     }
   };
 
-  if (loading) {
+  if (loading || isCheckingAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-black">
         <div className="text-white text-center">

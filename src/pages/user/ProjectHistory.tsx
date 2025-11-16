@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Building2, ArrowLeft, Calendar, Home, Trash2, Eye, Search, LogOut } from 'lucide-react';
+import { Building2, Calendar, Home, Trash2, Eye, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { projectService, ProjectData } from '@/supabase/projectService';
+import SiteNav from '@/components/ui/site-nav';
 
 interface LocalProjectData {
   id: string;
@@ -128,34 +129,19 @@ const UserHistory = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-black border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/')} className="p-2 hover:bg-slate-800 rounded-lg">
-              <ArrowLeft className="w-5 h-5 text-slate-300" />
-            </button>
-            <h1 className="text-xl font-bold text-white">My Projects</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-300">{user.email}</span>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-red-500/30 text-red-500 hover:bg-red-500/10"
-              onClick={async () => {
-                await logout();
-                navigate('/');
-              }}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        </div>
-      </header>
+      <SiteNav
+        brand="Cleub Automation"
+        links={[
+          { label: 'Home', href: '/' },
+        ]}
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white">My Projects</h1>
+          <p className="text-slate-400 mt-2">Manage and view all your automation projects</p>
+        </div>
         {/* Search and Create New */}
         <div className="mb-6 flex gap-3">
           <div className="flex-1 relative">

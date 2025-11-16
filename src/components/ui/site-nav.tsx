@@ -19,7 +19,7 @@ interface SiteNavProps {
 
 const SiteNav = ({ brand, links, rightActions }: SiteNavProps) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const onClick = (href: string, isExternal?: boolean) => {
@@ -62,7 +62,7 @@ const SiteNav = ({ brand, links, rightActions }: SiteNavProps) => {
           
           {/* Right Actions - Top Right */}
           <div className="flex items-center gap-2">
-            {user && <ProfileMenu />}
+            {!loading && user && <ProfileMenu />}
             {rightActions}
           </div>
         </div>
@@ -86,7 +86,7 @@ const SiteNav = ({ brand, links, rightActions }: SiteNavProps) => {
           
           {/* Right Actions */}
           <div className="flex items-center justify-end gap-2">
-            {user && <ProfileMenu />}
+            {!loading && user && <ProfileMenu />}
             {rightActions}
           </div>
         </div>

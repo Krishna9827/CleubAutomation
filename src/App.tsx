@@ -23,6 +23,9 @@ import AdminLogin from "./pages/admin/AdminLogin"
 import AdminSettings from "./pages/admin/AdminSettings"
 import AdminProjectHistory from "./pages/admin/AdminProjectHistory"
 import AdminTestimonials from "./pages/admin/AdminTestimonials"
+import AdminInquiries from "./pages/admin/AdminInquiries"
+import AdminProjects from "./pages/admin/AdminProjects"
+import AdminInventory from "./pages/admin/AdminInventory"
 
 const queryClient = new QueryClient();
 
@@ -66,8 +69,11 @@ const App = () => (
             <Route path="/planner" element={<Planner />} />
             <Route path="/my-projects" element={<UserHistory />} />
             <Route path="/admin" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
+            <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
+            <Route path="/admin/inquiries" element={<ProtectedAdminRoute><AdminInquiries /></ProtectedAdminRoute>} />
+            <Route path="/admin/projects" element={<ProtectedAdminRoute><AdminProjects /></ProtectedAdminRoute>} />
+            <Route path="/admin/inventory" element={<ProtectedAdminRoute><AdminInventory /></ProtectedAdminRoute>} />
             <Route path="/admin/testimonials" element={<ProtectedAdminRoute><AdminTestimonials /></ProtectedAdminRoute>} />
-            <Route path="/admin/projects" element={<ProtectedAdminRoute><AdminProjectHistory /></ProtectedAdminRoute>} />
             <Route path="/admin-login" element={<AdminLogin />} />
             {/* Legacy routes for backward compatibility */}
             <Route path="/intake" element={<ProjectPlanning />} />

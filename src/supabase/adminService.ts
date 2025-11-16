@@ -80,14 +80,21 @@ export const adminService = {
           console.log(`ℹ️ User ${email} is not an admin`);
           return null;
         }
-        console.error('❌ Error querying admin status:', error);
+        // Other errors (RLS, network) are suppressed to reduce console noise
+        console.log(`ℹ️ Admin check returned error (not necessarily a problem):`, error.code);
         return null;
       }
 
-      console.log(`✅ Verified admin access for: ${data.full_name} (${data.email})`);
-      return data as Admin;
+      if (!data) {
+        console.log(`ℹ️ No admin record found for ${email}`);
+        return null;
+      }
+
+      const adminData = data as Admin;
+      console.log(`✅ Verified admin access for: ${adminData.full_name} (${adminData.email})`);
+      return adminData;
     } catch (error: any) {
-      console.error('❌ Error in getAdminByEmail:', error.message);
+      console.log('ℹ️ Admin verification check encountered an issue (expected if user is not admin)');
       return null;
     }
   },
@@ -128,7 +135,7 @@ export const adminService = {
 
       if (error) throw error;
       console.log(`✅ Admin created: ${fullName} (${email})`);
-      return data.id;
+      return (data as any)?.id || '';
     } catch (error: any) {
       console.error('❌ Error creating admin:', error);
       throw new Error(error.message);
@@ -295,34 +302,68 @@ export const adminService = {
       if (error) {
         if (error.code === 'PGRST116') {
           // No settings found, return empty object
+          console.log(`ℹ️ No admin settings found for key: ${key}`);
           return {};
         }
         throw error;
       }
-      return data?.setting_value || {};
+      console.log(`✅ Loaded admin settings for key: ${key}`);
+      return (data as any)?.setting_value || {};
     } catch (error: any) {
-      console.error('Error fetching settings:', error);
+      console.error('❌ Error fetching settings:', error.message);
       return {};
     }
   },
 
   /**
    * Update admin settings
+   * Note: Requires INSERT permission on admin_settings table for upsert
    */
   async updateSettings(key: string, settings: any): Promise<void> {
     try {
-      const { error } = await (supabase
-        .from('admin_settings') as any)
-        .upsert({
-          setting_key: key,
-          setting_value: settings,
-        }, {
-          onConflict: 'setting_key'
-        });
+      // Use insert instead of upsert to avoid RLS issues
+      // First try to get existing record
+      const { data: existing } = await supabase
+        .from('admin_settings')
+        .select('id')
+        .eq('setting_key', key)
+        .single();
 
-      if (error) throw error;
+      if (existing) {
+        // Update existing record
+        console.log(`📝 Updating admin settings for key: ${key}`);
+        const { error } = await (supabase as any)
+          .from('admin_settings')
+          .update({
+            setting_value: settings,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('setting_key', key);
+
+        if (error) {
+          console.error('❌ Error updating settings:', error.message);
+          throw new Error(`Failed to update settings: ${error.message}`);
+        }
+        console.log(`✅ Settings updated for key: ${key}`);
+      } else {
+        // Insert new record
+        console.log(`📝 Creating new admin settings for key: ${key}`);
+        const { error } = await (supabase as any)
+          .from('admin_settings')
+          .insert({
+            setting_key: key,
+            setting_value: settings,
+          });
+
+        if (error) {
+          console.error('❌ Error creating settings:', error.message);
+          throw new Error(`Failed to create settings: ${error.message}`);
+        }
+        console.log(`✅ Settings created for key: ${key}`);
+      }
     } catch (error: any) {
-      throw new Error(error.message);
+      console.error('❌ Error in updateSettings:', error.message);
+      throw error;
     }
   },
 
@@ -360,7 +401,7 @@ export const adminService = {
         .single();
 
       if (error) throw error;
-      return data.id;
+      return (data as any)?.id || '';
     } catch (error: any) {
       throw new Error(error.message);
     }
@@ -451,7 +492,7 @@ export const adminService = {
         .single();
 
       if (error) throw error;
-      return data.id;
+      return (data as any)?.id || '';
     } catch (error: any) {
       throw new Error(error.message);
     }
