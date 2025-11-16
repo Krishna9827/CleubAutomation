@@ -11,6 +11,10 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+// Firebase initialization - ONLY used for legacy admin pages (Firestore data)
+// Auth is now handled exclusively by Supabase
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
-export const auth = getAuth(app);
+
+// Export a null auth to prevent Firebase Auth from interfering with Supabase Auth
+export const auth = null as any; // Legacy export - no longer used for authentication

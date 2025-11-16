@@ -1,53 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Building2, ArrowLeft, Calendar, User, Home, Trash2, Eye, Edit, Search, Download } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ArrowLeft, Trash2, Eye, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db, auth } from '@/firebase/config';
+import { AdminTable, ColumnDef, ActionButton } from '@/components/admin/AdminTable';
+import { projectService, ProjectData } from '@/supabase/projectService';
+import { userService, UserProfile } from '@/supabase/userService';
 
-interface ProjectData {
-  id: string;
-  userId: string;
-  projectName: string;
-  clientInfo?: {
-    name: string;
-    email: string;
-    phone: string;
-    address: string;
-  };
-  rooms?: any[];
-  totalCost?: number;
-  status?: string;
-  createdAt?: any;
-  updatedAt?: any;
-}
-
-interface UserData {
-  uid: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phoneNumber: string;
-  city: string;
-  state: string;
+interface ProjectWithUser extends ProjectData {
+  user_email?: string;
+  user_name?: string;
 }
 
 const AdminProjectHistory = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading } = useAuth();
-  const [projects, setProjects] = useState<ProjectData[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<ProjectData[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [projects, setProjects] = useState<ProjectWithUser[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
-  const [userMap, setUserMap] = useState<Record<string, UserData>>({});
-  const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null);
+  const [selectedProject, setSelectedProject] = useState<ProjectWithUser | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
   // Check if user is logged in, if not redirect to admin login
@@ -58,7 +32,7 @@ const AdminProjectHistory = () => {
     }
   }, [user, loading, navigate]);
 
-  // Load all projects from Firebase
+  // Load all projects from Supabase
   useEffect(() => {
     if (!user) {
       console.log('⏳ Waiting for user authentication...');
@@ -69,36 +43,33 @@ const AdminProjectHistory = () => {
       try {
         setLoadingProjects(true);
         
-        // Debug: Check current user auth state
         console.log('✅ Current user:', user.email);
-        console.log('✅ User UID:', user.uid);
-        const tokenResult = await user.getIdTokenResult();
-        console.log('✅ User token claims:', tokenResult.claims);
         
-        const projectsCol = collection(db, 'projects');
-        const projectsSnapshot = await getDocs(projectsCol);
-        const projectsList = projectsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as ProjectData));
+        // Fetch all projects from Supabase
+        const allProjects = await projectService.getAllProjects();
+        console.log('✅ Loaded projects from Supabase:', allProjects.length);
         
-        console.log('✅ Loaded projects from Firebase:', projectsList.length);
-        setProjects(projectsList);
-        setFilteredProjects(projectsList);
-
-        // Load user data for all projects
-        const usersCol = collection(db, 'users');
-        const usersSnapshot = await getDocs(usersCol);
-        const users: Record<string, UserData> = {};
-        usersSnapshot.docs.forEach(doc => {
-          users[doc.id] = { uid: doc.id, ...doc.data() } as UserData;
-        });
-        setUserMap(users);
+        // Fetch user profiles for each project to enrich data
+        const projectsWithUsers = await Promise.all(
+          allProjects.map(async (project) => {
+            if (project.user_id) {
+              const userProfile = await userService.getUserProfile(project.user_id);
+              return {
+                ...project,
+                user_email: userProfile?.email,
+                user_name: userProfile ? `${userProfile.first_name} ${userProfile.last_name}`.trim() : undefined,
+              };
+            }
+            return project;
+          })
+        );
+        
+        setProjects(projectsWithUsers);
       } catch (error) {
         console.error('❌ Error loading projects:', error);
         toast({
           title: 'Error',
-          description: 'Failed to load projects from Firebase',
+          description: 'Failed to load projects from Supabase',
           variant: 'destructive'
         });
       } finally {
@@ -109,29 +80,13 @@ const AdminProjectHistory = () => {
     loadProjects();
   }, [user, toast]);
 
-  // Filter projects based on search term
-  useEffect(() => {
-    if (!searchTerm) {
-      setFilteredProjects(projects);
-    } else {
-      const term = searchTerm.toLowerCase();
-      setFilteredProjects(projects.filter(p =>
-        p.projectName?.toLowerCase().includes(term) ||
-        p.clientInfo?.name?.toLowerCase().includes(term) ||
-        p.clientInfo?.email?.toLowerCase().includes(term) ||
-        userMap[p.userId]?.email?.toLowerCase().includes(term)
-      ));
-    }
-  }, [searchTerm, projects, userMap]);
-
-  const deleteProject = async (projectId: string) => {
-    if (!confirm('Are you sure you want to delete this project?')) return;
+  const deleteProject = async (project: ProjectWithUser) => {
+    if (!confirm(`Are you sure you want to delete project for "${project.client_info.name}"?`)) return;
 
     try {
-      await deleteDoc(doc(db, 'projects', projectId));
-      const updated = projects.filter(p => p.id !== projectId);
+      await projectService.deleteProject(project.id);
+      const updated = projects.filter(p => p.id !== project.id);
       setProjects(updated);
-      setFilteredProjects(updated);
       toast({
         title: 'Success',
         description: 'Project deleted successfully'
@@ -145,12 +100,11 @@ const AdminProjectHistory = () => {
     }
   };
 
-  const updateProjectStatus = async (projectId: string, newStatus: string) => {
+  const updateProjectStatus = async (project: ProjectWithUser, newStatus: 'draft' | 'in-progress' | 'completed') => {
     try {
-      await updateDoc(doc(db, 'projects', projectId), { status: newStatus });
-      const updated = projects.map(p => p.id === projectId ? { ...p, status: newStatus } : p);
+      await projectService.updateProject(project.id, { status: newStatus });
+      const updated = projects.map(p => p.id === project.id ? { ...p, status: newStatus } : p);
       setProjects(updated);
-      setFilteredProjects(updated);
       toast({
         title: 'Success',
         description: 'Project status updated'
@@ -164,18 +118,117 @@ const AdminProjectHistory = () => {
     }
   };
 
-  const handleViewDetails = (project: ProjectData) => {
+  const handleViewDetails = (project: ProjectWithUser) => {
     setSelectedProject(project);
     setShowDetails(true);
   };
 
-  const getUserDisplayName = (userId: string) => {
-    const user = userMap[userId];
-    if (!user) return 'Unknown User';
-    return `${user.firstName} ${user.lastName}`.trim() || user.email;
-  };
+  // Define table columns
+  const columns: ColumnDef<ProjectWithUser>[] = [
+    {
+      header: 'Client Name',
+      accessor: 'client_info',
+      cell: (row) => (
+        <div>
+          <div className="font-semibold">{row.client_info.name || 'N/A'}</div>
+          <div className="text-xs text-slate-400">{row.client_info.email}</div>
+        </div>
+      ),
+      sortable: true,
+      searchable: true,
+    },
+    {
+      header: 'Property Type',
+      accessor: 'property_details',
+      cell: (row) => (
+        <div>
+          <div className="font-semibold capitalize">{row.property_details.type || 'N/A'}</div>
+          <div className="text-xs text-slate-400">{row.property_details.size} sq ft</div>
+        </div>
+      ),
+    },
+    {
+      header: 'Created By',
+      accessor: 'user_name',
+      cell: (row) => (
+        <div>
+          <div className="font-semibold">{row.user_name || 'Unknown'}</div>
+          <div className="text-xs text-slate-400">{row.user_email}</div>
+        </div>
+      ),
+      searchable: true,
+    },
+    {
+      header: 'Rooms',
+      accessor: 'rooms',
+      cell: (row) => (
+        <Badge variant="outline" className="bg-slate-800/30 border-slate-700">
+          {row.rooms.length} rooms
+        </Badge>
+      ),
+    },
+    {
+      header: 'Total Cost',
+      accessor: 'total_cost',
+      cell: (row) => (
+        <div className="font-semibold text-teal-400">
+          ₹{row.total_cost.toLocaleString('en-IN')}
+        </div>
+      ),
+      sortable: true,
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      cell: (row) => (
+        <select
+          value={row.status}
+          onChange={(e) => updateProjectStatus(row, e.target.value as 'draft' | 'in-progress' | 'completed')}
+          onClick={(e) => e.stopPropagation()}
+          className="bg-slate-800 border border-slate-700 text-white text-sm rounded px-2 py-1 cursor-pointer hover:border-teal-600"
+        >
+          <option value="draft">Draft</option>
+          <option value="in-progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+      ),
+      sortable: true,
+    },
+    {
+      header: 'Created',
+      accessor: 'created_at',
+      cell: (row) => (
+        <div className="text-sm">
+          {new Date(row.created_at).toLocaleDateString('en-IN', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          })}
+        </div>
+      ),
+      sortable: true,
+    },
+  ];
 
-  const getRoomCount = (rooms: any[]) => rooms?.length || 0;
+  // Define table actions
+  const actions: ActionButton<ProjectWithUser>[] = [
+    {
+      label: 'View Details',
+      icon: <Eye className="w-4 h-4" />,
+      onClick: handleViewDetails,
+      variant: 'ghost',
+    },
+    {
+      label: 'Delete',
+      icon: <Trash2 className="w-4 h-4" />,
+      onClick: deleteProject,
+      variant: 'ghost',
+      className: 'text-red-500 hover:text-red-400 hover:bg-red-500/10',
+    },
+  ];
+
+  // Search keys for the table
+  const searchKeys: (keyof ProjectWithUser)[] = ['user_email', 'user_name'];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
@@ -183,198 +236,186 @@ const AdminProjectHistory = () => {
       <header className="sticky top-0 z-40 bg-black border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/admin')} className="p-2 hover:bg-slate-800 rounded-lg">
+            <button onClick={() => navigate('/admin')} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
               <ArrowLeft className="w-5 h-5 text-slate-300" />
             </button>
             <h1 className="text-xl font-bold text-white">Project History</h1>
           </div>
-          <Badge variant="outline" className="bg-teal-900/30 border-teal-600 text-teal-400">
-            {filteredProjects.length} Projects
-          </Badge>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Search and Filters */}
-        <div className="mb-6 flex gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-3 w-5 h-5 text-slate-500" />
-            <Input
-              placeholder="Search by project name, client name, or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-slate-800/50 border-slate-700 text-white"
-            />
-          </div>
-        </div>
-
-        {/* Projects Table */}
+        {/* Loading State */}
         {loading ? (
           <div className="text-center text-slate-400 py-12">Checking authentication...</div>
-        ) : loadingProjects ? (
-          <div className="text-center text-slate-400 py-12">Loading projects...</div>
-        ) : filteredProjects.length === 0 ? (
-          <div className="text-center text-slate-400 py-12">No projects found</div>
         ) : (
-          <div className="grid gap-6">
-            {filteredProjects.map(project => (
-              <Card key={project.id} className="bg-black/40 backdrop-blur-sm border-white/10 hover:border-teal-600/30 transition-all">
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    {/* Project Info */}
-                    <div>
-                      <div className="text-xs text-slate-500 mb-1">PROJECT NAME</div>
-                      <div className="text-white font-semibold truncate">{project.projectName}</div>
-                    </div>
+          <>
+            {/* Projects Table */}
+            <AdminTable<ProjectWithUser>
+              data={projects}
+              columns={columns}
+              actions={actions}
+              searchKeys={searchKeys}
+              searchPlaceholder="Search by client name, email, or user..."
+              loading={loadingProjects}
+              emptyMessage="No projects found"
+              itemsPerPage={15}
+            />
 
-                    {/* Client Info */}
-                    <div>
-                      <div className="text-xs text-slate-500 mb-1">CLIENT</div>
-                      <div className="text-white font-semibold truncate">{project.clientInfo?.name || 'N/A'}</div>
-                      <div className="text-xs text-slate-400 truncate">{project.clientInfo?.email}</div>
-                    </div>
-
-                    {/* Created By (User) */}
-                    <div>
-                      <div className="text-xs text-slate-500 mb-1">CREATED BY</div>
-                      <div className="text-white font-semibold truncate">{getUserDisplayName(project.userId)}</div>
-                      <div className="text-xs text-slate-400 truncate">{userMap[project.userId]?.email}</div>
-                    </div>
-
-                    {/* Status and Actions */}
-                    <div className="flex flex-col justify-between">
+            {/* Project Details Modal */}
+            {selectedProject && (
+              <Dialog open={showDetails} onOpenChange={setShowDetails}>
+                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-slate-950 border-white/10">
+                  <DialogHeader>
+                    <DialogTitle className="text-white text-2xl">Project Details</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-6 text-white">
+                    {/* Project Overview */}
+                    <div className="grid grid-cols-2 gap-4 p-4 bg-slate-800/30 rounded-lg">
                       <div>
-                        <div className="text-xs text-slate-500 mb-1">STATUS</div>
-                        <select
-                          value={project.status || 'active'}
-                          onChange={(e) => updateProjectStatus(project.id, e.target.value)}
-                          className="bg-slate-800 border border-slate-700 text-white text-sm rounded px-2 py-1 cursor-pointer"
+                        <div className="text-sm text-slate-500 mb-1">Status</div>
+                        <Badge 
+                          variant="outline" 
+                          className={`
+                            ${selectedProject.status === 'completed' ? 'bg-green-900/30 border-green-600 text-green-400' : ''}
+                            ${selectedProject.status === 'in-progress' ? 'bg-blue-900/30 border-blue-600 text-blue-400' : ''}
+                            ${selectedProject.status === 'draft' ? 'bg-slate-800/30 border-slate-600 text-slate-400' : ''}
+                          `}
                         >
-                          <option value="active">Active</option>
-                          <option value="completed">Completed</option>
-                          <option value="on-hold">On Hold</option>
-                          <option value="archived">Archived</option>
-                        </select>
+                          {selectedProject.status}
+                        </Badge>
                       </div>
-                      <div className="flex gap-2 mt-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleViewDetails(project)}
-                          className="border-slate-600 text-slate-300 hover:text-white"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-red-600/30 text-red-500 hover:bg-red-500/10"
-                          onClick={() => deleteProject(project.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Expandable Details */}
-                  <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <div className="text-slate-500">Rooms</div>
-                      <div className="text-white font-semibold">{getRoomCount(project.rooms)}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500">Total Cost</div>
-                      <div className="text-white font-semibold">₹{project.totalCost?.toLocaleString() || 'N/A'}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500">Created</div>
-                      <div className="text-white text-xs">{project.createdAt?.toDate?.()?.toLocaleDateString?.() || 'N/A'}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500">Updated</div>
-                      <div className="text-white text-xs">{project.updatedAt?.toDate?.()?.toLocaleDateString?.() || 'N/A'}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Project Details Modal */}
-        {selectedProject && (
-          <Dialog open={showDetails} onOpenChange={setShowDetails}>
-            <DialogContent className="max-w-2xl bg-slate-950 border-white/10">
-              <DialogHeader>
-                <DialogTitle className="text-white">Project Details</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 text-white">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm text-slate-500">Project Name</div>
-                    <div className="font-semibold">{selectedProject.projectName}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-slate-500">Status</div>
-                    <Badge variant="outline">{selectedProject.status || 'Active'}</Badge>
-                  </div>
-                </div>
-
-                <div className="border-t border-white/10 pt-4">
-                  <h4 className="font-semibold mb-2">Client Information</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div className="text-slate-500">Name</div>
-                      <div>{selectedProject.clientInfo?.name || 'N/A'}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500">Email</div>
-                      <div className="break-all">{selectedProject.clientInfo?.email || 'N/A'}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500">Phone</div>
-                      <div>{selectedProject.clientInfo?.phone || 'N/A'}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500">Address</div>
-                      <div>{selectedProject.clientInfo?.address || 'N/A'}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-white/10 pt-4">
-                  <h4 className="font-semibold mb-2">Created By</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div className="text-slate-500">User Name</div>
-                      <div>{getUserDisplayName(selectedProject.userId)}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500">Email</div>
-                      <div>{userMap[selectedProject.userId]?.email || 'N/A'}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-white/10 pt-4">
-                  <h4 className="font-semibold mb-2">Rooms ({getRoomCount(selectedProject.rooms)})</h4>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {selectedProject.rooms?.length ? (
-                      selectedProject.rooms.map((room: any, idx: number) => (
-                        <div key={idx} className="text-sm bg-slate-800/30 p-2 rounded">
-                          <div className="font-semibold">{room.name}</div>
-                          <div className="text-slate-400">{room.appliances?.length || 0} appliances</div>
+                      <div>
+                        <div className="text-sm text-slate-500 mb-1">Total Cost</div>
+                        <div className="font-bold text-xl text-teal-400">
+                          ₹{selectedProject.total_cost.toLocaleString('en-IN')}
                         </div>
-                      ))
-                    ) : (
-                      <div className="text-slate-400 text-sm">No rooms added yet</div>
-                    )}
+                      </div>
+                    </div>
+
+                    {/* Client Information */}
+                    <div className="border-t border-white/10 pt-4">
+                      <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                        <FileText className="w-5 h-5" />
+                        Client Information
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <div className="text-slate-500 mb-1">Name</div>
+                          <div className="font-medium">{selectedProject.client_info.name || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-500 mb-1">Email</div>
+                          <div className="font-medium break-all">{selectedProject.client_info.email || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-500 mb-1">Phone</div>
+                          <div className="font-medium">{selectedProject.client_info.phone || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-500 mb-1">Address</div>
+                          <div className="font-medium">{selectedProject.client_info.address || 'N/A'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Property Details */}
+                    <div className="border-t border-white/10 pt-4">
+                      <h4 className="font-semibold text-lg mb-3">Property Details</h4>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <div className="text-slate-500 mb-1">Type</div>
+                          <div className="font-medium capitalize">{selectedProject.property_details.type || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-500 mb-1">Size</div>
+                          <div className="font-medium">{selectedProject.property_details.size} sq ft</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-500 mb-1">Budget</div>
+                          <div className="font-medium">₹{selectedProject.property_details.budget.toLocaleString('en-IN')}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Created By */}
+                    <div className="border-t border-white/10 pt-4">
+                      <h4 className="font-semibold text-lg mb-3">Created By</h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <div className="text-slate-500 mb-1">User Name</div>
+                          <div className="font-medium">{selectedProject.user_name || 'Unknown'}</div>
+                        </div>
+                        <div>
+                          <div className="text-slate-500 mb-1">Email</div>
+                          <div className="font-medium">{selectedProject.user_email || 'N/A'}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Rooms */}
+                    <div className="border-t border-white/10 pt-4">
+                      <h4 className="font-semibold text-lg mb-3">
+                        Rooms ({selectedProject.rooms.length})
+                      </h4>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {selectedProject.rooms.length > 0 ? (
+                          selectedProject.rooms.map((room: any, idx: number) => (
+                            <div key={idx} className="text-sm bg-slate-800/30 p-3 rounded border border-white/5">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <div className="font-semibold">{room.name}</div>
+                                  <div className="text-slate-400 text-xs mt-1">
+                                    Type: {room.type || 'N/A'}
+                                  </div>
+                                </div>
+                                <Badge variant="outline" className="bg-slate-900/50 border-slate-700">
+                                  {room.appliances?.length || 0} appliances
+                                </Badge>
+                              </div>
+                              {room.appliances && room.appliances.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-white/10">
+                                  <div className="text-xs text-slate-500 mb-1">Appliances:</div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {room.appliances.slice(0, 5).map((app: any, i: number) => (
+                                      <span key={i} className="text-xs bg-slate-900/50 px-2 py-0.5 rounded">
+                                        {app.name}
+                                      </span>
+                                    ))}
+                                    {room.appliances.length > 5 && (
+                                      <span className="text-xs text-slate-400">
+                                        +{room.appliances.length - 5} more
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-slate-400 text-sm text-center py-4">No rooms added yet</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Timestamps */}
+                    <div className="border-t border-white/10 pt-4 text-sm text-slate-400">
+                      <div className="flex justify-between">
+                        <div>
+                          <span className="text-slate-500">Created:</span>{' '}
+                          {new Date(selectedProject.created_at).toLocaleString('en-IN')}
+                        </div>
+                        <div>
+                          <span className="text-slate-500">Updated:</span>{' '}
+                          {new Date(selectedProject.updated_at).toLocaleString('en-IN')}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+                </DialogContent>
+              </Dialog>
+            )}
+          </>
         )}
       </main>
     </div>

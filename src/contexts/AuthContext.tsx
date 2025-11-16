@@ -2,10 +2,12 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase/config'
 import { userService as supabaseUserService, UserProfile } from '@/services/supabase/userService'
+import { adminService } from '@/supabase/adminService';
 
 interface AuthContextType {
   user: SupabaseUser | null;
   userProfile: UserProfile | null;
+  isAdmin: boolean;
   loading: boolean;
   signUpWithEmail: (email: string, password: string, userData: Partial<UserProfile>) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
@@ -19,6 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,21 +30,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, session: Session | null) => {
         const currentUser = session?.user || null;
         setUser(currentUser);
+        setIsAdmin(false);
+        setUserProfile(null);
         
         if (currentUser) {
           try {
-            console.log('👤 Auth state changed. Current user:', currentUser.id);
-            
             // Fetch profile from Supabase
             let profile = await supabaseUserService.getUserProfile(currentUser.id);
             
             if (profile) {
-              console.log('✅ Profile found:', profile);
+              setUserProfile(profile);
             } else {
-              console.log('⚠️ No profile found for user. Creating one...');
+              // Auto-create profile for first-time users
               const [firstName, lastName] = (currentUser.user_metadata?.full_name || '').split(' ');
               
-              const { error: createError } = await supabase.from('users').insert({
+              await supabase.from('users').insert({
                 id: currentUser.id,
                 email: currentUser.email!,
                 first_name: firstName || currentUser.user_metadata?.name || '',
@@ -49,20 +52,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 profile_complete: false,
               });
 
-              if (createError) {
-                console.error('❌ Error auto-creating profile:', createError);
-              } else {
-                console.log('✅ Auto-created profile for first-time user');
-                profile = await supabaseUserService.getUserProfile(currentUser.id);
+              profile = await supabaseUserService.getUserProfile(currentUser.id);
+              setUserProfile(profile);
+            }
+
+            // Check if user is admin
+            if (currentUser.email) {
+              const adminRecord = await adminService.getAdminByEmail(currentUser.email);
+              if (adminRecord?.is_active) {
+                setIsAdmin(true);
               }
             }
-            
-            setUserProfile(profile);
           } catch (error) {
-            console.error('❌ Error in auth state change handler:', error);
+            console.error('❌ Auth error:', error);
           }
-        } else {
-          setUserProfile(null);
         }
         setLoading(false);
       }
@@ -149,9 +152,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setUserProfile(null);
+    try {
+      // Sign out from Supabase first - this clears the session from storage
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+    } finally {
+      // Always clear local state regardless of Supabase success
+      setUser(null);
+      setUserProfile(null);
+      setIsAdmin(false);
+    }
   };
 
   const updateProfile = async (data: Partial<UserProfile>) => {
@@ -164,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, signUpWithEmail, signInWithEmail, signInWithGoogle, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, userProfile, isAdmin, loading, signUpWithEmail, signInWithEmail, signInWithGoogle, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

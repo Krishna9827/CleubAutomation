@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { userService } from '@/supabase/userService';
 import {
   LayoutDashboard,
   MessageSquareQuote,
@@ -15,7 +17,24 @@ interface AdminLayoutProps {
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  const handleLogout = async () => {
+    try {
+      await userService.signOut();
+      console.log('✅ Admin signed out successfully');
+      navigate('/admin-login');
+    } catch (error) {
+      console.error('❌ Error signing out:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to sign out. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  };
 
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -36,7 +55,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-slate-300">Admin User</span>
-              <button className="p-2 text-slate-300 hover:text-white">
+              <button 
+                onClick={handleLogout}
+                className="p-2 text-slate-300 hover:text-white hover:bg-red-500/10 rounded-lg transition-colors"
+                title="Sign out"
+              >
                 <LogOut className="h-5 w-5" />
               </button>
             </div>

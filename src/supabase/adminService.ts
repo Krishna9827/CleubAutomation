@@ -1,5 +1,14 @@
 import { supabase } from './config';
 
+export interface Admin {
+  id: string;
+  email: string;
+  full_name: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Inquiry {
   id: string;
   name: string;
@@ -44,6 +53,109 @@ export interface InventoryItem {
 }
 
 export const adminService = {
+  // ============================================
+  // ADMIN MANAGEMENT
+  // ============================================
+
+  /**
+   * Check if user is admin by email
+   * This is the primary method for verifying admin access
+   */
+  async getAdminByEmail(email: string): Promise<Admin | null> {
+    try {
+      if (!email) {
+        console.log('⚠️ No email provided to getAdminByEmail');
+        return null;
+      }
+
+      console.log(`🔍 Checking admin status for email: ${email}`);
+
+      const { data, error } = await supabase
+        .from('admins')
+        .select('*')
+        .eq('email', email.toLowerCase().trim())
+        .eq('is_active', true)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No record found - user is not an admin
+          console.log(`ℹ️ User ${email} is not an admin`);
+          return null;
+        }
+        console.error('❌ Error querying admin status:', error);
+        return null;
+      }
+
+      console.log(`✅ Verified admin access for: ${data.full_name} (${data.email})`);
+      return data as Admin;
+    } catch (error: any) {
+      console.error('❌ Error in getAdminByEmail:', error.message);
+      return null;
+    }
+  },
+
+  /**
+   * Get all admin users (admin-only)
+   */
+  async getAllAdmins(): Promise<Admin[]> {
+    try {
+      const { data, error } = await supabase
+        .from('admins')
+        .select('*')
+        .eq('is_active', true)
+        .order('full_name', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error: any) {
+      console.error('❌ Error fetching admins:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Add new admin user (admin-only)
+   */
+  async createAdmin(email: string, fullName: string): Promise<string> {
+    try {
+      const { data, error } = await supabase
+        .from('admins')
+        .insert({
+          email: email.toLowerCase().trim(),
+          full_name: fullName,
+          is_active: true,
+        })
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      console.log(`✅ Admin created: ${fullName} (${email})`);
+      return data.id;
+    } catch (error: any) {
+      console.error('❌ Error creating admin:', error);
+      throw new Error(error.message);
+    }
+  },
+
+  /**
+   * Deactivate admin (admin-only)
+   */
+  async deactivateAdmin(adminId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('admins')
+        .update({ is_active: false })
+        .eq('id', adminId);
+
+      if (error) throw error;
+      console.log(`✅ Admin deactivated`);
+    } catch (error: any) {
+      console.error('❌ Error deactivating admin:', error);
+      throw new Error(error.message);
+    }
+  },
+
   // ============================================
   // INQUIRIES
   // ============================================

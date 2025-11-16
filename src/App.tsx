@@ -3,8 +3,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { Toaster as Sonner } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import { AuthProvider } from "@/contexts/AuthContext"
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
+import { AuthProvider, useAuth } from "@/contexts/AuthContext"
 // Public pages
 import PremiumLanding from "./pages/public/PremiumLanding"
 import Login from "./pages/public/Login"
@@ -28,12 +28,23 @@ const queryClient = new QueryClient();
 
 
 // Wrapper to protect admin routes
-const ProtectedAdmin = ({ children }: { children: React.ReactNode }) => {
-  const isAdmin = typeof window !== 'undefined' && localStorage.getItem('isAdmin') === 'true';
-  if (!isAdmin) {
-    window.location.replace('/admin-login');
+const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isAdmin, loading } = useAuth();
+  const navigate = useNavigate();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    navigate('/admin-login', { replace: true });
     return null;
   }
+
   return <>{children}</>;
 };
 
@@ -54,9 +65,9 @@ const App = () => (
             <Route path="/final-review" element={<FinalReview />} />
             <Route path="/planner" element={<Planner />} />
             <Route path="/my-projects" element={<UserHistory />} />
-            <Route path="/admin" element={<ProtectedAdmin><AdminSettings /></ProtectedAdmin>} />
-            <Route path="/admin/testimonials" element={<ProtectedAdmin><AdminTestimonials /></ProtectedAdmin>} />
-            <Route path="/admin/projects" element={<ProtectedAdmin><AdminProjectHistory /></ProtectedAdmin>} />
+            <Route path="/admin" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
+            <Route path="/admin/testimonials" element={<ProtectedAdminRoute><AdminTestimonials /></ProtectedAdminRoute>} />
+            <Route path="/admin/projects" element={<ProtectedAdminRoute><AdminProjectHistory /></ProtectedAdminRoute>} />
             <Route path="/admin-login" element={<AdminLogin />} />
             {/* Legacy routes for backward compatibility */}
             <Route path="/intake" element={<ProjectPlanning />} />

@@ -21,8 +21,9 @@ import {
 } from '@/components/features';
 import { DEFAULT_INVENTORY_PRICES } from '@/constants/inventory';
 import TestimonialManager from '@/components/admin/TestimonialManager';
-import { db } from '@/services/firebase/config';
-import { collection, query, orderBy, onSnapshot, updateDoc, doc, setDoc, getDoc, getDocs, addDoc } from 'firebase/firestore';
+import { projectService } from '@/supabase/projectService';
+import { adminService } from '@/supabase/adminService';
+import { userService } from '@/supabase/userService';
 
 interface DefaultSettings {
   applianceCategories: string[];
@@ -33,35 +34,38 @@ interface DefaultSettings {
 
 interface Inquiry {
   id: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   phone: string;
-  propertyType: string;
-  propertySize: string;
-  location: string;
-  budget: string;
-  requirements: string;
-  timeline: string;
-  status: 'new' | 'contacted' | 'proposal_sent' | 'closed';
-  createdAt: any;
-  updatedAt: any;
+  message: string;
+  status: string;
+  created_at: string;
 }
 
 const AdminSettings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, loading } = useAuth();
+  const { user, isAdmin, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('general');
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
 
-  // Check if user is logged in, if not redirect to admin login
+  // Check if user is admin, if not redirect to home
   useEffect(() => {
-    if (!loading && !user) {
-      console.log('⚠️ User not logged in, redirecting to admin login');
-      navigate('/admin-login');
+    if (!loading) {
+      if (!user) {
+        console.log('⚠️ User not authenticated, redirecting to login');
+        navigate('/');
+      } else if (!isAdmin) {
+        console.log('⚠️ User is not an admin, redirecting to home');
+        toast({
+          title: 'Access Denied',
+          description: 'You do not have admin access.',
+          variant: 'destructive',
+        });
+        navigate('/');
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, isAdmin, loading, navigate, toast]);
   // Project selection and management state
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -121,22 +125,17 @@ const AdminSettings = () => {
     console.log('activeTab changed to:', activeTab);
   }, [activeTab]);
 
-  // Load projects from Firebase instead of localStorage
+  // Load projects from Supabase
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        console.log('Loading projects from Firebase...');
-        const projectsCol = collection(db, 'projects');
-        const projectsSnapshot = await getDocs(projectsCol);
-        const projectsList = projectsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        console.log('Loading projects from Supabase...');
+        const projectsList = await projectService.getAllProjects();
         
-        console.log('✅ Loaded projects from Firebase:', projectsList.length);
+        console.log('✅ Loaded projects from Supabase:', projectsList.length);
         setProjects(projectsList);
       } catch (error) {
-        console.error('❌ Error loading projects from Firebase:', error);
+        console.error('❌ Error loading projects from Supabase:', error);
         
         // Fallback to localStorage
         try {
@@ -158,30 +157,19 @@ const AdminSettings = () => {
     loadProjects();
   }, []);
 
-  // Load inquiries from Firebase in real-time
+  // Load inquiries from Supabase
   useEffect(() => {
-    try {
-      const inquiriesQuery = query(
-        collection(db, 'inquiries'),
-        orderBy('createdAt', 'desc')
-      );
-
-      const unsubscribe = onSnapshot(inquiriesQuery, (snapshot) => {
-        const inquiriesList: Inquiry[] = [];
-        snapshot.forEach((doc) => {
-          inquiriesList.push({
-            id: doc.id,
-            ...doc.data(),
-          } as Inquiry);
-        });
-        console.log('✅ Loaded inquiries from Firebase:', inquiriesList.length);
+    const loadInquiries = async () => {
+      try {
+        const inquiriesList = await adminService.getAllInquiries();
+        console.log('✅ Loaded inquiries from Supabase:', inquiriesList.length);
         setInquiries(inquiriesList);
-      });
+      } catch (error) {
+        console.error('Error loading inquiries:', error);
+      }
+    };
 
-      return () => unsubscribe();
-    } catch (error) {
-      console.error('Error loading inquiries:', error);
-    }
+    loadInquiries();
   }, []);
 
   // Reset project selection when switching to automation tab
@@ -263,18 +251,18 @@ const AdminSettings = () => {
   const [newCategory, setNewCategory] = useState('');
   const [newWattage, setNewWattage] = useState('');
 
-  // Load admin settings from Firebase
+  // Load admin settings from Supabase
   useEffect(() => {
     const loadAdminSettings = async () => {
       try {
-        const settingsDoc = await getDoc(doc(db, 'adminSettings', 'general'));
-        if (settingsDoc.exists()) {
-          console.log('✅ Loaded admin settings from Firebase');
-          setSettings({ ...settings, ...settingsDoc.data() });
+        const loadedSettings = await adminService.getSettings('general');
+        if (loadedSettings && Object.keys(loadedSettings).length > 0) {
+          console.log('✅ Loaded admin settings from Supabase');
+          setSettings({ ...settings, ...loadedSettings });
         } else {
           console.log('🔄 No admin settings found, using defaults');
-          // Save default settings to Firebase
-          await setDoc(doc(db, 'adminSettings', 'general'), settings);
+          // Save default settings to Supabase
+          await adminService.updateSettings('general', settings);
         }
       } catch (error) {
         console.error('Error loading admin settings:', error);
@@ -291,13 +279,13 @@ const AdminSettings = () => {
 
   const saveSettings = async () => {
     try {
-      // Save to Firebase
-      await setDoc(doc(db, 'adminSettings', 'general'), {
+      // Save to Supabase
+      await adminService.updateSettings('general', {
         ...settings,
         updatedAt: new Date().toISOString()
       });
       
-      console.log('✅ Admin settings saved to Firebase');
+      console.log('✅ Admin settings saved to Supabase');
       
       // Also save to localStorage as backup
       localStorage.setItem('adminSettings', JSON.stringify(settings));
@@ -314,7 +302,7 @@ const AdminSettings = () => {
       
       toast({
         title: "Settings Saved Locally",
-        description: "Settings saved to browser storage (Firebase error).",
+        description: "Settings saved to browser storage (Supabase error).",
         variant: "destructive"
       });
     }
@@ -355,9 +343,19 @@ const AdminSettings = () => {
     }));
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('isAdmin');
-    navigate('/admin-login');
+  const handleLogout = async () => {
+    try {
+      await userService.signOut();
+      console.log('✅ Admin signed out successfully');
+      navigate('/admin-login');
+    } catch (error) {
+      console.error('❌ Error signing out:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to sign out. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (
@@ -431,62 +429,78 @@ const AdminSettings = () => {
                             <div>
                               <div className="text-sm text-slate-400 mb-1">Contact</div>
                               <div className="font-semibold text-white">
-                                {inquiry.firstName} {inquiry.lastName}
+                                {inquiry.name}
                               </div>
                               <div className="text-sm text-slate-300">{inquiry.email}</div>
                               <div className="text-sm text-slate-300">{inquiry.phone}</div>
                             </div>
                             <div>
-                              <div className="text-sm text-slate-400 mb-1">Property Details</div>
-                              <div className="text-white">{inquiry.propertyType} • {inquiry.propertySize || 'Size not specified'} sq ft</div>
-                              <div className="text-sm text-slate-300">{inquiry.location}</div>
-                              <div className="text-sm text-slate-300">Budget: {inquiry.budget}</div>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                              <div className="text-sm text-slate-400 mb-1">Requirements</div>
-                              <div className="text-sm text-slate-300 bg-black/30 p-2 rounded max-h-16 overflow-y-auto">
-                                {inquiry.requirements || 'No specific requirements'}
-                              </div>
-                            </div>
-                            <div>
-                              <div className="text-sm text-slate-400 mb-1">Timeline & Status</div>
-                              <div className="text-sm text-slate-300 mb-2">Timeline: {inquiry.timeline}</div>
+                              <div className="text-sm text-slate-400 mb-1">Status & Date</div>
                               <select
                                 value={inquiry.status}
-                                onChange={(e) => {
-                                  const newStatus = e.target.value as Inquiry['status'];
-                                  updateDoc(doc(db, 'inquiries', inquiry.id), { status: newStatus })
-                                    .then(() => {
-                                      toast({
-                                        title: 'Status Updated',
-                                        description: `Inquiry marked as ${newStatus}`,
-                                      });
+                                onChange={async (e) => {
+                                  const newStatus = e.target.value;
+                                  try {
+                                    await adminService.updateInquiryStatus(inquiry.id, newStatus);
+                                    toast({
+                                      title: 'Status Updated',
+                                      description: `Inquiry marked as ${newStatus}`,
                                     });
+                                    // Reload inquiries
+                                    const updatedInquiries = await adminService.getAllInquiries();
+                                    setInquiries(updatedInquiries);
+                                  } catch (error) {
+                                    toast({
+                                      title: 'Error',
+                                      description: 'Failed to update status',
+                                      variant: 'destructive',
+                                    });
+                                  }
                                 }}
-                                className="w-full text-sm bg-slate-700 text-white border border-slate-600 rounded px-2 py-1"
+                                className="w-full text-sm bg-slate-700 text-white border border-slate-600 rounded px-2 py-1 mb-2"
                               >
-                                <option value="new">New</option>
+                                <option value="pending">Pending</option>
                                 <option value="contacted">Contacted</option>
-                                <option value="proposal_sent">Proposal Sent</option>
-                                <option value="closed">Closed</option>
+                                <option value="resolved">Resolved</option>
                               </select>
+                              <div className="text-xs text-slate-400">
+                                Submitted: {new Date(inquiry.created_at).toLocaleDateString()}
+                              </div>
                             </div>
                           </div>
-                          <div className="flex items-center justify-between text-xs text-slate-400">
-                            <div>Submitted: {inquiry.createdAt?.toDate?.().toLocaleDateString() || 'N/A'}</div>
-                            <Badge 
+                          <div className="mb-4">
+                            <div className="text-sm text-slate-400 mb-1">Message</div>
+                            <div className="text-sm text-slate-300 bg-black/30 p-3 rounded max-h-24 overflow-y-auto">
+                              {inquiry.message || 'No message provided'}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-end">
+                            <Button
                               variant="outline"
-                              className={`${
-                                inquiry.status === 'new' ? 'bg-blue-500/20 text-blue-300' :
-                                inquiry.status === 'contacted' ? 'bg-yellow-500/20 text-yellow-300' :
-                                inquiry.status === 'proposal_sent' ? 'bg-purple-500/20 text-purple-300' :
-                                'bg-green-500/20 text-green-300'
-                              }`}
+                              size="sm"
+                              onClick={async () => {
+                                if (confirm('Are you sure you want to delete this inquiry?')) {
+                                  try {
+                                    await adminService.deleteInquiry(inquiry.id);
+                                    toast({
+                                      title: 'Inquiry Deleted',
+                                      description: 'The inquiry has been removed.',
+                                    });
+                                    const updatedInquiries = await adminService.getAllInquiries();
+                                    setInquiries(updatedInquiries);
+                                  } catch (error) {
+                                    toast({
+                                      title: 'Error',
+                                      description: 'Failed to delete inquiry',
+                                      variant: 'destructive',
+                                    });
+                                  }
+                                }
+                              }}
+                              className="border-red-600/30 text-red-500 hover:bg-red-500/10"
                             >
-                              {inquiry.status}
-                            </Badge>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -771,7 +785,7 @@ const AdminSettings = () => {
                       variant="outline"
                       onClick={async () => {
                         try {
-                          // Save to Firebase
+                          // Save to Supabase
                           const newProject = {
                             projectName: projectData.projectName || '',
                             clientName: projectData.clientName || '',
@@ -779,24 +793,23 @@ const AdminSettings = () => {
                             designerName: projectData.designerName || '',
                             notes: projectData.notes || '',
                             rooms,
-                            userId: 'admin',
-                            status: 'draft',
+                            userId: user?.id || 'admin',
+                            status: 'draft' as const,
                             createdAt: new Date().toISOString(),
                             updatedAt: new Date().toISOString(),
                           };
 
-                          const projectsCol = collection(db, 'projects');
-                          const docRef = await addDoc(projectsCol, newProject);
+                          const projectId = await projectService.createProject(newProject, user?.id);
                           
                           // Also save to localStorage as backup
                           const history = JSON.parse(localStorage.getItem('projectHistory') || '[]');
-                          localStorage.setItem('projectHistory', JSON.stringify([{ id: docRef.id, ...newProject }, ...history]));
+                          localStorage.setItem('projectHistory', JSON.stringify([{ id: projectId, ...newProject }, ...history]));
                           
-                          setProjects([{ id: docRef.id, ...newProject }, ...projects]);
+                          setProjects([{ id: projectId, ...newProject }, ...projects]);
                           
                           toast({ 
                             title: 'Project Saved', 
-                            description: 'Project saved to Firebase successfully.' 
+                            description: 'Project saved to Supabase successfully.' 
                           });
                         } catch (error: any) {
                           console.error('Error saving project:', error);
@@ -819,7 +832,7 @@ const AdminSettings = () => {
                           
                           toast({ 
                             title: 'Project Saved Locally', 
-                            description: 'Saved to browser storage (Firebase error).',
+                            description: 'Saved to browser storage (Supabase error).',
                             variant: 'destructive'
                           });
                         }
@@ -1052,26 +1065,25 @@ const AdminSettings = () => {
                               designerName: projectData.designerName || '',
                               notes: projectData.notes || '',
                               rooms,
-                              userId: 'admin',
-                              status: 'master_plan',
+                              userId: user?.id || 'admin',
+                              status: 'draft' as const,
                               isMasterPlan: true,
                               createdAt: new Date().toISOString(),
                               updatedAt: new Date().toISOString(),
                             };
 
-                            // Save to Firebase
-                            const projectsCol = collection(db, 'projects');
-                            const docRef = await addDoc(projectsCol, newProject);
+                            // Save to Supabase
+                            const projectId = await projectService.createProject(newProject, user?.id);
                             
                             // Also save to localStorage as backup
                             const history = JSON.parse(localStorage.getItem('projectHistory') || '[]');
-                            localStorage.setItem('projectHistory', JSON.stringify([{ id: docRef.id, ...newProject }, ...history]));
+                            localStorage.setItem('projectHistory', JSON.stringify([{ id: projectId, ...newProject }, ...history]));
                             
-                            setProjects([{ id: docRef.id, ...newProject }, ...projects]);
+                            setProjects([{ id: projectId, ...newProject }, ...projects]);
                             
                             toast({ 
                               title: 'Master Plan Saved', 
-                              description: 'Saved to Firebase as Master Plan.' 
+                              description: 'Saved to Supabase as Master Plan.' 
                             });
                           } catch (error) {
                             console.error('Error saving master plan:', error);
@@ -1095,7 +1107,7 @@ const AdminSettings = () => {
                             
                             toast({ 
                               title: 'Master Plan Saved Locally', 
-                              description: 'Saved to browser storage (Firebase error).',
+                              description: 'Saved to browser storage (Supabase error).',
                               variant: 'destructive'
                             });
                           }

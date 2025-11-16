@@ -10,13 +10,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Settings, User } from 'lucide-react';
+import { LogOut, Settings, User, Shield, Loader } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export const ProfileMenu = () => {
-  const { user, userProfile, logout } = useAuth();
+  const { user, userProfile, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   if (!user) return null;
 
@@ -26,8 +27,16 @@ export const ProfileMenu = () => {
   ).toUpperCase() || 'U';
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/');
+    setIsLoggingOut(true);
+    try {
+      // Navigate first, then logout (prevents component unmount mid-execution)
+      navigate('/');
+      await logout();
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -49,6 +58,7 @@ export const ProfileMenu = () => {
               {userProfile?.first_name} {userProfile?.last_name}
             </div>
             <div className="text-xs text-slate-400">{user.email}</div>
+            {isAdmin && <div className="text-xs text-amber-400 mt-1">🔐 Admin User</div>}
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="bg-slate-700" />
           <DropdownMenuItem
@@ -65,13 +75,30 @@ export const ProfileMenu = () => {
             <Settings className="w-4 h-4 mr-2" />
             Settings
           </DropdownMenuItem>
+          {isAdmin && (
+            <>
+              <DropdownMenuSeparator className="bg-slate-700" />
+              <DropdownMenuItem
+                onClick={() => navigate('/admin')}
+                className="text-amber-400 cursor-pointer focus:bg-amber-900/30 focus:text-amber-400"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Admin Panel
+              </DropdownMenuItem>
+            </>
+          )}
           <DropdownMenuSeparator className="bg-slate-700" />
           <DropdownMenuItem
             onClick={handleLogout}
-            className="text-red-400 cursor-pointer focus:bg-red-900/20 focus:text-red-400"
+            disabled={isLoggingOut}
+            className="text-red-400 cursor-pointer focus:bg-red-900/20 focus:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
+            {isLoggingOut ? (
+              <Loader className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <LogOut className="w-4 h-4 mr-2" />
+            )}
+            {isLoggingOut ? 'Signing Out...' : 'Sign Out'}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
