@@ -1,4 +1,22 @@
 import { supabase } from './config';
+import { InventoryItem } from '@/types/inventory';
+
+// Database types (snake_case - matches Supabase schema)
+export interface Inquiry {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  status: string;
+  property_type?: string | null;
+  property_size?: string | null;
+  location?: string | null;
+  budget?: string | null;
+  requirements?: string | null;
+  timeline?: string | null;
+  created_at: string;
+}
 
 export interface Admin {
   id: string;
@@ -7,16 +25,6 @@ export interface Admin {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-}
-
-export interface Inquiry {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  message: string;
-  status: string;
-  created_at: string;
 }
 
 export interface AdminSettings {
@@ -37,17 +45,6 @@ export interface Testimonial {
   features: string[];
   results: string[];
   video_url: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface InventoryItem {
-  id: string;
-  category: string;
-  subcategory: string | null;
-  wattage: number | null;
-  price_per_unit: number;
-  notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -125,7 +122,7 @@ export const adminService = {
           email: email.toLowerCase().trim(),
           full_name: fullName,
           is_active: true,
-        })
+        } as any)
         .select('id')
         .single();
 
@@ -143,8 +140,8 @@ export const adminService = {
    */
   async deactivateAdmin(adminId: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('admins')
+      const { error } = await (supabase
+        .from('admins') as any)
         .update({ is_active: false })
         .eq('id', adminId);
 
@@ -183,16 +180,68 @@ export const adminService = {
    */
   async createInquiry(inquiry: Omit<Inquiry, 'id' | 'created_at'>): Promise<string> {
     try {
-      const { data, error } = await supabase
+      console.log('📝 Creating inquiry with data:', inquiry);
+      
+      // Set a timeout for the operation
+      const insertPromise = supabase
         .from('inquiries')
-        .insert(inquiry)
+        .insert(inquiry as any)
         .select('id')
         .single();
+      
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Supabase insert timeout - no response after 15 seconds')), 15000)
+      );
+      
+      const { data, error } = await Promise.race([insertPromise, timeoutPromise]) as any;
 
-      if (error) throw error;
-      return data.id;
+      if (error) {
+        console.error('❌ Supabase error inserting inquiry:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          status: (error as any).status
+        });
+        
+        // If error is due to unknown columns (42703 = undefined column), retry with core fields only
+        if (error.code === '42703' || error.message?.includes('column')) {
+          console.log('⚠️ Detected missing columns. Retrying with core fields only...');
+          const coreInquiry = {
+            name: inquiry.name,
+            email: inquiry.email,
+            phone: inquiry.phone,
+            message: inquiry.message,
+            status: inquiry.status
+          };
+          
+          const { data: retryData, error: retryError } = await supabase
+            .from('inquiries')
+            .insert(coreInquiry as any)
+            .select('id')
+            .single();
+          
+          if (retryError) throw retryError;
+          if (!retryData) throw new Error('No data returned from fallback insert');
+          
+          console.log('✅ Inquiry created successfully (fallback mode) with ID:', (retryData as any).id);
+          return (retryData as any).id;
+        }
+        
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error('No data returned from insert');
+      }
+
+      console.log('✅ Inquiry created successfully with ID:', (data as any).id);
+      return (data as any).id;
     } catch (error: any) {
-      throw new Error(error.message);
+      const errorMsg = error?.message || JSON.stringify(error);
+      console.error('❌ Error in createInquiry:', errorMsg);
+      console.error('❌ Full error object:', error);
+      throw new Error(`Failed to save inquiry: ${errorMsg}`);
     }
   },
 
@@ -201,8 +250,8 @@ export const adminService = {
    */
   async updateInquiryStatus(inquiryId: string, status: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('inquiries')
+      const { error } = await (supabase
+        .from('inquiries') as any)
         .update({ status })
         .eq('id', inquiryId);
 
@@ -262,8 +311,8 @@ export const adminService = {
    */
   async updateSettings(key: string, settings: any): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('admin_settings')
+      const { error } = await (supabase
+        .from('admin_settings') as any)
         .upsert({
           setting_key: key,
           setting_value: settings,
@@ -306,7 +355,7 @@ export const adminService = {
     try {
       const { data, error } = await supabase
         .from('testimonials')
-        .insert(testimonial)
+        .insert(testimonial as any)
         .select('id')
         .single();
 
@@ -322,8 +371,8 @@ export const adminService = {
    */
   async updateTestimonial(testimonialId: string, updates: Partial<Testimonial>): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('testimonials')
+      const { error } = await (supabase
+        .from('testimonials') as any)
         .update(updates)
         .eq('id', testimonialId);
 
@@ -397,7 +446,7 @@ export const adminService = {
     try {
       const { data, error } = await supabase
         .from('inventory')
-        .insert(item)
+        .insert(item as any)
         .select('id')
         .single();
 
@@ -413,8 +462,8 @@ export const adminService = {
    */
   async updateInventoryItem(itemId: string, updates: Partial<InventoryItem>): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('inventory')
+      const { error } = await (supabase
+        .from('inventory') as any)
         .update(updates)
         .eq('id', itemId);
 
@@ -447,7 +496,7 @@ export const adminService = {
     try {
       const { error } = await supabase
         .from('inventory')
-        .insert(items);
+        .insert(items as any);
 
       if (error) throw error;
     } catch (error: any) {

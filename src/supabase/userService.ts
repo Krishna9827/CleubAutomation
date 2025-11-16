@@ -60,7 +60,7 @@ export const userService = {
           state: userData.state || null,
           postal_code: userData.postal_code || null,
           profile_complete: true,
-        });
+        } as any);
 
       if (profileError) throw profileError;
 
@@ -133,8 +133,8 @@ export const userService = {
    */
   async updateUserProfile(uid: string, updates: Partial<UserProfile>): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('users')
+      const { error } = await (supabase
+        .from('users') as any)
         .update(updates)
         .eq('id', uid);
 

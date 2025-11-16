@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Building2, Users, Lightbulb, ChevronRight, Settings, History, Moon, Sun, LogOut } from 'lucide-react';
-import { projectService } from '@/services/supabase/projectService';
+import { projectService } from '@/supabase/projectService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 

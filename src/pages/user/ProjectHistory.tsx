@@ -8,32 +8,30 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Building2, ArrowLeft, Calendar, Home, Trash2, Eye, Search, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { collection, getDocs, doc, deleteDoc, query, where } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { projectService, ProjectData } from '@/supabase/projectService';
 
-interface ProjectData {
+interface LocalProjectData {
   id: string;
-  userId: string;
-  projectName: string;
-  clientInfo?: {
+  user_id: string;
+  client_info: {
     name: string;
     email: string;
     phone: string;
     address: string;
   };
   rooms?: any[];
-  totalCost?: number;
+  total_cost?: number;
   status?: string;
-  createdAt?: any;
-  updatedAt?: any;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const UserHistory = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, logout } = useAuth();
-  const [projects, setProjects] = useState<ProjectData[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<ProjectData[]>([]);
+  const [projects, setProjects] = useState<LocalProjectData[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<LocalProjectData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null);
@@ -46,25 +44,19 @@ const UserHistory = () => {
     }
   }, [user, navigate]);
 
-  // Load user's projects from Firebase
+  // Load user's projects from Supabase
   useEffect(() => {
     const loadUserProjects = async () => {
-      if (!user?.uid) return;
+      if (!user?.id) return;
 
       try {
         setLoading(true);
-        const projectsCol = collection(db, 'projects');
-        const q = query(projectsCol, where('userId', '==', user.uid));
-        const projectsSnapshot = await getDocs(q);
-        const projectsList = projectsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as ProjectData));
-        
-        setProjects(projectsList);
-        setFilteredProjects(projectsList);
+        const projectsList = await projectService.getUserProjects(user.id);
+        const formattedProjects = projectsList as LocalProjectData[];
+        setProjects(formattedProjects);
+        setFilteredProjects(formattedProjects);
       } catch (error) {
-        console.error('Error loading projects:', error);
+        console.error('❌ Error loading projects:', error);
         toast({
           title: 'Error',
           description: 'Failed to load your projects',
@@ -76,7 +68,7 @@ const UserHistory = () => {
     };
 
     loadUserProjects();
-  }, [user?.uid]);
+  }, [user?.id, toast]);
 
   // Filter projects based on search term
   useEffect(() => {
@@ -85,8 +77,7 @@ const UserHistory = () => {
     } else {
       const term = searchTerm.toLowerCase();
       setFilteredProjects(projects.filter(p =>
-        p.projectName?.toLowerCase().includes(term) ||
-        p.clientInfo?.name?.toLowerCase().includes(term)
+        p.client_info?.name?.toLowerCase().includes(term)
       ));
     }
   }, [searchTerm, projects]);
@@ -95,7 +86,7 @@ const UserHistory = () => {
     if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) return;
 
     try {
-      await deleteDoc(doc(db, 'projects', projectId));
+      await projectService.deleteProject(projectId);
       const updated = projects.filter(p => p.id !== projectId);
       setProjects(updated);
       setFilteredProjects(updated);
@@ -104,6 +95,7 @@ const UserHistory = () => {
         description: 'Project deleted successfully'
       });
     } catch (error) {
+      console.error('❌ Delete failed:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete project',
@@ -112,21 +104,21 @@ const UserHistory = () => {
     }
   };
 
-  const continueProject = (project: ProjectData) => {
+  const continueProject = (project: LocalProjectData) => {
     // Save project data to localStorage for editing
     localStorage.setItem('projectId', project.id);
     localStorage.setItem('projectData', JSON.stringify({
-      projectName: project.projectName,
-      clientName: project.clientInfo?.name || '',
-      clientEmail: project.clientInfo?.email || '',
-      clientPhone: project.clientInfo?.phone || '',
-      clientAddress: project.clientInfo?.address || '',
+      projectName: project.client_info?.name || 'Untitled',
+      clientName: project.client_info?.name || '',
+      clientEmail: project.client_info?.email || '',
+      clientPhone: project.client_info?.phone || '',
+      clientAddress: project.client_info?.address || '',
     }));
     navigate('/room-selection');
   };
 
-  const handleViewDetails = (project: ProjectData) => {
-    setSelectedProject(project);
+  const handleViewDetails = (project: LocalProjectData) => {
+    setSelectedProject(project as any);
     setShowDetails(true);
   };
 
@@ -200,7 +192,7 @@ const UserHistory = () => {
           <Card className="bg-black/40 backdrop-blur-sm border-white/10">
             <CardContent className="p-6">
               <div className="text-slate-500 text-sm">Total Investment</div>
-              <div className="text-3xl font-bold text-white">₹{projects.reduce((sum, p) => sum + (p.totalCost || 0), 0).toLocaleString()}</div>
+              <div className="text-3xl font-bold text-white">₹{projects.reduce((sum, p) => sum + (p.total_cost || 0), 0).toLocaleString()}</div>
             </CardContent>
           </Card>
         </div>
@@ -228,16 +220,15 @@ const UserHistory = () => {
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-white">{project.projectName}</h3>
-                      <p className="text-sm text-slate-400">Client: {project.clientInfo?.name || 'N/A'}</p>
+                      <h3 className="text-lg font-bold text-white">{project.client_info?.name || 'Untitled Project'}</h3>
+                      <p className="text-sm text-slate-400">Client: {project.client_info?.name || 'N/A'}</p>
                     </div>
                     <Badge variant="outline" className={`${
                       project.status === 'completed' ? 'bg-green-900/30 border-green-600 text-green-400' :
-                      project.status === 'archived' ? 'bg-slate-700/30 border-slate-600 text-slate-400' :
-                      project.status === 'on-hold' ? 'bg-yellow-900/30 border-yellow-600 text-yellow-400' :
-                      'bg-teal-900/30 border-teal-600 text-teal-400'
+                      project.status === 'in-progress' ? 'bg-teal-900/30 border-teal-600 text-teal-400' :
+                      'bg-slate-700/30 border-slate-600 text-slate-400'
                     }`}>
-                      {project.status || 'Active'}
+                      {project.status || 'draft'}
                     </Badge>
                   </div>
 
@@ -248,15 +239,15 @@ const UserHistory = () => {
                     </div>
                     <div>
                       <div className="text-xs text-slate-500">Total Cost</div>
-                      <div className="text-white font-semibold">₹{project.totalCost?.toLocaleString() || 'N/A'}</div>
+                      <div className="text-white font-semibold">₹{project.total_cost?.toLocaleString() || 'N/A'}</div>
                     </div>
                     <div>
                       <div className="text-xs text-slate-500">Created</div>
-                      <div className="text-white text-xs">{project.createdAt?.toDate?.()?.toLocaleDateString?.() || 'N/A'}</div>
+                      <div className="text-white text-xs">{project.created_at ? new Date(project.created_at).toLocaleDateString() : 'N/A'}</div>
                     </div>
                     <div>
                       <div className="text-xs text-slate-500">Updated</div>
-                      <div className="text-white text-xs">{project.updatedAt?.toDate?.()?.toLocaleDateString?.() || 'N/A'}</div>
+                      <div className="text-white text-xs">{project.updated_at ? new Date(project.updated_at).toLocaleDateString() : 'N/A'}</div>
                     </div>
                   </div>
 
@@ -301,11 +292,11 @@ const UserHistory = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-sm text-slate-500">Project Name</div>
-                    <div className="font-semibold">{selectedProject.projectName}</div>
+                    <div className="font-semibold">{selectedProject.client_info?.name || 'Untitled'}</div>
                   </div>
                   <div>
                     <div className="text-sm text-slate-500">Status</div>
-                    <Badge variant="outline">{selectedProject.status || 'Active'}</Badge>
+                    <Badge variant="outline">{selectedProject.status || 'draft'}</Badge>
                   </div>
                 </div>
 
@@ -314,19 +305,19 @@ const UserHistory = () => {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <div className="text-slate-500">Name</div>
-                      <div>{selectedProject.clientInfo?.name || 'N/A'}</div>
+                      <div>{selectedProject.client_info?.name || 'N/A'}</div>
                     </div>
                     <div>
                       <div className="text-slate-500">Email</div>
-                      <div className="break-all">{selectedProject.clientInfo?.email || 'N/A'}</div>
+                      <div className="break-all">{selectedProject.client_info?.email || 'N/A'}</div>
                     </div>
                     <div>
                       <div className="text-slate-500">Phone</div>
-                      <div>{selectedProject.clientInfo?.phone || 'N/A'}</div>
+                      <div>{selectedProject.client_info?.phone || 'N/A'}</div>
                     </div>
                     <div>
                       <div className="text-slate-500">Address</div>
-                      <div>{selectedProject.clientInfo?.address || 'N/A'}</div>
+                      <div>{selectedProject.client_info?.address || 'N/A'}</div>
                     </div>
                   </div>
                 </div>

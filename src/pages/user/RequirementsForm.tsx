@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { projectService } from '@/services/supabase/projectService';
+import { projectService } from '@/supabase/projectService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -73,7 +73,7 @@ const RequirementSheet2 = () => {
           }
         }
 
-        // Fallback to localStorage if no Firebase data
+        // Fallback to localStorage if no Supabase data available
         const savedProject = localStorage.getItem('projectData');
         if (savedProject) {
           setProjectData(JSON.parse(savedProject));

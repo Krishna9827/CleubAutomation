@@ -72,6 +72,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhbHFucmt
 | `admin_settings` | System configuration                 | Admin-only access                            |
 | `testimonials`   | Client testimonials and case studies | Public view, admin manage                    |
 | `inventory`      | Product catalog and pricing          | Public view, admin manage                    |
+| `admins`         | Admin users with email-based access  | Email-based identification, active flag      |
 
 ### Detailed Schema
 
@@ -79,7 +80,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhbHFucmt
 
 ```sql
 CREATE TABLE public.users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT NOT NULL UNIQUE,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
@@ -202,18 +203,38 @@ CREATE TABLE public.inventory (
 - `idx_inventory_category` on `category`
 - `idx_inventory_subcategory` on `subcategory`
 
+#### 7. Admins Table
+
+```sql
+CREATE TABLE public.admins (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email TEXT NOT NULL UNIQUE,
+    full_name TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**Indexes:**
+
+- `idx_admins_email` on `email`
+- `idx_admins_is_active` on `is_active`
+
+**Purpose:** Email-based admin identification. Admins are verified by checking if their email exists in this table and is_active=true.
+
 ---
 
 ## Setup Instructions
 
-### Step 1: Run SQL Migration
+### Step 1: Run SQL Migrations
 
 1. Log in to your Supabase Dashboard: https://supabase.com/dashboard/project/dalqnrkpjzlcklhqsoum
 2. Navigate to **SQL Editor**
-3. Copy the entire contents of `supabase/migrations/001_initial_schema.sql`
-4. Paste into the SQL Editor
-5. Click **RUN** to execute the migration
-6. Verify all tables are created in **Database** > **Tables**
+3. Run migrations in order:
+   - `supabase/migrations/001_initial_schema.sql` - Core tables (users, projects, inquiries, etc.)
+   - `supabase/migrations/002_create_admins_table.sql` - Admin users table
+4. Verify all tables in **Database** > **Tables**
 
 ### Step 2: Configure Authentication (Future)
 
@@ -224,20 +245,21 @@ When ready to migrate from Firebase Auth to Supabase Auth:
 3. Configure redirect URLs
 4. Update auth service to use Supabase Auth
 
-### Step 3: Set Admin User Metadata
+### Step 3: Add Admin Users
 
 To grant admin access to a user:
 
-1. Go to **Authentication** > **Users**
-2. Find the user
-3. Click on the user
-4. In **User Metadata**, add:
+1. Go to **Supabase Dashboard** > **SQL Editor**
+2. Insert the admin user (example):
 
-```json
-{
-  "is_admin": true
-}
+```sql
+INSERT INTO public.admins (email, full_name, is_active)
+VALUES ('newadmin@example.com', 'Admin Name', true)
+ON CONFLICT (email) DO UPDATE SET is_active = true;
 ```
+
+3. Verify admin access by logging in with that email
+4. AdminService will verify the email exists in the admins table
 
 ---
 
@@ -349,17 +371,24 @@ All tables have RLS enabled. Policies are configured as follows:
 
 - Users can view/update/insert their own profile only
 - Match: `auth.uid() = id`
+- RLS enforced by auth.users(id) foreign key reference
 
 ### Projects Table
 
 - Users can view/create/update/delete their own projects
-- Admins can view all projects
-- Public (non-logged) users can create projects with `user_id = NULL`
+- Match: `auth.uid() = user_id`
+- Note: Admins view own projects, not all projects (same RLS applies)
 
 ### Inquiries Table
 
-- Anyone can create inquiries (contact form)
-- Only admins can view/update inquiries
+- Anyone can create inquiries (public contact form)
+- Anyone can view inquiries (no auth required)
+
+### Admins Table
+
+- Only admins can query their own email record
+- Policy: `email = auth.jwt() ->> 'email' AND is_active = true`
+- Used during login: AuthContext checks if user email exists in admins table
 
 ### Admin Settings Table
 
@@ -379,26 +408,54 @@ All tables have RLS enabled. Policies are configured as follows:
 
 ## Admin Configuration
 
-### Setting Admin User Metadata
+### Admin Verification (Email-based)
 
-Admins are identified by the `is_admin` flag in user metadata:
+Admins are identified by checking if their email exists in the `admins` table with `is_active=true`:
 
-1. Go to Supabase Dashboard > Authentication > Users
-2. Select user
-3. Add to User Metadata:
+**In Code:**
 
-```json
-{
-  "is_admin": true
+```typescript
+const adminRecord = await adminService.getAdminByEmail(userEmail);
+if (adminRecord) {
+  setIsAdmin(true);
 }
 ```
 
-### RLS Policy Check
-
-Policies check admin status using:
+**In Database:**
 
 ```sql
-(auth.jwt() -> 'user_metadata' ->> 'is_admin')::boolean = true
+SELECT * FROM admins WHERE email = 'user@example.com' AND is_active = true
+```
+
+### Adding a New Admin
+
+1. Insert user email into admins table:
+
+```sql
+INSERT INTO public.admins (email, full_name, is_active)
+VALUES ('newalamin@example.com', 'Admin Name', true)
+```
+
+2. Or use admin service method:
+
+```typescript
+await adminService.createAdmin("newadmin@example.com", "Admin Name");
+```
+
+3. Verify in Supabase Dashboard > admins table
+
+**Note:** User must be logged in via Supabase Auth first before they can be added as admin.
+
+### Revoking Admin Access
+
+```sql
+UPDATE public.admins SET is_active = false WHERE email = 'admin@example.com'
+```
+
+Or use service method:
+
+```typescript
+await adminService.deactivateAdmin(adminId);
 ```
 
 ---

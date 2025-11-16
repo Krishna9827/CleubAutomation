@@ -111,6 +111,12 @@ export interface Database {
           phone: string
           message: string
           status: string
+          property_type: string | null
+          property_size: string | null
+          location: string | null
+          budget: string | null
+          requirements: string | null
+          timeline: string | null
           created_at: string
         }
         Insert: {
@@ -120,6 +126,12 @@ export interface Database {
           phone: string
           message: string
           status?: string
+          property_type?: string | null
+          property_size?: string | null
+          location?: string | null
+          budget?: string | null
+          requirements?: string | null
+          timeline?: string | null
           created_at?: string
         }
         Update: {
@@ -129,6 +141,12 @@ export interface Database {
           phone?: string
           message?: string
           status?: string
+          property_type?: string | null
+          property_size?: string | null
+          location?: string | null
+          budget?: string | null
+          requirements?: string | null
+          timeline?: string | null
           created_at?: string
         }
       }

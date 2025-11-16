@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2 } from 'lucide-react';
-import { projectService } from '@/services/supabase/projectService';
+import { projectService } from '@/supabase/projectService';
 import { useToast } from '@/hooks/use-toast';
 
 interface Room {

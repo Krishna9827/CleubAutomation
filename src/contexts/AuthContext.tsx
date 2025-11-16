@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import { supabase } from '@/services/supabase/config'
-import { userService as supabaseUserService, UserProfile } from '@/services/supabase/userService'
+import { supabase } from '@/supabase/config'
+import { userService as supabaseUserService, UserProfile } from '@/supabase/userService'
 import { adminService } from '@/supabase/adminService';
 
 interface AuthContextType {
@@ -44,16 +44,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Auto-create profile for first-time users
               const [firstName, lastName] = (currentUser.user_metadata?.full_name || '').split(' ');
               
-              await supabase.from('users').insert({
-                id: currentUser.id,
-                email: currentUser.email!,
-                first_name: firstName || currentUser.user_metadata?.name || '',
-                last_name: lastName || '',
-                profile_complete: false,
-              });
-
-              profile = await supabaseUserService.getUserProfile(currentUser.id);
-              setUserProfile(profile);
+              const { error: insertError } = await supabase
+                .from('users')
+                .insert({
+                  id: currentUser.id,
+                  email: currentUser.email!,
+                  first_name: firstName || currentUser.user_metadata?.name || '',
+                  last_name: lastName || '',
+                  profile_complete: false,
+                } as any);
+              
+              if (insertError) {
+                console.error('❌ Failed to create user profile:', insertError);
+              } else {
+                profile = await supabaseUserService.getUserProfile(currentUser.id);
+                setUserProfile(profile);
+              }
             }
 
             // Check if user is admin
@@ -94,7 +100,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       // Create user profile in Supabase
-      // Use .select() to confirm the insert was successful
       console.log('📝 Creating user profile for:', data.user.id);
       
       const { error: insertError } = await supabase
@@ -112,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           state: userData.state || null,
           postal_code: userData.postal_code || null,
           profile_complete: true,
-        });
+        } as any);
 
       if (insertError) {
         console.error('❌ Profile creation error:', insertError);

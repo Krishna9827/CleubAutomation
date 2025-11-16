@@ -11,8 +11,7 @@ import { EstimatedCost } from "@/components/features";
 // import { AutomationBilling } from "@/components/features";
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { db } from '@/firebase/config';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { projectService } from '@/supabase/projectService';
 
 interface ProjectData {
   projectName: string;
@@ -110,63 +109,58 @@ const Planner = () => {
 
   const getTotalRooms = () => rooms.length;
 
-  // Helper to generate a random serial code
-  const generateSerialCode = () => {
-    // Example: 8 uppercase letters/numbers
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 8; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
-  };
-
   const saveProject = async () => {
-    if (!projectData) return;
+    if (!projectData || !user?.id) return;
 
     try {
-      // Generate serial code
-      let serialCode = '';
-      let unique = false;
-      while (!unique) {
-        serialCode = generateSerialCode();
-        // Check against localStorage as fallback for existing projects
-        const projectHistory = JSON.parse(localStorage.getItem('projectHistory') || '[]');
-        unique = !projectHistory.some((p: any) => p.serialCode === serialCode);
-      }
-
       const projectToSave = {
-        ...projectData,
-        rooms,
-        serialCode,
-        userId: user?.uid || 'guest',
-        status: 'draft',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        client_info: {
+          name: projectData.clientName || 'Client',
+          email: '',
+          phone: '',
+          address: '',
+        },
+        property_details: {
+          type: 'home',
+          size: 0,
+          budget: 0,
+        },
+        rooms: rooms.map(room => ({
+          id: room.id,
+          name: room.name,
+          type: room.type,
+          features: [],
+          appliances: room.appliances.map(app => ({
+            id: app.id,
+            name: app.name,
+            quantity: app.quantity,
+            price: 0,
+          }))
+        })),
+        status: 'draft' as const,
       };
 
-      // Save to Firebase
-      const projectsCollection = collection(db, 'projects');
-      const docRef = await addDoc(projectsCollection, projectToSave);
+      // Create project using Supabase
+      const projectId = await projectService.createProject(projectToSave, user.id);
       
-      console.log('✅ Project saved to Firebase:', docRef.id);
+      console.log('✅ Project saved to Supabase:', projectId);
 
       // Also save to localStorage for offline access
       const projectHistory = JSON.parse(localStorage.getItem('projectHistory') || '[]');
       projectHistory.unshift({
-        id: docRef.id,
+        id: projectId,
         ...projectToSave,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       });
       localStorage.setItem('projectHistory', JSON.stringify(projectHistory));
 
       toast({
         title: "Project Saved",
-        description: `Your project has been saved with serial code: ${serialCode}`
+        description: `Your project has been saved successfully`
       });
     } catch (error: any) {
-      console.error('Error saving project:', error);
+      console.error('❌ Error saving project:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to save project",

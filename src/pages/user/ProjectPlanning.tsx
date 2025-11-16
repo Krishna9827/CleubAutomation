@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Building2, Users, Lightbulb, ChevronRight, Settings, Moon, Sun, LogOut } from 'lucide-react';
-import { projectService } from '@/services/supabase/projectService';
+import { Building2, Users, Lightbulb, ChevronRight, Settings, LogOut } from 'lucide-react';
+import { projectService } from '@/supabase/projectService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -25,7 +25,6 @@ const ProjectPlanning = () => {
     designerName: '',
     notes: ''
   });
-  const [dark, setDark] = useState<boolean>(() => localStorage.getItem('theme') === 'dark');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
@@ -98,7 +97,7 @@ const ProjectPlanning = () => {
   const isFormValid = formData.projectName.trim() && formData.clientName.trim();
 
   return (
-    <div className={`${dark ? 'dark' : ''}`}>
+    <div>
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black flex flex-col transition-colors">
       {/* Header minimal/nav */}
       <header className="sticky top-0 z-40 bg-black border-b border-white/10">
@@ -109,7 +108,6 @@ const ProjectPlanning = () => {
           </div>
           <nav className="hidden md:flex items-center justify-center gap-6 text-sm">
             <button className="text-white hover:text-teal-400 transition-colors" onClick={() => navigate('/')}>Home</button>
-            <button className="text-white hover:text-teal-400 transition-colors" onClick={() => navigate('/admin')}>Admin</button>
           </nav>
           <div className="flex items-center justify-end gap-3">
             {user ? (
@@ -137,13 +135,6 @@ const ProjectPlanning = () => {
                 Login
               </Button>
             )}
-            <Button 
-              variant="ghost" 
-              className="text-white hover:text-teal-400 transition-colors"
-              onClick={() => { const next = !dark; setDark(next); localStorage.setItem('theme', next ? 'dark' : 'light'); }}
-            >
-              {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
           </div>
         </div>
       </header>

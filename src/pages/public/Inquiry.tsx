@@ -9,18 +9,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Phone, Mail, MapPin, Building2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { adminService } from '@/services/supabase/adminService';
+import { adminService } from '@/supabase/adminService';
 
 const Inquiry = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
 
   const [formData, setFormData] = useState({
-    firstName: user?.displayName?.split(' ')[0] || '',
-    lastName: user?.displayName?.split(' ').slice(1).join(' ') || '',
+    firstName: userProfile?.first_name || '',
+    lastName: userProfile?.last_name || '',
     email: user?.email || '',
-    phone: '',
+    phone: userProfile?.phone_number || '',
     propertyType: '',
     propertySize: '',
     location: '',
@@ -59,16 +59,39 @@ const Inquiry = () => {
 
     setIsLoading(true);
     try {
-      // Save inquiry to Supabase
-      await adminService.createInquiry({
+      // Create comprehensive message with all details (for backward compatibility)
+      const detailedMessage = `
+Property Type: ${formData.propertyType || 'Not specified'}
+Property Size: ${formData.propertySize || 'Not specified'} sq ft
+Location: ${formData.location || 'Not specified'}
+Budget: ${formData.budget || 'Not specified'}
+Timeline: ${formData.timeline || 'Not specified'}
+Requirements: ${formData.requirements || 'Not specified'}
+      `.trim();
+
+      // Set a timeout for the submission
+      const submissionTimeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Submission timed out. Please check your internet connection and try again.')), 20000)
+      );
+
+      // Save inquiry to Supabase with all fields
+      const inquiryPromise = adminService.createInquiry({
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         phone: formData.phone,
-        message: `Property Type: ${formData.propertyType}\nProperty Size: ${formData.propertySize}\nLocation: ${formData.location}\nBudget: ${formData.budget}\nRequirements: ${formData.requirements}\nTimeline: ${formData.timeline}`,
+        property_type: formData.propertyType || null,
+        property_size: formData.propertySize || null,
+        location: formData.location || null,
+        budget: formData.budget || null,
+        requirements: formData.requirements || null,
+        timeline: formData.timeline || null,
+        message: detailedMessage,
         status: 'pending',
       });
 
-      console.log('✅ Inquiry saved to Firebase');
+      const inquiryId = await Promise.race([inquiryPromise, submissionTimeout]) as string;
+
+      console.log('✅ Inquiry saved to Supabase successfully. Inquiry ID:', inquiryId);
       toast({
         title: 'Success!',
         description: 'Your inquiry has been submitted. We will contact you soon.',
@@ -76,10 +99,10 @@ const Inquiry = () => {
 
       // Reset form
       setFormData({
-        firstName: user?.displayName?.split(' ')[0] || '',
-        lastName: user?.displayName?.split(' ').slice(1).join(' ') || '',
+        firstName: userProfile?.first_name || '',
+        lastName: userProfile?.last_name || '',
         email: user?.email || '',
-        phone: '',
+        phone: userProfile?.phone_number || '',
         propertyType: '',
         propertySize: '',
         location: '',

@@ -115,7 +115,7 @@ export const projectService = {
       // Use insert without .single() first to see what happens
       const { data, error, status } = await supabase
         .from('projects')
-        .insert([projectData])
+        .insert([projectData] as any)
         .select('id');
 
       console.log('✅ Step 6: Supabase response received');
@@ -155,8 +155,8 @@ export const projectService = {
       console.log('📝 Updating project:', projectId);
       console.log('📝 Updates:', updates);
 
-      const { error } = await supabase
-        .from('projects')
+      const { error } = await (supabase
+        .from('projects') as any)
         .update(updates)
         .eq('id', projectId);
 
