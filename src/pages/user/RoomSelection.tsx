@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -55,6 +55,7 @@ const ROOM_PACKAGES = {
 
 const RoomSelection = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [projectId, setProjectId] = useState<string | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -64,10 +65,20 @@ const RoomSelection = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    // Project ID and rooms should be passed via navigation or fetched from context
-    // For now, just mark as loaded
+    // Get project ID from navigation state or localStorage
+    const stateProjectId = (location.state as any)?.projectId;
+    const storedProjectId = localStorage.getItem('currentProjectId');
+    const id = stateProjectId || storedProjectId;
+    
+    if (id) {
+      setProjectId(id);
+      console.log('✅ Project ID loaded:', id);
+    } else {
+      console.warn('⚠️ No project ID found');
+    }
+    
     setIsLoading(false);
-  }, []);
+  }, [location]);
 
   const addPackage = (pkg: keyof typeof ROOM_PACKAGES) => {
     const newRooms = ROOM_PACKAGES[pkg].map(room => ({
@@ -128,12 +139,15 @@ const RoomSelection = () => {
         clearTimeout(timeoutId);
         console.log('✅ Room selection saved successfully');
         
+        // Keep project ID for next page
+        localStorage.setItem('currentProjectId', projectId);
+        
         toast({
           title: 'Success',
           description: 'Room selection saved successfully'
         });
         
-        navigate('/requirements');
+        navigate('/requirements', { state: { projectId } });
       } catch (saveError: any) {
         clearTimeout(timeoutId);
         console.error('❌ Room selection save failed:', {

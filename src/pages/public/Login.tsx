@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,14 @@ import { FcGoogle } from 'react-icons/fc';
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signInWithEmail, signInWithGoogle, signUpWithEmail } = useAuth();
+  const { signInWithEmail, signInWithGoogle, signUpWithEmail, user, loading } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState('');
@@ -55,7 +62,7 @@ const Login = () => {
         title: 'Success',
         description: 'Logged in successfully!',
       });
-      navigate('/');
+      navigate('/', { replace: true });
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -70,8 +77,6 @@ const Login = () => {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
-      // Note: Google OAuth will redirect. No need for navigate() here
-      // The redirect will happen, and auth state will update automatically
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -152,7 +157,6 @@ const Login = () => {
 
     setSignupLoading(true);
     try {
-      console.log('📝 Attempting signup with email:', signupData.email);
       await signUpWithEmail(signupData.email, signupData.password, {
         first_name: signupData.firstName,
         last_name: signupData.lastName,
@@ -168,9 +172,8 @@ const Login = () => {
         title: 'Success',
         description: 'Account created successfully!',
       });
-      navigate('/');
+      navigate('/', { replace: true });
     } catch (error: any) {
-      console.error('🔴 Signup failed:', error);
       const errorMessage = error.message || 'An error occurred during signup';
       toast({
         title: 'Error',

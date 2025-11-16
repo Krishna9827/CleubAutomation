@@ -1,8 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import { supabase } from '@/supabase/config'
-import { userService as supabaseUserService, UserProfile } from '@/supabase/userService'
-import { adminService } from '@/supabase/adminService';
+import { User as SupabaseUser } from '@supabase/supabase-js';
+import { supabase } from '@/supabase/config';
+import { UserProfile } from '@/supabase/userService';
 
 interface AuthContextType {
   user: SupabaseUser | null;
@@ -25,166 +24,134 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listen to Supabase auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session: Session | null) => {
-        try {
-          const currentUser = session?.user || null;
-          setUser(currentUser);
-          setIsAdmin(false);
-          setUserProfile(null);
-          
-          if (currentUser) {
-            // Fetch profile from Supabase with retry logic
-            let profile = await supabaseUserService.getUserProfile(currentUser.id);
-            
-            if (profile) {
-              console.log('✅ Profile fetched successfully');
-              setUserProfile(profile);
-            } else {
-              console.log('📝 Profile not found, attempting to create...');
-              // Auto-create profile for first-time users
-              const [firstName, lastName] = (currentUser.user_metadata?.full_name || '').split(' ');
-              
-              const { error: insertError } = await supabase
-                .from('users')
-                .insert({
-                  id: currentUser.id,
-                  email: currentUser.email!,
-                  first_name: firstName || currentUser.user_metadata?.name || '',
-                  last_name: lastName || '',
-                  profile_complete: false,
-                } as any);
-              
-              if (insertError) {
-                console.log('ℹ️ Could not auto-create profile (may already exist):', insertError.message);
-              } else {
-                console.log('✅ Profile created successfully');
-                profile = await supabaseUserService.getUserProfile(currentUser.id);
-                setUserProfile(profile);
-              }
-            }
-
-            // Check if user is admin - IMPORTANT: This must complete before marking loading as false
-            if (currentUser.email) {
-              console.log('🔍 Checking admin status for:', currentUser.email);
-              const adminRecord = await adminService.getAdminByEmail(currentUser.email);
-              if (adminRecord?.is_active) {
-                console.log('✅ Admin status: TRUE');
-                setIsAdmin(true);
-              } else {
-                console.log('ℹ️ Admin status: FALSE (user is not an admin)');
-                setIsAdmin(false);
-              }
-            }
-          }
-        } catch (error) {
-          console.error('❌ Auth error:', error);
-        } finally {
-          // Mark loading complete AFTER all async operations (profile + admin check)
-          setLoading(false);
-        }
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        loadUserData(session.user.id, session.user.email);
+      } else {
+        setLoading(false);
       }
-    );
+    });
 
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
+    // Listen to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+      
+      if (session?.user) {
+        loadUserData(session.user.id, session.user.email);
+      } else {
+        setUserProfile(null);
+        setIsAdmin(false);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
+  const loadUserData = async (userId: string, email: string | undefined) => {
+    try {
+      // Fetch profile
+      const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (profile) {
+        setUserProfile(profile);
+      }
+
+      // Check admin status
+      if (email) {
+        const { data: adminData } = await supabase
+          .from('admins')
+          .select('is_active')
+          .eq('email', email)
+          .maybeSingle();
+
+        setIsAdmin((adminData as any)?.is_active || false);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signUpWithEmail = async (email: string, password: string, userData: Partial<UserProfile>) => {
-    // Sign up with Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
-      options: {
-        data: {
-          first_name: userData.first_name || '',
-          last_name: userData.last_name || '',
-        }
-      }
     });
 
     if (error) throw error;
     if (!data.user) throw new Error('User not created');
 
-    try {
-      // Create user profile in Supabase
-      console.log('📝 Creating user profile for:', data.user.id);
-      
-      const { error: insertError } = await supabase
-        .from('users')
-        .insert({
-          id: data.user.id,
-          email: data.user.email!,
-          first_name: userData.first_name || '',
-          last_name: userData.last_name || '',
-          phone_number: userData.phone_number || null,
-          date_of_birth: userData.date_of_birth || null,
-          house_number: userData.house_number || null,
-          area: userData.area || null,
-          city: userData.city || null,
-          state: userData.state || null,
-          postal_code: userData.postal_code || null,
-          profile_complete: true,
-        } as any);
+    // Create profile
+    const { error: profileError } = await (supabase
+      .from('users') as any)
+      .insert({
+        id: data.user.id,
+        email: data.user.email!,
+        first_name: userData.first_name || '',
+        last_name: userData.last_name || '',
+        phone_number: userData.phone_number || null,
+        date_of_birth: userData.date_of_birth || null,
+        house_number: userData.house_number || null,
+        area: userData.area || null,
+        city: userData.city || null,
+        state: userData.state || null,
+        postal_code: userData.postal_code || null,
+        profile_complete: true,
+      });
 
-      if (insertError) {
-        console.error('❌ Profile creation error:', insertError);
-        throw insertError;
-      }
-
-      console.log('✅ Profile created successfully');
-      setUser(data.user);
-    } catch (profileError: any) {
-      // If profile creation fails but auth succeeded, log it
-      console.error('❌ Failed to create user profile:', profileError);
-      throw new Error('Account created but profile setup failed. Please try logging in.');
-    }
+    if (profileError) throw profileError;
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
-      password
+      password,
     });
 
     if (error) throw error;
-    setUser(data.user);
   };
 
   const signInWithGoogle = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`
-      }
+        redirectTo: `${window.location.origin}/login`,
+      },
     });
 
     if (error) throw error;
-
-    // The user will be set by the onAuthStateChange listener after OAuth redirect
   };
 
   const logout = async () => {
-    try {
-      // Sign out from Supabase first - this clears the session from storage
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error('❌ Logout error:', error);
-    } finally {
-      // Always clear local state regardless of Supabase success
-      setUser(null);
-      setUserProfile(null);
-      setIsAdmin(false);
-    }
+    await supabase.auth.signOut();
   };
 
   const updateProfile = async (data: Partial<UserProfile>) => {
-    if (user) {
-      // Update in Supabase using Supabase user.id (not Firebase uid)
-      await supabaseUserService.updateUserProfile(user.id, data);
-      const updatedProfile = await supabaseUserService.getUserProfile(user.id);
+    if (!user) return;
+
+    const { error } = await (supabase
+      .from('users') as any)
+      .update(data)
+      .eq('id', user.id);
+
+    if (error) throw error;
+
+    // Reload profile
+    const { data: updatedProfile } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (updatedProfile) {
       setUserProfile(updatedProfile);
     }
   };

@@ -153,12 +153,19 @@ export const projectService = {
   async updateProject(projectId: string, updates: Partial<ProjectData>): Promise<void> {
     try {
       console.log('📝 Updating project:', projectId);
-      console.log('📝 Updates:', updates);
+      console.log('📝 Updates:', JSON.stringify(updates, null, 2));
 
-      const { error } = await (supabase
+      // Ensure we have a valid session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session. Please log in again.');
+      }
+
+      const { data, error } = await (supabase
         .from('projects') as any)
         .update(updates)
-        .eq('id', projectId);
+        .eq('id', projectId)
+        .select();
 
       if (error) {
         console.error('❌ Update Error Details:', {
@@ -167,13 +174,17 @@ export const projectService = {
           details: error.details,
           hint: error.hint
         });
-        throw new Error(`Update failed [${error.code}]: ${error.message}`);
+        throw new Error(`Update failed: ${error.message || 'Unknown error'}`);
       }
 
-      console.log('✅ Project updated successfully');
+      if (!data || data.length === 0) {
+        throw new Error('Update failed: No data returned. Check RLS policies.');
+      }
+
+      console.log('✅ Project updated successfully:', data);
     } catch (error: any) {
       console.error('❌ Error updating project:', error);
-      throw new Error(error.message);
+      throw new Error(error.message || 'Failed to update project');
     }
   },
 

@@ -72,12 +72,15 @@ const ProjectPlanning = () => {
         }
       }, user.id);
 
+      // Store project ID for next page
+      localStorage.setItem('currentProjectId', projectId);
+
       toast({
         title: 'Success',
         description: 'Project created successfully'
       });
 
-      navigate('/room-selection');
+      navigate('/room-selection', { state: { projectId } });
     } catch (error) {
       console.error('Error creating project:', error);
       toast({

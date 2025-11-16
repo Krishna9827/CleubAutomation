@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { projectService } from '@/supabase/projectService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +39,9 @@ const defaultRoomReq = {
 
 const RequirementSheet2 = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [projectData, setProjectData] = useState<any>(null);
   const [rooms, setRooms] = useState<any[]>([]);
   // Initialize each room's requirements separately
@@ -51,19 +53,48 @@ const RequirementSheet2 = () => {
   useEffect(() => {
     const loadProject = async () => {
       try {
-        // Project ID should be available from router state or context
-        // For now, redirect if not available
-        if (!projectData) {
-          navigate('/');
+        // Get project ID from navigation state or localStorage
+        const stateProjectId = (location.state as any)?.projectId;
+        const storedProjectId = localStorage.getItem('currentProjectId');
+        const id = stateProjectId || storedProjectId;
+        
+        if (!id) {
+          console.warn('⚠️ No project ID found, redirecting to project planning');
+          navigate('/project-planning');
+          return;
+        }
+        
+        setProjectId(id);
+        console.log('✅ Project ID loaded in RequirementsForm:', id);
+        
+        // Fetch project data from Supabase
+        const project = await projectService.getProject(id);
+        if (project) {
+          setProjectData(project);
+          
+          // Initialize rooms from project
+          if (project.rooms && project.rooms.length > 0) {
+            setRooms(project.rooms);
+            // Initialize requirements for each room
+            const initialReqs = project.rooms.map((room: any) => ({
+              ...defaultRoomReq,
+              ...(room.requirements || {})
+            }));
+            setRoomRequirements(initialReqs);
+          }
         }
       } catch (error) {
         console.error('Error loading project:', error);
-        navigate('/');
+        toast({
+          title: 'Error',
+          description: 'Failed to load project data',
+          variant: 'destructive'
+        });
       }
     };
 
     loadProject();
-  }, [navigate, projectData]);
+  }, [navigate, location, toast]);
 
   const handleReqChange = (roomIndex: number, field: string, value: any, isLightType = false) => {
     setRoomRequirements(prev => {
@@ -159,26 +190,15 @@ const RequirementSheet2 = () => {
     try {
       setIsSaving(true);
       
-      // Get projectId from state or create a new project
-      let projectId = projectData?.id;
-      
+      // Use projectId from state
       if (!projectId) {
-        console.log('📝 Creating new project for requirements...');
-        // Create a new project
-        projectId = await projectService.createProject({
-          client_info: {
-            name: projectData.clientName,
-            email: projectData.clientEmail || '',
-            phone: projectData.clientPhone || '',
-            address: projectData.clientAddress || '',
-          },
-          property_details: {
-            type: projectData.propertyType || '',
-            size: projectData.propertySize || 0,
-            budget: projectData.budget || 0,
-          }
+        toast({
+          title: 'Error',
+          description: 'Project ID not found. Please start from project planning.',
+          variant: 'destructive'
         });
-        console.log('✅ New project created:', projectId);
+        navigate('/project-planning');
+        return;
       }
 
       // Update rooms with their requirements
@@ -203,6 +223,9 @@ const RequirementSheet2 = () => {
         });
         clearTimeout(timeoutId);
         console.log('✅ Requirements saved successfully');
+        
+        // Keep project ID for next page
+        localStorage.setItem('currentProjectId', projectId);
 
         toast({
           title: 'Success',
@@ -210,7 +233,7 @@ const RequirementSheet2 = () => {
         });
 
         // Navigate to final review page
-        navigate('/final-review');
+        navigate('/final-review', { state: { projectId } });
       } catch (saveError: any) {
         clearTimeout(timeoutId);
         console.error('❌ Requirements save failed:', {
@@ -249,7 +272,16 @@ const RequirementSheet2 = () => {
     }
   };
 
-  if (!projectData) return <div>Loading...</div>;
+  if (!projectData || rooms.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500 mx-auto mb-4"></div>
+          <p className="text-white">Loading project...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
@@ -258,7 +290,7 @@ const RequirementSheet2 = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold text-white">Requirement Sheet</h1>
-              <p className="text-sm text-slate-300">{projectData.projectName} - {projectData.clientName}</p>
+              <p className="text-sm text-slate-300">{projectData?.client_info?.name || 'Project'}</p>
             </div>
             <Button 
               onClick={saveRequirementProject} 
