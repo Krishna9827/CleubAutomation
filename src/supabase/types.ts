@@ -71,6 +71,8 @@ export interface Database {
           total_cost: number
           status: 'draft' | 'in-progress' | 'completed'
           last_saved_page: string
+          timeline: string | null
+          notes: string | null
           created_at: string
           updated_at: string
         }
@@ -85,6 +87,8 @@ export interface Database {
           total_cost?: number
           status?: 'draft' | 'in-progress' | 'completed'
           last_saved_page?: string
+          timeline?: string | null
+          notes?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -99,6 +103,8 @@ export interface Database {
           total_cost?: number
           status?: 'draft' | 'in-progress' | 'completed'
           last_saved_page?: string
+          timeline?: string | null
+          notes?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -270,6 +276,89 @@ export interface Database {
           is_active?: boolean
           created_at?: string
           updated_at?: string
+        }
+      }
+      proforma_invoices: {
+        Row: {
+          id: string
+          project_id: string
+          user_id: string
+          pi_number: string
+          boq_items: Json[]
+          boq_summary: Json
+          project_name: string | null
+          client_name: string | null
+          client_email: string | null
+          client_phone: string | null
+          automation_type: 'wired' | 'wireless'
+          total_amount: number
+          gst_amount: number
+          grand_total: number
+          notes: string | null
+          validity_days: number | null
+          terms_conditions: string | null
+          status: 'draft' | 'sent' | 'accepted' | 'rejected'
+          sent_at: string | null
+          accepted_at: string | null
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          view_count: number | null
+          last_viewed_at: string | null
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          user_id: string
+          pi_number?: string
+          boq_items: Json[]
+          boq_summary: Json
+          project_name?: string | null
+          client_name?: string | null
+          client_email?: string | null
+          client_phone?: string | null
+          automation_type: 'wired' | 'wireless'
+          total_amount?: number
+          gst_amount?: number
+          grand_total?: number
+          notes?: string | null
+          validity_days?: number | null
+          terms_conditions?: string | null
+          status?: 'draft' | 'sent' | 'accepted' | 'rejected'
+          sent_at?: string | null
+          accepted_at?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          view_count?: number | null
+          last_viewed_at?: string | null
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          user_id?: string
+          pi_number?: string
+          boq_items?: Json[]
+          boq_summary?: Json
+          project_name?: string | null
+          client_name?: string | null
+          client_email?: string | null
+          client_phone?: string | null
+          automation_type?: 'wired' | 'wireless'
+          total_amount?: number
+          gst_amount?: number
+          grand_total?: number
+          notes?: string | null
+          validity_days?: number | null
+          terms_conditions?: string | null
+          status?: 'draft' | 'sent' | 'accepted' | 'rejected'
+          sent_at?: string | null
+          accepted_at?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          view_count?: number | null
+          last_viewed_at?: string | null
         }
       }
     }

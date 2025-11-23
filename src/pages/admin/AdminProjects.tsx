@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Trash2, Eye } from 'lucide-react';
+import { Building2, Trash2, Eye, FileText, Clock, Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { AdminTable, ColumnDef, ActionButton } from '@/components/admin/AdminTable';
@@ -148,6 +148,31 @@ const AdminProjects = () => {
 
   const actions: ActionButton<ProjectWithUser>[] = [
     {
+      label: 'Edit',
+      icon: <Edit className="w-4 h-4" />,
+      onClick: (project) => {
+        localStorage.setItem('currentProjectId', project.id);
+        navigate('/requirements', { state: { projectId: project.id } });
+      },
+      className: 'text-blue-500 hover:text-blue-400 hover:bg-blue-500/10',
+    },
+    {
+      label: 'BOQ & Details',
+      icon: <FileText className="w-4 h-4" />,
+      onClick: (project) => {
+        navigate(`/admin/projects/${project.id}/boq`);
+      },
+      className: 'text-teal-500 hover:text-teal-400 hover:bg-teal-500/10',
+    },
+    {
+      label: 'Timeline',
+      icon: <Clock className="w-4 h-4" />,
+      onClick: (project) => {
+        navigate(`/admin/projects/${project.id}/timeline`);
+      },
+      className: 'text-purple-500 hover:text-purple-400 hover:bg-purple-500/10',
+    },
+    {
       label: 'View Details',
       icon: <Eye className="w-4 h-4" />,
       onClick: (project) => {
@@ -189,12 +214,13 @@ const AdminProjects = () => {
 
         {selectedProject && (
           <Dialog open={showDetails} onOpenChange={setShowDetails}>
-            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-slate-950 border-white/10">
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-slate-950 border-white/10">
               <DialogHeader>
                 <DialogTitle className="text-white text-2xl">Project Details</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 text-white">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-6 text-white">
+                {/* Client Info */}
+                <div className="grid grid-cols-2 gap-4 pb-4 border-b border-white/10">
                   <div>
                     <p className="text-slate-400 text-sm">Client</p>
                     <p className="font-semibold">{selectedProject.client_info?.name}</p>
@@ -204,12 +230,63 @@ const AdminProjects = () => {
                     <p className="font-semibold">{selectedProject.client_info?.email}</p>
                   </div>
                   <div>
+                    <p className="text-slate-400 text-sm">Phone</p>
+                    <p className="font-semibold">{selectedProject.client_info?.phone || 'N/A'}</p>
+                  </div>
+                  <div>
                     <p className="text-slate-400 text-sm">Status</p>
                     <Badge className="mt-1">{selectedProject.status}</Badge>
                   </div>
-                  <div>
-                    <p className="text-slate-400 text-sm">Total Rooms</p>
-                    <p className="font-semibold">{selectedProject.rooms?.length || 0}</p>
+                </div>
+
+                {/* Rooms & Appliances */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-teal-400">Rooms & Appliances</h3>
+                  {selectedProject.rooms && selectedProject.rooms.length > 0 ? (
+                    <div className="space-y-3">
+                      {selectedProject.rooms.map((room: any, roomIdx: number) => (
+                        <div key={roomIdx} className="bg-slate-800/50 rounded-lg p-4">
+                          <h4 className="font-semibold text-white mb-2">
+                            {room.name} ({room.type})
+                          </h4>
+                          {room.appliances && room.appliances.length > 0 ? (
+                            <div className="space-y-2 ml-4">
+                              {room.appliances.map((app: any, appIdx: number) => (
+                                <div key={appIdx} className="text-sm text-slate-300">
+                                  <div className="flex justify-between">
+                                    <span>
+                                      {app.name} 
+                                      {app.category && ` (${app.category})`}
+                                      {app.subcategory && ` - ${app.subcategory}`}
+                                    </span>
+                                    <span className="text-teal-400">Qty: {app.quantity}</span>
+                                  </div>
+                                  {app.wattage && (
+                                    <div className="text-xs text-slate-500">
+                                      Wattage: {app.wattage}W
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-slate-500 ml-4">No appliances added</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500">No rooms created yet</p>
+                  )}
+                </div>
+
+                {/* Cost Summary */}
+                <div className="bg-teal-900/20 border border-teal-600/20 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-300">Total Cost</span>
+                    <span className="text-2xl font-bold text-teal-400">
+                      ₹{selectedProject.total_cost?.toLocaleString() || '0'}
+                    </span>
                   </div>
                 </div>
               </div>

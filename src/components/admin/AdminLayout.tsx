@@ -10,7 +10,8 @@ import {
   Home,
   MessageSquare,
   Building2,
-  Package
+  Package,
+  FileText
 } from 'lucide-react';
 
 interface AdminLayoutProps {

@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Building2, Calendar, Home, Trash2, Eye, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { projectService, ProjectData } from '@/supabase/projectService';
 import SiteNav from '@/components/ui/site-nav';
+import { ProjectDetailsModal } from '@/components/features';
 
 interface LocalProjectData {
   id: string;
@@ -152,7 +152,7 @@ const UserHistory = () => {
               className="pl-10 bg-slate-800/50 border-slate-700 text-white"
             />
           </div>
-          <Button 
+          <Button
             onClick={() => navigate('/project-planning')}
             className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
           >
@@ -190,7 +190,7 @@ const UserHistory = () => {
             <CardContent className="p-12 text-center">
               <Home className="w-12 h-12 text-slate-600 mx-auto mb-3" />
               <div className="text-slate-400">No projects yet</div>
-              <Button 
+              <Button
                 onClick={() => navigate('/project-planning')}
                 className="mt-4 bg-teal-600 hover:bg-teal-700"
               >
@@ -208,11 +208,10 @@ const UserHistory = () => {
                       <h3 className="text-lg font-bold text-white">{project.client_info?.name || 'Untitled Project'}</h3>
                       <p className="text-sm text-slate-400">Client: {project.client_info?.name || 'N/A'}</p>
                     </div>
-                    <Badge variant="outline" className={`${
-                      project.status === 'completed' ? 'bg-green-900/30 border-green-600 text-green-400' :
-                      project.status === 'in-progress' ? 'bg-teal-900/30 border-teal-600 text-teal-400' :
-                      'bg-slate-700/30 border-slate-600 text-slate-400'
-                    }`}>
+                    <Badge variant="outline" className={`${project.status === 'completed' ? 'bg-green-900/30 border-green-600 text-green-400' :
+                        project.status === 'in-progress' ? 'bg-teal-900/30 border-teal-600 text-teal-400' :
+                          'bg-slate-700/30 border-slate-600 text-slate-400'
+                      }`}>
                       {project.status || 'draft'}
                     </Badge>
                   </div>
@@ -275,101 +274,21 @@ const UserHistory = () => {
 
         {/* Project Details Modal */}
         {selectedProject && (
-          <Dialog open={showDetails} onOpenChange={setShowDetails}>
-            <DialogContent className="max-w-2xl bg-slate-950 border-white/10">
-              <DialogHeader>
-                <DialogTitle className="text-white">Project Details</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 text-white">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm text-slate-500">Project Name</div>
-                    <div className="font-semibold">{selectedProject.client_info?.name || 'Untitled'}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-slate-500">Status</div>
-                    <Badge variant="outline">{selectedProject.status || 'draft'}</Badge>
-                  </div>
-                </div>
-
-                <div className="border-t border-white/10 pt-4">
-                  <h4 className="font-semibold mb-2">Client Information</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div className="text-slate-500">Name</div>
-                      <div>{selectedProject.client_info?.name || 'N/A'}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500">Email</div>
-                      <div className="break-all">{selectedProject.client_info?.email || 'N/A'}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500">Phone</div>
-                      <div>{selectedProject.client_info?.phone || 'N/A'}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500">Address</div>
-                      <div>{selectedProject.client_info?.address || 'N/A'}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-white/10 pt-4">
-                  <h4 className="font-semibold mb-2">Rooms ({getRoomCount(selectedProject.rooms)})</h4>
-                  <div className="space-y-3 max-h-80 overflow-y-auto">
-                    {selectedProject.rooms?.length ? (
-                      selectedProject.rooms.map((room: any, idx: number) => (
-                        <div key={idx} className="bg-slate-800/30 p-3 rounded border border-white/5">
-                          <div className="font-semibold text-white">{room.name} <span className="text-xs text-slate-400">({room.type})</span></div>
-                          
-                          {/* Appliances */}
-                          {room.appliances && room.appliances.length > 0 && (
-                            <div className="mt-2 ml-2 text-xs">
-                              <div className="text-slate-400 font-medium">Appliances:</div>
-                              {room.appliances.map((app: any, aIdx: number) => (
-                                <div key={aIdx} className="text-slate-300 mt-1">
-                                  • {app.name} ({app.category}{app.subcategory ? ` - ${app.subcategory}` : ''}) × {app.quantity}
-                                  {app.wattage && <span> • {app.wattage}W</span>}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Requirements */}
-                          {room.requirements && (
-                            <div className="mt-2 ml-2 text-xs">
-                              <div className="text-slate-400 font-medium">Requirements:</div>
-                              <div className="text-slate-300 mt-1 space-y-1">
-                                {room.requirements.numLights && <div>• Lights: {room.requirements.numLights}</div>}
-                                {room.requirements.totalWattage && <div>• Total Wattage: {room.requirements.totalWattage}</div>}
-                                {room.requirements.fanType && <div>• Fan: {room.requirements.fanType}</div>}
-                                {room.requirements.acTvControl && <div>• AC/TV Control: {room.requirements.acTvControl}</div>}
-                                {room.requirements.smartLighting && <div>• Smart Lighting: {room.requirements.smartLighting}</div>}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Sections */}
-                          {room.requirements?.sections && room.requirements.sections.length > 0 && (
-                            <div className="mt-2 ml-2 text-xs">
-                              <div className="text-slate-400 font-medium">Switch Panels:</div>
-                              {room.requirements.sections.map((section: any, sIdx: number) => (
-                                <div key={sIdx} className="text-slate-300 mt-1">
-                                  • {section.name} ({section.items?.length || 0} items)
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-slate-400 text-sm">No rooms added yet</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <ProjectDetailsModal
+            open={showDetails}
+            onClose={() => setShowDetails(false)}
+            projectData={selectedProject}
+            onUpdate={(data) => {
+              // Update local state with new data
+              const updated = projects.map(p =>
+                p.id === selectedProject.id
+                  ? { ...p, ...data }
+                  : p
+              );
+              setProjects(updated);
+              setFilteredProjects(updated);
+            }}
+          />
         )}
       </main>
     </div>

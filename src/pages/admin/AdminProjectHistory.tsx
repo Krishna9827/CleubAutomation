@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Trash2, Eye, FileText } from 'lucide-react';
+import { ArrowLeft, Trash2, Eye, FileText, Edit, Copy, Clock, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { AdminTable, ColumnDef, ActionButton } from '@/components/admin/AdminTable';
 import { projectService, ProjectData } from '@/supabase/projectService';
 import { userService, UserProfile } from '@/supabase/userService';
+import { ProjectDetailsModal } from '@/components/features';
+import { editHistoryService } from '@/supabase/editHistoryService';
 
 interface ProjectWithUser extends ProjectData {
   user_email?: string;
@@ -24,6 +25,7 @@ const AdminProjectHistory = () => {
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [selectedProject, setSelectedProject] = useState<ProjectWithUser | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
   // Check if user is logged in, if not redirect to admin login
   useEffect(() => {
@@ -43,13 +45,13 @@ const AdminProjectHistory = () => {
     const loadProjects = async () => {
       try {
         setLoadingProjects(true);
-        
+
         console.log('✅ Current user:', user.email);
-        
+
         // Fetch all projects from Supabase
         const allProjects = await projectService.getAllProjects();
         console.log('✅ Loaded projects from Supabase:', allProjects.length);
-        
+
         // Fetch user profiles for each project to enrich data
         const projectsWithUsers = await Promise.all(
           allProjects.map(async (project) => {
@@ -64,7 +66,7 @@ const AdminProjectHistory = () => {
             return project;
           })
         );
-        
+
         setProjects(projectsWithUsers);
       } catch (error) {
         console.error('❌ Error loading projects:', error);
@@ -122,6 +124,51 @@ const AdminProjectHistory = () => {
   const handleViewDetails = (project: ProjectWithUser) => {
     setSelectedProject(project);
     setShowDetails(true);
+  };
+
+  const handleEditProject = (project: ProjectWithUser) => {
+    // Navigate to edit form
+    navigate(`/admin/projects/${project.id}/edit`);
+  };
+
+  const handleDuplicateProject = async (project: ProjectWithUser) => {
+    if (!user?.id) return;
+
+    setDuplicatingId(project.id);
+    try {
+      const duplicated = await editHistoryService.duplicateProject(project.id, user.id);
+
+      if (duplicated) {
+        toast({
+          title: 'Success',
+          description: 'Project duplicated successfully. Reloading...',
+        });
+
+        // Reload projects
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to duplicate project',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error duplicating:', error);
+      toast({
+        title: 'Error',
+        description: 'An error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setDuplicatingId(null);
+    }
+  };
+
+  const handleViewTimeline = (project: ProjectWithUser) => {
+    navigate(`/admin/projects/${project.id}/timeline`);
   };
 
   // Define table columns
@@ -220,6 +267,27 @@ const AdminProjectHistory = () => {
       variant: 'ghost',
     },
     {
+      label: 'Edit Project',
+      icon: <Edit className="w-4 h-4" />,
+      onClick: handleEditProject,
+      variant: 'ghost',
+      className: 'text-teal-500 hover:text-teal-400 hover:bg-teal-500/10',
+    },
+    {
+      label: 'Duplicate',
+      icon: <Copy className="w-4 h-4" />,
+      onClick: handleDuplicateProject,
+      variant: 'ghost',
+      className: 'text-blue-500 hover:text-blue-400 hover:bg-blue-500/10',
+    },
+    {
+      label: 'Timeline',
+      icon: <Clock className="w-4 h-4" />,
+      onClick: handleViewTimeline,
+      variant: 'ghost',
+      className: 'text-purple-500 hover:text-purple-400 hover:bg-purple-500/10',
+    },
+    {
       label: 'Delete',
       icon: <Trash2 className="w-4 h-4" />,
       onClick: deleteProject,
@@ -240,7 +308,7 @@ const AdminProjectHistory = () => {
         ) : (
           <>
             <h2 className="text-2xl font-bold text-white mb-6">Project History</h2>
-            
+
             {/* Projects Table */}
             <AdminTable<ProjectWithUser>
               data={projects}
@@ -255,156 +323,20 @@ const AdminProjectHistory = () => {
 
             {/* Project Details Modal */}
             {selectedProject && (
-              <Dialog open={showDetails} onOpenChange={setShowDetails}>
-                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-slate-950 border-white/10">
-                  <DialogHeader>
-                    <DialogTitle className="text-white text-2xl">Project Details</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-6 text-white">
-                    {/* Project Overview */}
-                    <div className="grid grid-cols-2 gap-4 p-4 bg-slate-800/30 rounded-lg">
-                      <div>
-                        <div className="text-sm text-slate-500 mb-1">Status</div>
-                        <Badge 
-                          variant="outline" 
-                          className={`
-                            ${selectedProject.status === 'completed' ? 'bg-green-900/30 border-green-600 text-green-400' : ''}
-                            ${selectedProject.status === 'in-progress' ? 'bg-blue-900/30 border-blue-600 text-blue-400' : ''}
-                            ${selectedProject.status === 'draft' ? 'bg-slate-800/30 border-slate-600 text-slate-400' : ''}
-                          `}
-                        >
-                          {selectedProject.status}
-                        </Badge>
-                      </div>
-                      <div>
-                        <div className="text-sm text-slate-500 mb-1">Total Cost</div>
-                        <div className="font-bold text-xl text-teal-400">
-                          ₹{selectedProject.total_cost.toLocaleString('en-IN')}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Client Information */}
-                    <div className="border-t border-white/10 pt-4">
-                      <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                        <FileText className="w-5 h-5" />
-                        Client Information
-                      </h4>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <div className="text-slate-500 mb-1">Name</div>
-                          <div className="font-medium">{selectedProject.client_info.name || 'N/A'}</div>
-                        </div>
-                        <div>
-                          <div className="text-slate-500 mb-1">Email</div>
-                          <div className="font-medium break-all">{selectedProject.client_info.email || 'N/A'}</div>
-                        </div>
-                        <div>
-                          <div className="text-slate-500 mb-1">Phone</div>
-                          <div className="font-medium">{selectedProject.client_info.phone || 'N/A'}</div>
-                        </div>
-                        <div>
-                          <div className="text-slate-500 mb-1">Address</div>
-                          <div className="font-medium">{selectedProject.client_info.address || 'N/A'}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Property Details */}
-                    <div className="border-t border-white/10 pt-4">
-                      <h4 className="font-semibold text-lg mb-3">Property Details</h4>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <div className="text-slate-500 mb-1">Type</div>
-                          <div className="font-medium capitalize">{selectedProject.property_details.type || 'N/A'}</div>
-                        </div>
-                        <div>
-                          <div className="text-slate-500 mb-1">Size</div>
-                          <div className="font-medium">{selectedProject.property_details.size} sq ft</div>
-                        </div>
-                        <div>
-                          <div className="text-slate-500 mb-1">Budget</div>
-                          <div className="font-medium">₹{selectedProject.property_details.budget.toLocaleString('en-IN')}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Created By */}
-                    <div className="border-t border-white/10 pt-4">
-                      <h4 className="font-semibold text-lg mb-3">Created By</h4>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <div className="text-slate-500 mb-1">User Name</div>
-                          <div className="font-medium">{selectedProject.user_name || 'Unknown'}</div>
-                        </div>
-                        <div>
-                          <div className="text-slate-500 mb-1">Email</div>
-                          <div className="font-medium">{selectedProject.user_email || 'N/A'}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Rooms */}
-                    <div className="border-t border-white/10 pt-4">
-                      <h4 className="font-semibold text-lg mb-3">
-                        Rooms ({selectedProject.rooms.length})
-                      </h4>
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {selectedProject.rooms.length > 0 ? (
-                          selectedProject.rooms.map((room: any, idx: number) => (
-                            <div key={idx} className="text-sm bg-slate-800/30 p-3 rounded border border-white/5">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <div className="font-semibold">{room.name}</div>
-                                  <div className="text-slate-400 text-xs mt-1">
-                                    Type: {room.type || 'N/A'}
-                                  </div>
-                                </div>
-                                <Badge variant="outline" className="bg-slate-900/50 border-slate-700">
-                                  {room.appliances?.length || 0} appliances
-                                </Badge>
-                              </div>
-                              {room.appliances && room.appliances.length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-white/10">
-                                  <div className="text-xs text-slate-500 mb-1">Appliances:</div>
-                                  <div className="flex flex-wrap gap-1">
-                                    {room.appliances.slice(0, 5).map((app: any, i: number) => (
-                                      <span key={i} className="text-xs bg-slate-900/50 px-2 py-0.5 rounded">
-                                        {app.name}
-                                      </span>
-                                    ))}
-                                    {room.appliances.length > 5 && (
-                                      <span className="text-xs text-slate-400">
-                                        +{room.appliances.length - 5} more
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-slate-400 text-sm text-center py-4">No rooms added yet</div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Timestamps */}
-                    <div className="border-t border-white/10 pt-4 text-sm text-slate-400">
-                      <div className="flex justify-between">
-                        <div>
-                          <span className="text-slate-500">Created:</span>{' '}
-                          {new Date(selectedProject.created_at).toLocaleString('en-IN')}
-                        </div>
-                        <div>
-                          <span className="text-slate-500">Updated:</span>{' '}
-                          {new Date(selectedProject.updated_at).toLocaleString('en-IN')}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <ProjectDetailsModal
+                open={showDetails}
+                onClose={() => setShowDetails(false)}
+                projectData={selectedProject}
+                onUpdate={(data) => {
+                  // Update local state with new data
+                  const updated = projects.map(p =>
+                    p.id === selectedProject.id
+                      ? { ...p, ...data }
+                      : p
+                  );
+                  setProjects(updated);
+                }}
+              />
             )}
           </>
         )}

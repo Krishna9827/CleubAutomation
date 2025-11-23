@@ -25,11 +25,12 @@ import UserHistory from "./pages/user/ProjectHistory"
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin"
 import AdminSettings from "./pages/admin/AdminSettings"
-import AdminProjectHistory from "./pages/admin/AdminProjectHistory"
 import AdminTestimonials from "./pages/admin/AdminTestimonials"
 import AdminInquiries from "./pages/admin/AdminInquiries"
 import AdminProjects from "./pages/admin/AdminProjects"
 import AdminInventory from "./pages/admin/AdminInventory"
+import AdminProjectTimeline from "./pages/admin/AdminProjectTimeline"
+import AdminBOQGeneration from "./pages/admin/AdminBOQGeneration"
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,8 @@ const App = () => (
             <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
             <Route path="/admin/inquiries" element={<ProtectedAdminRoute><AdminInquiries /></ProtectedAdminRoute>} />
             <Route path="/admin/projects" element={<ProtectedAdminRoute><AdminProjects /></ProtectedAdminRoute>} />
+            <Route path="/admin/projects/:projectId/timeline" element={<ProtectedAdminRoute><AdminProjectTimeline /></ProtectedAdminRoute>} />
+            <Route path="/admin/projects/:projectId/boq" element={<ProtectedAdminRoute><AdminBOQGeneration /></ProtectedAdminRoute>} />
             <Route path="/admin/inventory" element={<ProtectedAdminRoute><AdminInventory /></ProtectedAdminRoute>} />
             <Route path="/admin/testimonials" element={<ProtectedAdminRoute><AdminTestimonials /></ProtectedAdminRoute>} />
             <Route path="/admin-login" element={<AdminLogin />} />

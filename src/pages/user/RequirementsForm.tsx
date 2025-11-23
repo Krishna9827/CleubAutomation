@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Copy, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { SectionItemsDialog, type SectionItem, ProjectSummary } from '@/components/features';
+import { SectionItemsDialog, type SectionItem, ProjectDetailsModal } from '@/components/features';
 
 const defaultRoomReq = {
   curtains: false,
@@ -49,7 +49,7 @@ const RequirementSheet2 = () => {
   const [activeSection, setActiveSection] = useState<{ roomIndex: number; sectionId: string; sectionName: string } | null>(null);
   const [duplicateRoomIndex, setDuplicateRoomIndex] = useState<number | null>(null);
   const [duplicateRoomName, setDuplicateRoomName] = useState('');
-  const [showProjectSummary, setShowProjectSummary] = useState(false);
+  const [showProjectDetails, setShowProjectDetails] = useState(false);
 
   useEffect(() => {
     const loadProject = async () => {
@@ -58,21 +58,21 @@ const RequirementSheet2 = () => {
         const stateProjectId = (location.state as any)?.projectId;
         const storedProjectId = localStorage.getItem('currentProjectId');
         const id = stateProjectId || storedProjectId;
-        
+
         if (!id) {
           console.warn('⚠️ No project ID found, redirecting to project planning');
           navigate('/project-planning');
           return;
         }
-        
+
         setProjectId(id);
         console.log('✅ Project ID loaded in RequirementsForm:', id);
-        
+
         // Fetch project data from Supabase
         const project = await projectService.getProject(id);
         if (project) {
           setProjectData(project);
-          
+
           // Initialize rooms from project
           if (project.rooms && project.rooms.length > 0) {
             setRooms(project.rooms);
@@ -101,7 +101,7 @@ const RequirementSheet2 = () => {
     setRoomRequirements(prev => {
       const newReqs = [...prev];
       const updatedRoom = { ...newReqs[roomIndex] };
-      
+
       if (isLightType) {
         updatedRoom.lightTypes = {
           ...updatedRoom.lightTypes,
@@ -110,7 +110,7 @@ const RequirementSheet2 = () => {
       } else {
         updatedRoom[field] = value;
       }
-      
+
       newReqs[roomIndex] = updatedRoom;
       return newReqs;
     });
@@ -190,7 +190,7 @@ const RequirementSheet2 = () => {
   const saveRequirementProject = async () => {
     try {
       setIsSaving(true);
-      
+
       // Use projectId from state
       if (!projectId) {
         toast({
@@ -224,7 +224,7 @@ const RequirementSheet2 = () => {
         });
         clearTimeout(timeoutId);
         console.log('✅ Requirements saved successfully');
-        
+
         // Keep project ID for next page
         localStorage.setItem('currentProjectId', projectId);
 
@@ -233,8 +233,8 @@ const RequirementSheet2 = () => {
           description: 'Requirements saved successfully'
         });
 
-        // Show ProjectSummary modal for verification
-        setShowProjectSummary(true);
+        // Show ProjectDetails modal for verification
+        setShowProjectDetails(true);
       } catch (saveError: any) {
         clearTimeout(timeoutId);
         console.error('❌ Requirements save failed:', {
@@ -258,7 +258,7 @@ const RequirementSheet2 = () => {
             variant: 'destructive'
           });
         }
-        
+
         // Navigate after showing error
       }
     } catch (error: any) {
@@ -293,8 +293,8 @@ const RequirementSheet2 = () => {
               <h1 className="text-xl font-bold text-white">Requirement Sheet</h1>
               <p className="text-sm text-slate-300">{projectData?.client_info?.name || 'Project'}</p>
             </div>
-            <Button 
-              onClick={saveRequirementProject} 
+            <Button
+              onClick={saveRequirementProject}
               className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
               disabled={isSaving}
             >
@@ -309,8 +309,8 @@ const RequirementSheet2 = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg text-white">{room.name} ({room.type})</CardTitle>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => {
                     setDuplicateRoomIndex(roomIndex);
@@ -419,7 +419,7 @@ const RequirementSheet2 = () => {
           </Card>
         </div>
       )}
-      
+
       <SectionItemsDialog
         open={!!activeSection}
         onClose={() => setActiveSection(null)}
@@ -432,22 +432,15 @@ const RequirementSheet2 = () => {
       />
 
       {/* Project Summary Modal */}
-      <ProjectSummary
-        open={showProjectSummary}
+      <ProjectDetailsModal
+        open={showProjectDetails}
         onClose={() => {
-          setShowProjectSummary(false);
+          setShowProjectDetails(false);
           // Clear project ID and redirect to home
           localStorage.removeItem('currentProjectId');
           navigate('/');
         }}
-        projectData={{
-          projectName: projectData?.client_info?.name || 'Untitled Project',
-          clientName: projectData?.client_info?.name || 'N/A',
-          architectName: projectData?.client_info?.architectName || '',
-          designerName: projectData?.client_info?.designerName || '',
-          notes: projectData?.client_info?.notes || ''
-        }}
-        rooms={rooms}
+        projectData={projectData}
       />
     </div>
   );

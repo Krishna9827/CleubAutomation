@@ -12,6 +12,7 @@ import { EstimatedCost } from "@/components/features";
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { projectService } from '@/supabase/projectService';
+import { editHistoryService } from '@/supabase/editHistoryService';
 
 interface ProjectData {
   projectName: string;
@@ -89,6 +90,55 @@ const Planner = () => {
       room.id === roomId ? updatedRoom : room
     );
     saveRooms(updatedRooms);
+    
+    // Auto-save to database if there's a project ID
+    const projectId = localStorage.getItem('currentProjectId');
+    if (projectId) {
+      saveRoomsToDatabase(projectId, updatedRooms);
+    }
+  };
+
+  const saveRoomsToDatabase = async (projectId: string, updatedRooms: Room[]) => {
+    try {
+      const updateData = {
+        rooms: updatedRooms.map(room => ({
+          id: room.id,
+          name: room.name,
+          type: room.type,
+          features: room.features || [],
+          appliances: room.appliances.map(app => ({
+            id: app.id,
+            name: app.name,
+            category: app.category,
+            subcategory: app.subcategory,
+            quantity: app.quantity,
+            wattage: app.wattage,
+            specifications: app.specifications,
+          }))
+        }))
+      };
+
+      await projectService.updateProject(projectId, updateData);
+      console.log('✅ Rooms auto-saved to database');
+
+      // Save edit history snapshot if user is logged in
+      if (user?.id) {
+        const project = await projectService.getProject(projectId);
+        if (project) {
+          await editHistoryService.saveEditHistory(
+            projectId,
+            user.id,
+            project,
+            'other',
+            'Rooms updated in Planner',
+            ['rooms']
+          );
+          console.log('✅ Edit history saved');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error auto-saving rooms:', error);
+    }
   };
 
   const deleteRoom = (roomId: string) => {
@@ -126,7 +176,11 @@ const Planner = () => {
           appliances: room.appliances.map(app => ({
             id: app.id,
             name: app.name,
+            category: app.category,
+            subcategory: app.subcategory,
             quantity: app.quantity,
+            wattage: app.wattage,
+            specifications: app.specifications,
             price: 0,
           }))
         })),
