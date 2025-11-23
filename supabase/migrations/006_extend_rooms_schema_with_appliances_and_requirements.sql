@@ -1,0 +1,73 @@
+-- Migration to extend projects table schema for complete room data storage
+-- Allows storing appliances, requirements, and sections within each room
+
+-- Extend the rooms JSONB structure to include appliances, requirements, and sections
+-- No schema changes needed - JSONB is flexible and can accept new fields
+-- This is a documentation migration to establish the new rooms JSONB structure:
+-- {
+--   "id": "room-id",
+--   "name": "Living Room",
+--   "type": "Living",
+--   "features": [],
+--   "appliances": [
+--     {
+--       "id": "app-id",
+--       "name": "LED Light",
+--       "category": "Lights",
+--       "subcategory": "Dimmable",
+--       "quantity": 5,
+--       "wattage": 12,
+--       "specifications": { "notes": "Optional notes" },
+--       "panelType": "Touch Panel" (for Touch Panels only),
+--       "moduleChannels": 4 (for Touch Panels only),
+--       "channelConfig": [...] (for Touch Panels only)
+--     }
+--   ],
+--   "requirements": {
+--     "curtains": false,
+--     "ethernet": false,
+--     "curtainMotor": false,
+--     "panelChange": false,
+--     "numLights": "5",
+--     "totalWattage": "60W",
+--     "fanType": "Ceiling Fan",
+--     "fanControl": "Smart",
+--     "acTvControl": "Yes",
+--     "smartLighting": "RGB",
+--     "smartSwitch": true,
+--     "switchboardHeight": "1.2m",
+--     "switchboardModule": "10A",
+--     "controlsInSameBoard": true,
+--     "notes": "Additional notes",
+--     "video": null,
+--     "lightTypes": {
+--       "strip": "5m",
+--       "cob": "10",
+--       "accent": "3",
+--       "cylinder": "2"
+--     },
+--     "sections": [
+--       {
+--         "id": "section-id",
+--         "name": "Main Door Panel",
+--         "items": [
+--           {
+--             "channelNumber": 1,
+--             "label": "Light",
+--             "details": "12W LED"
+--           }
+--         ]
+--       }
+--     ]
+--   }
+-- }
+
+-- Create index for faster queries on room appliances
+CREATE INDEX IF NOT EXISTS idx_projects_rooms_appliances ON public.projects
+USING GIN (rooms);
+
+-- Add comment to projects table documenting the new schema
+COMMENT ON TABLE public.projects IS 'Home automation project planning. Rooms now include appliances, requirements, and sections for complete project data.';
+
+-- Note: The sections column at table level can now be deprecated as sections are stored within room requirements
+-- For backward compatibility, keep it but new data will use room.requirements.sections

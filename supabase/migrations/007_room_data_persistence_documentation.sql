@@ -1,0 +1,101 @@
+-- Verification and documentation for complete room data persistence
+-- This SQL confirms the JSONB structure for storing appliances and requirements within rooms
+
+-- The projects table stores rooms as JSONB array where each room can contain:
+-- {
+--   "id": "uuid-string",
+--   "name": "Room Name",
+--   "type": "RoomType",
+--   "features": ["feature1", "feature2"],
+--   "appliances": [
+--     {
+--       "id": "app-uuid",
+--       "name": "LED Light",
+--       "category": "Lights",
+--       "subcategory": "Dimmable",
+--       "quantity": 5,
+--       "wattage": 12,
+--       "specifications": {
+--         "notes": "Optional specifications",
+--         ...any other fields
+--       },
+--       "panelType": "Touch Screen" (only for Touch Panels),
+--       "moduleChannels": 4 (only for Touch Panels),
+--       "channelConfig": [
+--         {
+--           "channelNumber": 1,
+--           "label": "Light",
+--           "details": "12W LED Bulb"
+--         }
+--       ]
+--     }
+--   ],
+--   "requirements": {
+--     "curtains": false,
+--     "ethernet": true,
+--     "curtainMotor": false,
+--     "panelChange": true,
+--     "numLights": "5",
+--     "totalWattage": "60W",
+--     "fanType": "Ceiling Fan",
+--     "fanControl": "Smart",
+--     "acTvControl": "Yes",
+--     "smartLighting": "RGBW",
+--     "smartSwitch": true,
+--     "switchboardHeight": "1.2m",
+--     "switchboardModule": "10A",
+--     "controlsInSameBoard": true,
+--     "notes": "Any additional notes about requirements",
+--     "video": null,
+--     "lightTypes": {
+--       "strip": "5m",
+--       "cob": "10",
+--       "accent": "3",
+--       "cylinder": "2"
+--     },
+--     "sections": [
+--       {
+--         "id": "section-uuid",
+--         "name": "Main Door Panel",
+--         "items": [
+--           {
+--             "channelNumber": 1,
+--             "label": "Light",
+--             "details": "12W LED Bulb"
+--           },
+--           {
+--             "channelNumber": 2,
+--             "label": "Fan",
+--             "details": "Ceiling Fan"
+--           }
+--         ]
+--       }
+--     ]
+--   }
+-- }
+
+-- Example query to extract appliance count per room:
+-- SELECT 
+--   id,
+--   client_info->>'name' as client_name,
+--   json_array_length(rooms) as room_count,
+--   (rooms->>0)::jsonb->>'name' as first_room_name,
+--   json_array_length((rooms->>0)::jsonb->'appliances') as first_room_appliance_count
+-- FROM public.projects
+-- WHERE user_id = '<user_id>'
+-- LIMIT 1;
+
+-- Example query to extract requirements for a specific room:
+-- SELECT 
+--   (rooms->>0)::jsonb->'requirements'->>'numLights' as num_lights,
+--   (rooms->>0)::jsonb->'requirements'->>'totalWattage' as total_wattage,
+--   (rooms->>0)::jsonb->'requirements'->>'smartLighting' as smart_lighting_type,
+--   json_array_length((rooms->>0)::jsonb->'requirements'->'sections') as panel_sections_count
+-- FROM public.projects
+-- WHERE id = '<project_id>';
+
+-- Verify table structure
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_schema = 'public' AND table_name = 'projects'
+ORDER BY ordinal_position;

@@ -124,8 +124,87 @@ CREATE TABLE public.projects (
 
 - `client_info`: `{ name, email, phone, address }`
 - `property_details`: `{ type, size, budget }`
-- `rooms`: Array of `{ id, name, type, features[], appliances[] }`
-- `sections`: Array of `{ id, name, items[] }`
+- `rooms`: Array of Room objects (see detailed structure below)
+- `sections`: Array of `{ id, name, items[] }` (deprecated - use room.requirements.sections instead)
+
+**Detailed Room JSONB Structure (NEW - v2):**
+
+Each room in the `rooms[]` array contains:
+
+```json
+{
+  "id": "room-uuid",
+  "name": "Living Room",
+  "type": "Living",
+  "features": ["string", "string"],
+  "appliances": [
+    {
+      "id": "appliance-uuid",
+      "name": "LED Downlight",
+      "category": "Lights",
+      "subcategory": "Dimmable",
+      "quantity": 5,
+      "wattage": 12,
+      "specifications": {
+        "notes": "Optional notes about appliance"
+      },
+      "panelType": "Touch Screen",
+      "moduleChannels": 4,
+      "channelConfig": [
+        {
+          "channelNumber": 1,
+          "label": "Light",
+          "details": "12W LED Bulb"
+        }
+      ]
+    }
+  ],
+  "requirements": {
+    "curtains": false,
+    "ethernet": true,
+    "curtainMotor": false,
+    "panelChange": true,
+    "numLights": "5",
+    "totalWattage": "60W",
+    "fanType": "Ceiling Fan",
+    "fanControl": "Smart",
+    "acTvControl": "Yes",
+    "smartLighting": "RGBW",
+    "smartSwitch": true,
+    "switchboardHeight": "1.2m",
+    "switchboardModule": "10A",
+    "controlsInSameBoard": true,
+    "notes": "Additional requirements notes",
+    "video": null,
+    "lightTypes": {
+      "strip": "5m",
+      "cob": "10",
+      "accent": "3",
+      "cylinder": "2"
+    },
+    "sections": [
+      {
+        "id": "section-uuid",
+        "name": "Main Door Panel",
+        "items": [
+          {
+            "channelNumber": 1,
+            "label": "Light",
+            "details": "12W LED Bulb"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Complete Data Flow:**
+1. User creates project → `projects` table, rooms initialized empty
+2. User selects/adds rooms → `rooms[]` array populated with room objects
+3. User adds appliances to room (RoomCard + AddApplianceDialog) → `rooms[].appliances[]` populated
+4. User fills requirement sheet (RequirementsForm) → `rooms[].requirements` populated
+5. All data saved to Supabase via `projectService.updateProject(projectId, { rooms: updatedRooms })`
 
 **Indexes:**
 

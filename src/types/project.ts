@@ -15,11 +15,39 @@ export interface PropertyDetails {
   [key: string]: any
 }
 
+export interface RoomRequirements {
+  curtains?: boolean
+  ethernet?: boolean
+  curtainMotor?: boolean
+  panelChange?: boolean
+  numLights?: string
+  totalWattage?: string
+  fanType?: string
+  fanControl?: string
+  acTvControl?: string
+  smartLighting?: string
+  smartSwitch?: boolean
+  switchboardHeight?: string
+  switchboardModule?: string
+  controlsInSameBoard?: boolean
+  notes?: string
+  video?: File | null
+  lightTypes?: {
+    strip?: string
+    cob?: string
+    accent?: string
+    cylinder?: string
+  }
+  sections?: Section[]
+  [key: string]: any
+}
+
 export interface Room {
   id: string
   name: string
   type: string
   appliances: Appliance[]
+  requirements?: RoomRequirements
   [key: string]: any
 }
 
@@ -27,9 +55,18 @@ export interface Appliance {
   id: string
   name: string
   category: string
+  subcategory?: string
   wattage?: number
   quantity: number
-  price: number
+  price?: number
+  specifications?: Record<string, any>
+  panelType?: string
+  moduleChannels?: number
+  channelConfig?: Array<{
+    channelNumber: number
+    label: string
+    details: string
+  }>
   [key: string]: any
 }
 

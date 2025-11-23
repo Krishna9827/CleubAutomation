@@ -303,12 +303,50 @@ const UserHistory = () => {
 
                 <div className="border-t border-white/10 pt-4">
                   <h4 className="font-semibold mb-2">Rooms ({getRoomCount(selectedProject.rooms)})</h4>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                  <div className="space-y-3 max-h-80 overflow-y-auto">
                     {selectedProject.rooms?.length ? (
                       selectedProject.rooms.map((room: any, idx: number) => (
-                        <div key={idx} className="text-sm bg-slate-800/30 p-2 rounded">
-                          <div className="font-semibold">{room.name}</div>
-                          <div className="text-slate-400">{room.appliances?.length || 0} appliances</div>
+                        <div key={idx} className="bg-slate-800/30 p-3 rounded border border-white/5">
+                          <div className="font-semibold text-white">{room.name} <span className="text-xs text-slate-400">({room.type})</span></div>
+                          
+                          {/* Appliances */}
+                          {room.appliances && room.appliances.length > 0 && (
+                            <div className="mt-2 ml-2 text-xs">
+                              <div className="text-slate-400 font-medium">Appliances:</div>
+                              {room.appliances.map((app: any, aIdx: number) => (
+                                <div key={aIdx} className="text-slate-300 mt-1">
+                                  • {app.name} ({app.category}{app.subcategory ? ` - ${app.subcategory}` : ''}) × {app.quantity}
+                                  {app.wattage && <span> • {app.wattage}W</span>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Requirements */}
+                          {room.requirements && (
+                            <div className="mt-2 ml-2 text-xs">
+                              <div className="text-slate-400 font-medium">Requirements:</div>
+                              <div className="text-slate-300 mt-1 space-y-1">
+                                {room.requirements.numLights && <div>• Lights: {room.requirements.numLights}</div>}
+                                {room.requirements.totalWattage && <div>• Total Wattage: {room.requirements.totalWattage}</div>}
+                                {room.requirements.fanType && <div>• Fan: {room.requirements.fanType}</div>}
+                                {room.requirements.acTvControl && <div>• AC/TV Control: {room.requirements.acTvControl}</div>}
+                                {room.requirements.smartLighting && <div>• Smart Lighting: {room.requirements.smartLighting}</div>}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Sections */}
+                          {room.requirements?.sections && room.requirements.sections.length > 0 && (
+                            <div className="mt-2 ml-2 text-xs">
+                              <div className="text-slate-400 font-medium">Switch Panels:</div>
+                              {room.requirements.sections.map((section: any, sIdx: number) => (
+                                <div key={sIdx} className="text-slate-300 mt-1">
+                                  • {section.name} ({section.items?.length || 0} items)
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))
                     ) : (
