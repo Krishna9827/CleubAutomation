@@ -200,6 +200,7 @@ Each room in the `rooms[]` array contains:
 ```
 
 **Complete Data Flow:**
+
 1. User creates project → `projects` table, rooms initialized empty
 2. User selects/adds rooms → `rooms[]` array populated with room objects
 3. User adds appliances to room (RoomCard + AddApplianceDialog) → `rooms[].appliances[]` populated

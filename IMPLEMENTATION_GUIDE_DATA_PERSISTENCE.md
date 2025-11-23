@@ -1,6 +1,7 @@
 # Complete Data Persistence Implementation Guide
 
 ## Overview
+
 All project data (appliances, requirements, sections) are now properly saved and displayed in ProjectHistory. The complete workflow saves everything within nested room objects in Supabase.
 
 ---
@@ -8,6 +9,7 @@ All project data (appliances, requirements, sections) are now properly saved and
 ## Data Structure & Flow
 
 ### Room Object (Complete Structure)
+
 ```typescript
 {
   id: string
@@ -20,6 +22,7 @@ All project data (appliances, requirements, sections) are now properly saved and
 ```
 
 ### Appliance Object (From AddApplianceDialog)
+
 ```typescript
 {
   id: string
@@ -38,6 +41,7 @@ All project data (appliances, requirements, sections) are now properly saved and
 ```
 
 ### Requirements Object (From RequirementsForm)
+
 ```typescript
 {
   curtains?: boolean
@@ -74,12 +78,14 @@ All project data (appliances, requirements, sections) are now properly saved and
 ## Workflow: Complete Data Persistence
 
 ### 1. **ProjectPlanning Page**
+
 - User creates new project
 - `projectService.createProject()` called
 - Returns `projectId`, stored in localStorage & state
 - Redirect to RoomSelection
 
 ### 2. **RoomSelection Page**
+
 - User selects/adds rooms
 - Each room initialized with:
   ```typescript
@@ -93,6 +99,7 @@ All project data (appliances, requirements, sections) are now properly saved and
   - Changes propagated via `onUpdate(roomId, updatedRoom)`
 
 ### 3. **RequirementsForm Page**
+
 - User fills electrical requirements per room
 - Each room's requirements built separately in state
 - Requirements object includes:
@@ -102,18 +109,20 @@ All project data (appliances, requirements, sections) are now properly saved and
   ```typescript
   const updatedRooms = rooms.map((room, index) => ({
     ...room,
-    requirements: roomRequirements[index]
+    requirements: roomRequirements[index],
   }));
   await projectService.updateProject(projectId, { rooms: updatedRooms });
   ```
 - This saves rooms WITH appliances + requirements to Supabase
 
 ### 4. **Supabase Storage**
+
 - All data stored in `projects.rooms JSONB[]`
 - Each room contains nested appliances and requirements
 - No separate tables needed—single JSONB array
 
 ### 5. **ProjectHistory (Display)**
+
 - `projectService.getUserProjects(userId)` fetches all projects
 - Modal displays detailed project information:
   - For each room: name, type
@@ -126,6 +135,7 @@ All project data (appliances, requirements, sections) are now properly saved and
 ## Database Schema (Verified)
 
 ### Projects Table Columns
+
 ```sql
 id UUID PRIMARY KEY
 user_id UUID (references users)
@@ -144,8 +154,9 @@ updated_at TIMESTAMPTZ
 ### SQL Query Examples
 
 **Get appliance count per room:**
+
 ```sql
-SELECT 
+SELECT
   id,
   json_array_length(rooms) as room_count,
   (rooms->>0)::jsonb->>'name' as first_room_name,
@@ -155,8 +166,9 @@ WHERE user_id = '<user_id>';
 ```
 
 **Get requirements for specific room:**
+
 ```sql
-SELECT 
+SELECT
   (rooms->>0)::jsonb->'requirements'->>'numLights' as num_lights,
   (rooms->>0)::jsonb->'requirements'->>'totalWattage' as total_wattage,
   json_array_length((rooms->>0)::jsonb->'requirements'->'sections') as panel_count
@@ -169,11 +181,13 @@ WHERE id = '<project_id>';
 ## Files Modified/Updated
 
 ### 1. **src/types/project.ts**
+
 - ✅ Added `RoomRequirements` interface with all requirement fields
 - ✅ Updated `Room` interface to include `requirements?: RoomRequirements`
 - ✅ Extended `Appliance` interface with `category, subcategory, specifications, panelType, moduleChannels, channelConfig`
 
 ### 2. **src/pages/user/ProjectHistory.tsx**
+
 - ✅ Enhanced modal to display appliances with full details:
   - Category, subcategory, quantity, wattage
 - ✅ Display requirements:
@@ -181,24 +195,29 @@ WHERE id = '<project_id>';
 - ✅ Display sections (switch panels) with item count
 
 ### 3. **src/pages/user/RequirementsForm.tsx**
+
 - ✅ Already saves requirements bundled with rooms (line 207)
 - ✅ Loads existing requirements from room.requirements on page load
 - ✅ Properly structures sections within requirements
 
 ### 4. **src/components/features/RoomCard.tsx**
+
 - ✅ Already uses AddApplianceDialog for appliance creation
 - ✅ Properly updates room.appliances array
 
 ### 5. **src/components/features/AddApplianceDialog.tsx**
+
 - ✅ Captures all appliance data: name, category, subcategory, quantity, wattage, specifications
 - ✅ For Touch Panels: panelType, moduleChannels, channelConfig
 - ✅ Returns appliance object with all fields
 
 ### 6. **supabase/migrations/**
+
 - ✅ `006_extend_rooms_schema_with_appliances_and_requirements.sql` - Documents new JSONB structure
 - ✅ `007_room_data_persistence_documentation.sql` - Query examples and verification
 
 ### 7. **SUPABASE_NOTES.md**
+
 - ✅ Updated to document complete room JSONB structure
 - ✅ Added detailed field descriptions and example data
 - ✅ Documented complete data flow from creation to storage
@@ -224,22 +243,25 @@ WHERE id = '<project_id>';
 ### **Critical Line References:**
 
 **RequirementsForm.tsx (Line 207)** - Bundles all data correctly:
+
 ```typescript
 const updatedRooms = rooms.map((room, index) => ({
   ...room,
-  requirements: roomRequirements[index]
+  requirements: roomRequirements[index],
 }));
 ```
 
 **projectService.updateProject()** - Saves to Supabase without modification:
+
 ```typescript
 await projectService.updateProject(projectId, {
   rooms: updatedRooms,
-  last_saved_page: 'requirements'
+  last_saved_page: "requirements",
 });
 ```
 
 **ProjectHistory.tsx (Line 310-335)** - Displays all nested data:
+
 - Loops through rooms array
 - Shows appliances with full details
 - Shows requirements fields

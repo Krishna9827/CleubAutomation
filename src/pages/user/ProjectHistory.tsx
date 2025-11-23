@@ -105,10 +105,16 @@ const UserHistory = () => {
     }
   };
 
-  const continueProject = (project: LocalProjectData) => {
-    // Navigate to room selection with project data
-    // Project is already in Supabase, just navigate
-    navigate('/room-selection', { state: { projectId: project.id } });
+  const editProject = (project: LocalProjectData) => {
+    // Navigate to requirements form to edit project
+    localStorage.setItem('currentProjectId', project.id);
+    navigate('/requirements', { state: { projectId: project.id } });
+  };
+
+  const createNewProject = () => {
+    // Clear current project and navigate to project planning
+    localStorage.removeItem('currentProjectId');
+    navigate('/project-planning');
   };
 
   const handleViewDetails = (project: LocalProjectData) => {
@@ -232,10 +238,17 @@ const UserHistory = () => {
 
                   <div className="flex gap-2 pt-4 border-t border-white/10">
                     <Button
-                      onClick={() => continueProject(project)}
+                      onClick={() => editProject(project)}
                       className="flex-1 bg-teal-600 hover:bg-teal-700"
                     >
-                      Continue Project
+                      Edit Project
+                    </Button>
+                    <Button
+                      onClick={() => createNewProject()}
+                      variant="outline"
+                      className="flex-1 border-slate-600 text-slate-300 hover:text-white"
+                    >
+                      Create New
                     </Button>
                     <Button
                       size="sm"

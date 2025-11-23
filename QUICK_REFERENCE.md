@@ -46,13 +46,13 @@ ProjectHistory
 
 ## Files to Know
 
-| File | Purpose |
-|------|---------|
-| `src/types/project.ts` | Room & Appliance interface definitions |
+| File                                  | Purpose                                  |
+| ------------------------------------- | ---------------------------------------- |
+| `src/types/project.ts`                | Room & Appliance interface definitions   |
 | `src/pages/user/RequirementsForm.tsx` | Saves requirements with rooms (line 207) |
-| `src/pages/user/ProjectHistory.tsx` | Displays all data in modal |
-| `SUPABASE_NOTES.md` | Complete schema documentation |
-| `SQL_COMPLETE_DATA_PERSISTENCE.sql` | Verification queries |
+| `src/pages/user/ProjectHistory.tsx`   | Displays all data in modal               |
+| `SUPABASE_NOTES.md`                   | Complete schema documentation            |
+| `SQL_COMPLETE_DATA_PERSISTENCE.sql`   | Verification queries                     |
 
 ---
 
@@ -77,7 +77,7 @@ Go to **Supabase Dashboard > SQL Editor** and run:
 
 ```sql
 -- See appliances for first room of your project
-SELECT 
+SELECT
   room_obj->>'name' as room_name,
   app->>'name' as appliance_name,
   app->>'category' as category,
@@ -108,14 +108,17 @@ LIMIT 5;
 ## If Something's Wrong
 
 1. **Appliances not showing?**
+
    - Check `rooms[].appliances` in Supabase
    - Run verification query above
 
 2. **Requirements not showing?**
+
    - Check `rooms[].requirements` in Supabase
    - Ensure RequirementsForm saves successfully
 
 3. **ProjectHistory blank?**
+
    - Verify project was saved to Supabase (check `projects` table)
    - Check browser console for errors
 
@@ -128,15 +131,17 @@ LIMIT 5;
 ## Key Code References
 
 **RequirementsForm saves rooms with requirements (line 207):**
+
 ```typescript
 const updatedRooms = rooms.map((room, index) => ({
   ...room,
-  requirements: roomRequirements[index]
+  requirements: roomRequirements[index],
 }));
 await projectService.updateProject(projectId, { rooms: updatedRooms });
 ```
 
 **ProjectHistory displays appliances + requirements:**
+
 ```typescript
 // Shows appliances per room
 app.name, app.category, app.subcategory, app.quantity, app.wattage
@@ -163,6 +168,6 @@ requirements.sections (switch panels)
 ✅ Production build successful  
 ✅ Data structure documented  
 ✅ SQL examples provided  
-✅ Display implemented  
+✅ Display implemented
 
 **Ready to push!** 🚀
