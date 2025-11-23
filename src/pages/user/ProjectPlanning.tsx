@@ -103,6 +103,15 @@ const ProjectPlanning = () => {
         links={[
           { label: 'Home', href: '/' },
         ]}
+        rightActions={
+          <Button 
+            onClick={() => navigate('/my-projects')}
+            variant="outline"
+            className="border-teal-600 text-teal-400 hover:bg-teal-600/10"
+          >
+            Project History
+          </Button>
+        }
       />
 
       {/* Hero Section */}

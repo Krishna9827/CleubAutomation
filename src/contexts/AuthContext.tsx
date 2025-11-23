@@ -53,14 +53,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadUserData = async (userId: string, email: string | undefined) => {
     try {
       // Fetch profile
-      const { data: profile } = await supabase
+      const { data: profile, error: fetchError } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (profile) {
+        console.log('✅ User profile found');
         setUserProfile(profile);
+      } else if (!fetchError) {
+        // Profile doesn't exist - create it for first-time login
+        console.log('📝 Profile not found, creating for first-time login...');
+        await createUserProfileOnFirstLogin(userId, email);
+      } else {
+        console.log('ℹ️ Could not fetch user profile:', fetchError.message);
       }
 
       // Check admin status
@@ -80,34 +87,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const createUserProfileOnFirstLogin = async (userId: string, email: string | undefined) => {
+    try {
+      if (!email) {
+        console.warn('⚠️ No email provided, cannot create profile');
+        return;
+      }
+
+      console.log('🔄 Attempting to create profile for user:', userId);
+
+      const { data: newProfile, error: insertError } = await (supabase
+        .from('users') as any)
+        .insert({
+          id: userId,
+          email: email,
+          first_name: '',
+          last_name: '',
+          phone_number: null,
+          date_of_birth: null,
+          house_number: null,
+          area: null,
+          city: null,
+          state: null,
+          postal_code: null,
+          profile_complete: false,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        // If it's a conflict error, try to fetch again
+        if (insertError.code === '23505') {
+          console.log('ℹ️ Profile already exists, fetching...');
+          const { data: existingProfile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();
+          if (existingProfile) {
+            setUserProfile(existingProfile);
+          }
+        } else {
+          console.error('❌ Error creating profile:', insertError);
+        }
+      } else if (newProfile) {
+        console.log('✅ User profile created on first login');
+        setUserProfile(newProfile);
+      }
+    } catch (error) {
+      console.error('❌ Error in createUserProfileOnFirstLogin:', error);
+    }
+  };
+
   const signUpWithEmail = async (email: string, password: string, userData: Partial<UserProfile>) => {
     const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
+      options: {
+        data: {
+          first_name: userData.first_name || '',
+          last_name: userData.last_name || '',
+        }
+      }
     });
 
     if (error) throw error;
     if (!data.user) throw new Error('User not created');
 
-    // Create profile
-    const { error: profileError } = await (supabase
-      .from('users') as any)
-      .insert({
-        id: data.user.id,
-        email: data.user.email!,
-        first_name: userData.first_name || '',
-        last_name: userData.last_name || '',
-        phone_number: userData.phone_number || null,
-        date_of_birth: userData.date_of_birth || null,
-        house_number: userData.house_number || null,
-        area: userData.area || null,
-        city: userData.city || null,
-        state: userData.state || null,
-        postal_code: userData.postal_code || null,
-        profile_complete: true,
-      });
-
-    if (profileError) throw profileError;
+    console.log('✅ User account created. Profile will be created on first login.');
   };
 
   const signInWithEmail = async (email: string, password: string) => {
