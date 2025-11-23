@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Copy, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { SectionItemsDialog, type SectionItem } from '@/components/features';
+import { SectionItemsDialog, type SectionItem, ProjectSummary } from '@/components/features';
 
 const defaultRoomReq = {
   curtains: false,
@@ -49,6 +49,7 @@ const RequirementSheet2 = () => {
   const [activeSection, setActiveSection] = useState<{ roomIndex: number; sectionId: string; sectionName: string } | null>(null);
   const [duplicateRoomIndex, setDuplicateRoomIndex] = useState<number | null>(null);
   const [duplicateRoomName, setDuplicateRoomName] = useState('');
+  const [showProjectSummary, setShowProjectSummary] = useState(false);
 
   useEffect(() => {
     const loadProject = async () => {
@@ -232,8 +233,8 @@ const RequirementSheet2 = () => {
           description: 'Requirements saved successfully'
         });
 
-        // Navigate to final review page
-        navigate('/final-review', { state: { projectId } });
+        // Show ProjectSummary modal for verification
+        setShowProjectSummary(true);
       } catch (saveError: any) {
         clearTimeout(timeoutId);
         console.error('❌ Requirements save failed:', {
@@ -428,6 +429,25 @@ const RequirementSheet2 = () => {
         }}
         sectionName={activeSection?.sectionName || ''}
         initialItems={activeSection ? (roomRequirements[activeSection.roomIndex]?.sections || []).find((s: any) => s.id === activeSection.sectionId)?.items || [] : []}
+      />
+
+      {/* Project Summary Modal */}
+      <ProjectSummary
+        open={showProjectSummary}
+        onClose={() => {
+          setShowProjectSummary(false);
+          // Clear project ID and redirect to home
+          localStorage.removeItem('currentProjectId');
+          navigate('/');
+        }}
+        projectData={{
+          projectName: projectData?.client_info?.name || 'Untitled Project',
+          clientName: projectData?.client_info?.name || 'N/A',
+          architectName: projectData?.client_info?.architectName || '',
+          designerName: projectData?.client_info?.designerName || '',
+          notes: projectData?.client_info?.notes || ''
+        }}
+        rooms={rooms}
       />
     </div>
   );
