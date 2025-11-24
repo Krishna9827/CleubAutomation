@@ -571,17 +571,58 @@ export const adminService = {
   },
 
   /**
-   * Bulk import inventory items
+   * Bulk import inventory items from CSV/Excel
    */
   async bulkImportInventory(items: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>[]): Promise<void> {
     try {
+      console.log('📦 Bulk importing', items.length, 'items...');
+      
       const { error } = await supabase
         .from('inventory')
         .insert(items as any);
 
       if (error) throw error;
+      
+      console.log('✅ Bulk import successful');
     } catch (error: any) {
+      console.error('❌ Bulk import error:', error);
       throw new Error(error.message);
+    }
+  },
+
+  /**
+   * Bulk insert inventory items (alias for bulkImportInventory)
+   */
+  async bulkInsertInventory(items: any[]): Promise<boolean> {
+    try {
+      console.log('💾 Bulk inserting', items.length, 'inventory items...');
+
+      // Transform items to match database schema
+      const transformedItems = items.map(item => ({
+        product_name: item.product_name || item.name || '',
+        category: item.category || 'General',
+        subcategory: item.subcategory || item.sub_category || 'Other',
+        price_per_unit: item.price_per_unit || item.price || 0,
+        wattage: item.wattage || null,
+        notes: item.notes || null,
+        vendor: item.vendor || null,
+        protocol: item.protocol || null,
+      }));
+
+      const { error } = await supabase
+        .from('inventory')
+        .insert(transformedItems);
+
+      if (error) {
+        console.error('❌ Bulk insert error:', error);
+        return false;
+      }
+
+      console.log('✅ Successfully inserted', transformedItems.length, 'items');
+      return true;
+    } catch (error: any) {
+      console.error('❌ Bulk insert exception:', error);
+      return false;
     }
   },
 };

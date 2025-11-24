@@ -1,17 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Package, Trash2, Edit } from 'lucide-react';
+import { Package, Trash2, Upload } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { AdminTable, ColumnDef, ActionButton } from '@/components/admin/AdminTable';
 import { adminService } from '@/supabase/adminService';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/supabase/config';
 import { InventoryItem } from '@/types/inventory';
+import ImportInventoryDialog from '@/components/admin/ImportInventoryDialog';
 
 const AdminInventory = () => {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const realtimeChannelRef = useRef<any>(null);
 
   // Load inventory with realtime
@@ -132,12 +135,22 @@ const AdminInventory = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Package className="w-8 h-8 text-teal-400" />
-          <div>
-            <h1 className="text-3xl font-bold text-white">Inventory</h1>
-            <p className="text-slate-400">Manage products and pricing</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Package className="w-8 h-8 text-teal-400" />
+            <div>
+              <h1 className="text-3xl font-bold text-white">Inventory</h1>
+              <p className="text-slate-400">Manage products and pricing</p>
+            </div>
           </div>
+
+          <Button
+            onClick={() => setShowImportDialog(true)}
+            className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Import from CSV
+          </Button>
         </div>
 
         <AdminTable<InventoryItem>
@@ -149,6 +162,16 @@ const AdminInventory = () => {
           loading={loading}
           emptyMessage="No inventory items"
           itemsPerPage={15}
+        />
+
+        {/* Import Dialog */}
+        <ImportInventoryDialog
+          open={showImportDialog}
+          onClose={() => setShowImportDialog(false)}
+          onImportSuccess={() => {
+            // Reload inventory after import
+            window.location.reload();
+          }}
         />
       </div>
     </AdminLayout>
