@@ -223,8 +223,11 @@ export interface Database {
       inventory: {
         Row: {
           id: string
+          product_name: string | null
           category: string
           subcategory: string | null
+          vendor: string | null
+          protocol: string | null
           wattage: number | null
           price_per_unit: number
           notes: string | null
@@ -233,8 +236,11 @@ export interface Database {
         }
         Insert: {
           id?: string
+          product_name?: string | null
           category: string
           subcategory?: string | null
+          vendor?: string | null
+          protocol?: string | null
           wattage?: number | null
           price_per_unit: number
           notes?: string | null
@@ -243,8 +249,11 @@ export interface Database {
         }
         Update: {
           id?: string
+          product_name?: string | null
           category?: string
           subcategory?: string | null
+          vendor?: string | null
+          protocol?: string | null
           wattage?: number | null
           price_per_unit?: number
           notes?: string | null

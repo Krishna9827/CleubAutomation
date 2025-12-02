@@ -3,6 +3,7 @@
 ## Overview
 
 The **Inventory Import** feature allows admins to drag-and-drop CSV or Excel files directly into the AdminInventory page. The system automatically:
+
 - ✅ Detects column headers
 - ✅ Parses product data intelligently
 - ✅ Previews before import
@@ -14,12 +15,15 @@ The **Inventory Import** feature allows admins to drag-and-drop CSV or Excel fil
 ## Features
 
 ### 1. **Drag-and-Drop Upload**
+
 - Drag CSV/Excel file onto the upload area
 - Or click to browse and select file
 - Accepts: `.csv`, `.xlsx`, `.xls`
 
 ### 2. **Smart Column Detection**
+
 Automatically identifies columns by keywords:
+
 - **Product Name**: "product name", "product", "item"
 - **Category**: "catalogue", "category", "type"
 - **Sub-Category**: "sub-category", "subcategory", "module", "description"
@@ -30,6 +34,7 @@ Automatically identifies columns by keywords:
 - **Protocol**: "protocol", "connection"
 
 ### 3. **Data Validation**
+
 - ✅ Extracts valid rows
 - ✅ Skips empty rows
 - ✅ Cleans prices (removes ₹, commas)
@@ -37,12 +42,14 @@ Automatically identifies columns by keywords:
 - ✅ Provides detailed error/warning messages
 
 ### 4. **Preview & Selection**
+
 - View all parsed items before import
 - Select/deselect individual items
 - Select All / Deselect All buttons
 - Checkbox interface for easy toggling
 
 ### 5. **Bulk Import**
+
 - Insert multiple items at once
 - Database transaction (all or nothing)
 - Real-time updates via Supabase realtime
@@ -53,6 +60,7 @@ Automatically identifies columns by keywords:
 ## How It Works
 
 ### Step 1: Upload File
+
 ```
 Admin clicks "Import from CSV" button
         ↓
@@ -62,6 +70,7 @@ User drags file or selects from browser
 ```
 
 ### Step 2: Parse File
+
 ```
 File uploaded → parseCSV() reads content
         ↓
@@ -73,6 +82,7 @@ Validates and transforms data
 ```
 
 ### Step 3: Preview
+
 ```
 Parsed data displayed with:
 - Total rows
@@ -82,6 +92,7 @@ Parsed data displayed with:
 ```
 
 ### Step 4: Import
+
 ```
 User selects items to import
         ↓
@@ -129,14 +140,18 @@ AdminInventory component updates
 ### Files
 
 #### `src/utils/csvParser.ts`
+
 CSV parsing and data extraction utilities
+
 - `parseCSV()` - Parse CSV string to 2D array
 - `extractInventoryData()` - Extract inventory from parsed data
 - `readFileAsString()` - Read file as text
 - `processInventoryFile()` - Main orchestrator function
 
 #### `src/components/admin/ImportInventoryDialog.tsx`
+
 UI component for import dialog
+
 - Drag-and-drop upload area
 - File processing
 - Preview with checkboxes
@@ -144,12 +159,16 @@ UI component for import dialog
 - Error/warning display
 
 #### `src/supabase/adminService.ts`
+
 Database operations
+
 - `bulkInsertInventory()` - Insert multiple items
 - `bulkImportInventory()` - Legacy method (alias)
 
 #### `src/pages/admin/AdminInventory.tsx`
+
 Admin inventory page
+
 - "Import from CSV" button
 - Import dialog state management
 - Auto-refresh on success
@@ -159,6 +178,7 @@ Admin inventory page
 ## Example: Importing Your Master Sheet
 
 ### Your CSV Structure
+
 ```
 Product name,Catalogue,Description,Our Price,Wattage,Vendor,Protocol
 TOQ S (2-Module),Modules,Socket,4000,,Youtomatic,Wireless (Zigbee)
@@ -167,7 +187,9 @@ TAC ANODIZED ALUMINIUM FRAME,,,1500,Wireless (Zigbee),Youtomatic
 ```
 
 ### Processing Flow
+
 1. **Column Detection**
+
    - "Product name" → product_name
    - "Catalogue" → category
    - "Description" → subcategory
@@ -177,6 +199,7 @@ TAC ANODIZED ALUMINIUM FRAME,,,1500,Wireless (Zigbee),Youtomatic
    - "Protocol" → protocol
 
 2. **Data Extraction**
+
    ```typescript
    {
      product_name: "TOQ S (2-Module)",
@@ -200,6 +223,7 @@ TAC ANODIZED ALUMINIUM FRAME,,,1500,Wireless (Zigbee),Youtomatic
 ## Error Handling
 
 ### File Validation Errors
+
 ```
 ❌ Invalid file type. Please upload a CSV or Excel file.
 ❌ Failed to read file
@@ -207,12 +231,14 @@ TAC ANODIZED ALUMINIUM FRAME,,,1500,Wireless (Zigbee),Youtomatic
 ```
 
 ### Data Validation Warnings
+
 ```
 ⚠️ Row 5: Missing product name, skipping
 ⚠️ Row 8: Invalid price "N/A", using 0
 ```
 
 ### Import Errors
+
 ```
 ❌ Failed to import items to database
 ❌ An error occurred during import
@@ -222,11 +248,11 @@ TAC ANODIZED ALUMINIUM FRAME,,,1500,Wireless (Zigbee),Youtomatic
 
 ## Supported File Formats
 
-| Format | Extension | Status |
-|--------|-----------|--------|
-| CSV | `.csv` | ✅ Full support |
-| Excel | `.xlsx` | ✅ Full support |
-| Excel Legacy | `.xls` | ✅ Full support |
+| Format       | Extension | Status          |
+| ------------ | --------- | --------------- |
+| CSV          | `.csv`    | ✅ Full support |
+| Excel        | `.xlsx`   | ✅ Full support |
+| Excel Legacy | `.xls`    | ✅ Full support |
 
 ---
 
@@ -235,12 +261,14 @@ TAC ANODIZED ALUMINIUM FRAME,,,1500,Wireless (Zigbee),Youtomatic
 The parser is **flexible and case-insensitive**. Examples:
 
 ### Product Name
+
 - "Product name" ✅
 - "product" ✅
 - "item" ✅
 - "PRODUCT_NAME" ✅
 
 ### Price
+
 - "Our Price" ✅
 - "our price" ✅
 - "Price" ✅
@@ -248,6 +276,7 @@ The parser is **flexible and case-insensitive**. Examples:
 - "MRP" ✅
 
 ### Wattage
+
 - "Wattage" ✅
 - "wattage" ✅
 - "Power" ✅
@@ -259,6 +288,7 @@ The parser is **flexible and case-insensitive**. Examples:
 ## Database Schema
 
 ### Inventory Table
+
 ```sql
 CREATE TABLE inventory (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -280,6 +310,7 @@ CREATE TABLE inventory (
 ## UI Components
 
 ### Import Dialog
+
 ```
 ┌─────────────────────────────────────────┐
 │ Import Inventory                        │
@@ -302,6 +333,7 @@ CREATE TABLE inventory (
 ```
 
 ### Preview List
+
 ```
 ☑ TOQ S (2-Module)
   Category: Modules | Price: ₹4,000 | Wattage: -
@@ -318,25 +350,31 @@ CREATE TABLE inventory (
 ## Quick Start
 
 ### 1. Access Admin Inventory
+
 - Navigate to **Admin → Inventory**
 
 ### 2. Click Import Button
+
 - Click "Import from CSV" button in top-right
 
 ### 3. Upload File
+
 - Drag your CSV file onto the dialog
 - Or click "Select File" to browse
 
 ### 4. Review Data
+
 - Check total rows and valid items
 - Review any warnings or errors
 - Click "Preview" to see all items
 
 ### 5. Select Items
+
 - Use checkboxes to select items
 - Or use "Select All" / "Deselect All"
 
 ### 6. Import
+
 - Click "Import X Items" button
 - Wait for success notification
 - Page auto-refreshes with new items
@@ -346,6 +384,7 @@ CREATE TABLE inventory (
 ## Tips & Best Practices
 
 ### ✅ DO
+
 - Export from your source system as CSV
 - Include all relevant columns (vendor, protocol)
 - Use consistent formatting
@@ -353,6 +392,7 @@ CREATE TABLE inventory (
 - Start with a small test import
 
 ### ❌ DON'T
+
 - Delete the header row
 - Use special characters in product names
 - Leave price fields blank (use 0)
@@ -364,22 +404,27 @@ CREATE TABLE inventory (
 ## Troubleshooting
 
 ### "Invalid file type" Error
+
 - **Cause**: Uploaded file is not CSV/Excel
 - **Solution**: Save as CSV or XLSX and try again
 
 ### "Missing product name, skipping" Warning
+
 - **Cause**: A row has no product name
 - **Solution**: Add product names or remove empty rows
 
 ### "Invalid price" Warning
+
 - **Cause**: Price field has non-numeric values
 - **Solution**: Fix price format or leave blank for 0
 
 ### Import Not Showing New Items
+
 - **Cause**: Page not refreshed after import
 - **Solution**: Manually refresh page (auto-refresh should happen)
 
 ### File Takes Too Long to Process
+
 - **Cause**: Very large CSV file (1000+ rows)
 - **Solution**: Split into smaller files and import separately
 
@@ -388,13 +433,15 @@ CREATE TABLE inventory (
 ## Testing with Your Master Sheet
 
 Your provided CSV file has these columns:
+
 ```
-Product name, Catalogue, Checklist, Description, HSN code, Image, MAKE, 
-MRP, Module size, Our Price, Product ID, Protocol, Technical Details, 
+Product name, Catalogue, Checklist, Description, HSN code, Image, MAKE,
+MRP, Module size, Our Price, Product ID, Protocol, Technical Details,
 Vendor, Works With
 ```
 
 **Recommended mapping:**
+
 - Product name → product_name ✅
 - Catalogue → category ✅
 - Vendor → vendor ✅
@@ -403,6 +450,7 @@ Vendor, Works With
 - Technical Details → notes ✅
 
 **Result after import:**
+
 - 40+ products from your sheet
 - All properly categorized
 - Prices correctly parsed
@@ -413,18 +461,22 @@ Vendor, Works With
 ## Future Enhancements
 
 1. **Duplicate Detection**
+
    - Warn if product already exists
    - Option to update vs insert
 
 2. **Price Adjustments**
+
    - Apply markup/discount to imported prices
    - Batch price edits
 
 3. **Category Mapping**
+
    - Map vendor-specific categories to system categories
    - Pre-save mapping templates
 
 4. **Import History**
+
    - Log all imports with timestamps
    - Rollback previous imports
 
@@ -446,6 +498,7 @@ Vendor, Works With
 ## Support
 
 For issues or questions:
+
 1. Check error messages in toast notifications
 2. Review warnings in preview dialog
 3. Check browser console for detailed logs

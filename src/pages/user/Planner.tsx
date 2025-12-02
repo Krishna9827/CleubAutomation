@@ -26,6 +26,9 @@ interface Room {
   id: string;
   name: string;
   type: string;
+  automationType?: 'wired' | 'wireless';
+  panels?: any[];
+  features?: any[];
   appliances: Appliance[];
 }
 
@@ -36,6 +39,7 @@ interface Appliance {
   subcategory?: string;
   quantity: number;
   wattage?: number;
+  linkedInventoryId?: string;
   specifications: Record<string, any>;
 }
 
@@ -66,6 +70,8 @@ const Planner = () => {
       id: Date.now().toString(),
       name,
       type,
+      automationType: 'wireless',
+      panels: [],
       appliances: []
     };
     const updatedRooms = [...rooms, newRoom];
@@ -78,6 +84,8 @@ const Planner = () => {
       id: `${Date.now()}-${index}`,
       name: room.name,
       type: room.type,
+      automationType: 'wireless',
+      panels: [],
       appliances: []
     }));
     const updatedRooms = [...rooms, ...newRooms];
@@ -105,6 +113,8 @@ const Planner = () => {
           id: room.id,
           name: room.name,
           type: room.type,
+          automationType: room.automationType || 'wireless',
+          panels: room.panels || [],
           features: room.features || [],
           appliances: room.appliances.map(app => ({
             id: app.id,
@@ -113,7 +123,9 @@ const Planner = () => {
             subcategory: app.subcategory,
             quantity: app.quantity,
             wattage: app.wattage,
+            linkedInventoryId: app.linkedInventoryId,
             specifications: app.specifications,
+            price: 0
           }))
         }))
       };
@@ -172,6 +184,8 @@ const Planner = () => {
           id: room.id,
           name: room.name,
           type: room.type,
+          automationType: room.automationType || 'wireless',
+          panels: room.panels || [],
           features: [],
           appliances: room.appliances.map(app => ({
             id: app.id,
@@ -180,6 +194,7 @@ const Planner = () => {
             subcategory: app.subcategory,
             quantity: app.quantity,
             wattage: app.wattage,
+            linkedInventoryId: app.linkedInventoryId,
             specifications: app.specifications,
             price: 0,
           }))

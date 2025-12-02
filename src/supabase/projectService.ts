@@ -19,12 +19,19 @@ export interface ProjectData {
     id: string;
     name: string;
     type: string;
+    automationType?: 'wired' | 'wireless';
+    panels?: any[];
     features: string[];
     appliances: {
       id: string;
       name: string;
+      category?: string;
+      subcategory?: string;
       quantity: number;
       price: number;
+      wattage?: number;
+      linkedInventoryId?: string;
+      specifications?: Record<string, any>;
     }[];
   }[];
   sections: {

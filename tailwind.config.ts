@@ -24,6 +24,14 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				// Cinematic Luxury Palette
+				luxury: {
+					black: '#0A0A0A',
+					white: '#F5F5F3',
+					cream: '#FAF9F6',
+					gold: '#C9A962',
+					muted: '#6B6B6B',
+				},
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
@@ -85,7 +93,18 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'scroll': 'scroll 20s linear infinite'
+				'scroll': 'scroll 20s linear infinite',
+				'parallax': 'parallax 1s ease-out',
+				'reveal': 'reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+				'zoom-out': 'zoom-out 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
+			},
+			fontFamily: {
+				'serif': ['Playfair Display', 'Georgia', 'serif'],
+				'sans': ['Montserrat', 'system-ui', 'sans-serif'],
+			},
+			letterSpacing: {
+				'ultrawide': '0.2em',
+				'superwide': '0.3em',
 			}
 		}
 	},

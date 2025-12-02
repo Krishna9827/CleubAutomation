@@ -11,7 +11,8 @@ import {
   MessageSquare,
   Building2,
   Package,
-  FileText
+  FileText,
+  Zap
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -28,6 +29,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { name: 'Inquiries', href: '/admin/inquiries', icon: MessageSquare },
     { name: 'Projects', href: '/admin/projects', icon: Building2 },
     { name: 'Inventory', href: '/admin/inventory', icon: Package },
+    { name: 'Panel Presets', href: '/admin/panel-presets', icon: Zap },
     { name: 'Testimonials', href: '/admin/testimonials', icon: MessageSquareQuote },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
     { name: 'Back to Home', href: '/', icon: Home },

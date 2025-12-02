@@ -4,7 +4,10 @@ import { ProjectData } from './projectService';
 export interface BOQItem {
   id: string;
   roomName: string;
-  applianceName: string;
+  roomId?: string;
+  applianceName?: string;
+  panelName?: string;
+  panelId?: string;
   category: string;
   subcategory?: string;
   quantity: number;
@@ -12,6 +15,11 @@ export interface BOQItem {
   totalPrice: number;
   description?: string;
   specifications?: Record<string, any>;
+  itemType?: 'appliance' | 'panel';
+  vendorTag?: string;
+  availableVendors?: any[];
+  panelKey?: string;
+  [key: string]: any; // Allow additional fields
 }
 
 export interface BOQSummary {
@@ -66,9 +74,87 @@ export const proformaInvoiceService = {
     gstPercentage: number = 18
   ): Promise<ProformaInvoice | null> {
     try {
+      console.log('🔄 createProformaInvoice called with:', {
+        projectId,
+        userId,
+        boqItemsCount: boqItems.length,
+        automationType,
+      });
+
+      // Get current user's email from Supabase auth
+      console.log('📍 Step 1: Getting authenticated user...');
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      
+      console.log('📍 Step 1 Result:', {
+        hasError: !!authError,
+        errorMsg: authError?.message,
+        hasUser: !!authUser,
+        email: authUser?.email,
+      });
+
+      if (authError || !authUser?.email) {
+        console.error('❌ STEP 1 FAILED: Could not get authenticated user:', {
+          error: authError?.message,
+          hasEmail: !!authUser?.email,
+        });
+        return null;
+      }
+
+      const userEmail = authUser.email;
+      console.log('✅ STEP 1 PASSED: User email obtained:', userEmail);
+
+      // Check if user is admin by email
+      console.log('📍 Step 2: Checking admin status by email...');
+      const { data: adminCheck, error: adminError } = await supabase
+        .from('admins')
+        .select('id, email, is_active')
+        .eq('email', userEmail)
+        .maybeSingle();
+
+      console.log('📍 Step 2 Result:', {
+        hasError: !!adminError,
+        errorMsg: adminError?.message,
+        hasData: !!adminCheck,
+        adminData: adminCheck,
+      });
+
+      if (adminError) {
+        console.error('❌ STEP 2 FAILED: Error querying admins table:', {
+          error: adminError.message,
+          code: adminError.code,
+          details: adminError.details,
+        });
+        return null;
+      }
+
+      if (!adminCheck) {
+        console.error('❌ STEP 2 FAILED: User is not in admins table. Email:', userEmail);
+        console.warn('⚠️ You need to be added as an admin. Contact your administrator.');
+        return null;
+      }
+
+      const adminData = adminCheck as any;
+      console.log('✅ STEP 2 PASSED: Found admin record:', { id: adminData.id, email: adminData.email });
+
+      if (!adminData.is_active) {
+        console.error('❌ STEP 2b FAILED: Admin account is inactive');
+        return null;
+      }
+
+      console.log('✅ STEP 2b PASSED: Admin is active');
+
+      if (!boqItems || boqItems.length === 0) {
+        console.error('❌ STEP 3 FAILED: No BOQ items provided');
+        return null;
+      }
+
+      console.log('📍 Step 3: Calculating BOQ summary...');
       // Calculate BOQ summary
-      const totalQuantity = boqItems.reduce((sum, item) => sum + item.quantity, 0);
-      const totalCost = boqItems.reduce((sum, item) => sum + item.totalPrice, 0);
+      const totalQuantity = boqItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      const totalCost = boqItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+      
+      console.log('✅ STEP 3 PASSED: BOQ Summary:', { totalQuantity, totalCost, itemCount: boqItems.length });
+
       const boqSummary: BOQSummary = {
         total_items: boqItems.length,
         total_quantity: totalQuantity,
@@ -79,11 +165,27 @@ export const proformaInvoiceService = {
       const gstAmount = (totalCost * gstPercentage) / 100;
       const grandTotal = totalCost + gstAmount;
 
-      const piData: ProformaInvoice = {
+      console.log('📍 Step 4: Sanitizing BOQ items...');
+      // Prepare BOQ items - ensure all fields are serializable
+      const sanitizedBoqItems = boqItems.map(item => ({
+        id: item.id || '',
+        roomName: item.roomName || '',
+        applianceName: (item.applianceName || item.panelName || ''),
+        category: item.category || '',
+        subcategory: item.subcategory || '',
+        quantity: item.quantity || 1,
+        unitPrice: item.unitPrice || 0,
+        totalPrice: item.totalPrice || 0,
+        description: item.description || '',
+        specifications: item.specifications || {},
+      }));
+      console.log('✅ STEP 4 PASSED: BOQ items sanitized, count:', sanitizedBoqItems.length);
+
+      const piData = {
         project_id: projectId,
         user_id: userId,
         pi_number: generatePINumber(),
-        boq_items: boqItems,
+        boq_items: sanitizedBoqItems,
         boq_summary: boqSummary,
         project_name: projectData.client_info?.name || 'Untitled Project',
         client_name: projectData.client_info?.name || '',
@@ -97,24 +199,58 @@ export const proformaInvoiceService = {
         status: 'draft',
       };
 
+      console.log('📍 Step 5: Inserting PI data into database...');
+      console.log('PI Data to insert:', {
+        pi_number: piData.pi_number,
+        project_id: piData.project_id,
+        user_id: piData.user_id,
+        boq_items_count: sanitizedBoqItems.length,
+        automation_type: piData.automation_type,
+        grand_total: piData.grand_total,
+      });
+
       const { data, error } = await supabase
         .from('proforma_invoices')
         .insert([piData] as any)
-        .select()
-        .single();
+        .select('id, pi_number, status, created_at, project_id, user_id, client_name, client_email, client_phone, project_name, automation_type, total_amount, gst_amount, grand_total, boq_items, boq_summary, validity_days');
+
+      console.log('📍 Step 5 Result:', {
+        hasError: !!error,
+        errorMsg: error?.message,
+        errorCode: error?.code,
+        errorDetails: error?.details,
+        hasData: !!data,
+        dataLength: data?.length,
+      });
 
       if (error) {
-        console.error('❌ Error creating PI:', error);
+        console.error('❌ STEP 5 FAILED: Error inserting PI:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
         return null;
       }
 
-      if (data) {
-        console.log('✅ PI created:', (data as any).pi_number);
-        return data as ProformaInvoice;
+      if (data && data.length > 0) {
+        const createdPI = data[0] as ProformaInvoice;
+        console.log('✅ STEP 5 PASSED: PI created successfully:', {
+          id: createdPI.id,
+          pi_number: createdPI.pi_number,
+          grand_total: createdPI.grand_total,
+        });
+        return createdPI;
+      } else {
+        console.error('❌ STEP 5 FAILED: Insert succeeded but no data returned');
+        return null;
       }
-      return null;
     } catch (error) {
-      console.error('❌ Exception creating PI:', error);
+      console.error('❌ EXCEPTION: Unhandled error in createProformaInvoice:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       return null;
     }
   },
@@ -179,34 +315,64 @@ export const proformaInvoiceService = {
     notes?: string
   ): Promise<ProformaInvoice | null> {
     try {
+      console.log('📍 updateProformaInvoiceStatus called:', { piId, status, hasNotes: !!notes });
+
       const updateData: any = { status };
 
-      if (status === 'sent' && !notes) {
+      if (status === 'sent') {
         updateData.sent_at = new Date().toISOString();
+        console.log('📧 Setting sent_at to:', updateData.sent_at);
       }
       if (status === 'accepted') {
         updateData.accepted_at = new Date().toISOString();
+        console.log('✅ Setting accepted_at to:', updateData.accepted_at);
       }
       if (notes) {
         updateData.notes = notes;
+        console.log('📝 Adding notes:', notes.substring(0, 50) + '...');
       }
 
-      const { data, error } = (await (supabase as any)
+      console.log('💾 Sending update to database:', updateData);
+
+      const { data, error } = await (supabase as any)
         .from('proforma_invoices')
         .update(updateData)
         .eq('id', piId)
-        .select()
-        .single()) as { data: ProformaInvoice | null; error: any };
+        .select('id, pi_number, status, sent_at, accepted_at, notes, updated_at');
+
+      console.log('📍 Update result:', {
+        hasError: !!error,
+        errorMsg: error?.message,
+        hasData: !!data,
+        dataLength: (data as any[])?.length,
+      });
 
       if (error) {
-        console.error('❌ Error updating PI status:', error);
+        console.error('❌ Error updating PI status:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+        });
         return null;
       }
 
-      console.log('✅ PI status updated to:', status);
-      return data;
+      if (data && (data as any[]).length > 0) {
+        const updatedPI = (data as any[])[0] as ProformaInvoice;
+        console.log('✅ PI status updated successfully:', {
+          pi_number: updatedPI.pi_number,
+          status: updatedPI.status,
+        });
+        return updatedPI;
+      } else {
+        console.error('❌ Update succeeded but no data returned');
+        return null;
+      }
     } catch (error) {
       console.error('❌ Exception updating PI status:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       return null;
     }
   },

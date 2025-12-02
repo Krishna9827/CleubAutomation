@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,9 +14,12 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import { projectService } from '@/supabase/projectService';
 import { proformaInvoiceService } from '@/supabase/proformaInvoiceService';
 import { editHistoryService } from '@/supabase/editHistoryService';
+import { panelService } from '@/supabase/panelService';
 import { DEFAULT_INVENTORY_PRICES } from '@/constants/inventory';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { extractAppliancesFromRoom } from '@/utils/appliance-transformer';
+import { supabase } from '@/supabase/config';
+import type { PanelPreset } from '@/types/project';
 
 interface Appliance {
   id: string;
@@ -32,6 +35,8 @@ interface Room {
   id: string;
   name: string;
   type: string;
+  automationType?: 'wireless' | 'wired';
+  panels?: PanelPreset[];
   appliances: Appliance[];
 }
 
@@ -57,6 +62,10 @@ const AdminBOQGeneration = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingAppliance, setEditingAppliance] = useState<any>(null);
   const [editingRoom, setEditingRoom] = useState<number | null>(null);
+  const [panelVendorSelection, setPanelVendorSelection] = useState<Record<string, { panelId: string; vendorTag: string; price: number }>>({});
+  const [availablePanelVendors, setAvailablePanelVendors] = useState<Record<string, any[]>>({});
+  const [showPIPreview, setShowPIPreview] = useState(false);
+  const piCardRef = useRef<HTMLDivElement>(null);
 
   // Wired automation modules
   const wiredModules = {
@@ -89,7 +98,59 @@ const AdminBOQGeneration = () => {
       console.error('Error loading price data:', error);
       setPriceData(DEFAULT_INVENTORY_PRICES);
     }
+
+    // Load prices from inventory table
+    loadInventoryPrices();
   }, []);
+
+  // Fetch prices from inventory table
+  const loadInventoryPrices = async () => {
+    try {
+      console.log('💾 Loading inventory prices from Supabase...');
+      
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('product_name, category, subcategory, wattage, price_per_unit, vendor_tags');
+
+      if (error) {
+        console.error('❌ Error fetching inventory prices:', error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.warn('⚠️ No inventory items found');
+        return;
+      }
+
+      // Transform inventory data to match our price data format
+      const inventoryPrices = (data as any[]).map(item => ({
+        category: item.category,
+        subcategory: item.subcategory || undefined,
+        wattage: item.wattage,
+        productName: item.product_name,
+        pricePerUnit: parseFloat(item.price_per_unit || '0'),
+        vendor_tags: item.vendor_tags || [],  // Include vendor_tags for panel pricing
+      }));
+
+      console.log('💰 Loaded', inventoryPrices.length, 'inventory prices from database');
+      
+      // Store in state for use in BOQ calculation
+      setPriceData(inventoryPrices);
+    } catch (error) {
+      console.error('❌ Exception loading inventory prices:', error);
+      // Fall back to defaults
+    }
+  };
+
+  // Monitor showPIPreview state changes
+  useEffect(() => {
+    console.log('🎯 [STATE] showPIPreview changed to:', showPIPreview);
+  }, [showPIPreview]);
+
+  // Monitor piGenerated state changes
+  useEffect(() => {
+    console.log('🎯 [STATE] piGenerated changed:', { hasValue: !!piGenerated, pi_number: piGenerated?.pi_number });
+  }, [piGenerated]);
 
   useEffect(() => {
     if (!projectId) return;
@@ -143,8 +204,10 @@ const AdminBOQGeneration = () => {
   // Generate BOQ items from rooms
   const generateBOQItems = (projectRooms: Room[]) => {
     const items: any[] = [];
+    const panelBrands: Record<string, any[]> = {};
 
     projectRooms.forEach((room) => {
+      // Add appliances to BOQ
       if (room.appliances && Array.isArray(room.appliances) && room.appliances.length > 0) {
         room.appliances.forEach((appliance) => {
           // Ensure appliance has required fields
@@ -167,6 +230,7 @@ const AdminBOQGeneration = () => {
             id: appliance.id || `${room.id}-${appliance.name}`,
             roomName: room.name,
             roomId: room.id,
+            itemType: 'appliance',
             applianceName: appliance.name,
             category: appliance.category,
             subcategory: appliance.subcategory || '-',
@@ -177,10 +241,82 @@ const AdminBOQGeneration = () => {
           });
         });
       }
+
+      // Add panels to BOQ for wireless rooms only
+      if (room.automationType === 'wireless' && room.panels && Array.isArray(room.panels) && room.panels.length > 0) {
+        room.panels.forEach((panel) => {
+          if (!panel.name) {
+            console.warn('⚠️ Skipping panel with missing name:', panel);
+            return;
+          }
+
+          const panelKey = `${room.id}-${panel.id}`;
+          
+          // Get inventory items that match this panel's brand_vendor (from panel_presets metadata)
+          // Look for items with vendor_tags matching the panel's brand
+          const panelInventoryItems = priceData.filter(p => 
+            p.category === 'Touch Panels' && 
+            p.vendor_tags && 
+            Array.isArray(p.vendor_tags)
+          );
+          
+          // Extract unique vendor tags from all panel items
+          const vendorTagMap = new Map<string, { vendorTag: string; price: number; productName: string }[]>();
+          
+          panelInventoryItems.forEach(item => {
+            if (item.vendor_tags && Array.isArray(item.vendor_tags)) {
+              item.vendor_tags.forEach((tag: string) => {
+                if (!vendorTagMap.has(tag)) {
+                  vendorTagMap.set(tag, []);
+                }
+                vendorTagMap.get(tag)!.push({
+                  vendorTag: tag,
+                  price: item.pricePerUnit,
+                  productName: item.productName
+                });
+              });
+            }
+          });
+          
+          // Convert map to array for display
+          const availableVendors = Array.from(vendorTagMap.entries()).map(([tag, items]) => ({
+            vendorTag: tag,
+            price: items[0]?.price || 5000,
+            productName: items[0]?.productName || tag
+          }));
+          
+          if (!panelBrands[panelKey]) {
+            panelBrands[panelKey] = availableVendors;
+          }
+
+          // Get default vendor price (first available or default)
+          const defaultVendor = panelBrands[panelKey]?.[0];
+          const unitPrice = defaultVendor?.price || 5000;
+          const totalPrice = unitPrice * 1; // Panels are typically qty 1
+
+          items.push({
+            id: panel.id || `${room.id}-${panel.name}`,
+            roomName: room.name,
+            roomId: room.id,
+            panelId: panel.id,
+            panelKey,
+            itemType: 'panel',
+            panelName: panel.name,
+            category: 'Touch Panels',
+            subcategory: panel.moduleSize + 'M Panel',
+            quantity: 1,
+            unitPrice,
+            totalPrice,
+            vendorTag: defaultVendor?.vendorTag || 'Unspecified',
+            availableVendors: panelBrands[panelKey] || [],
+          });
+        });
+      }
     });
 
-    console.log('📊 BOQ items generated:', items.length, 'items');
+    console.log('📊 BOQ items generated:', items.length, 'items (appliances + panels)');
     setBoqItems(items);
+    setAvailablePanelVendors(panelBrands);
   };
 
   // Get device price helper
@@ -342,7 +478,14 @@ const AdminBOQGeneration = () => {
       ? calculateWiredCost().totalCost 
       : calculateWirelessCost().totalCost;
     
-    const itemsCost = boqItems.reduce((sum, item) => sum + item.totalPrice, 0);
+    // Calculate items cost, accounting for selected panel vendor tags
+    const itemsCost = boqItems.reduce((sum, item) => {
+      if (item.itemType === 'panel' && panelVendorSelection[item.panelKey]) {
+        return sum + (panelVendorSelection[item.panelKey].price * item.quantity);
+      }
+      return sum + item.totalPrice;
+    }, 0);
+    
     const subtotal = automationCost + itemsCost;
     const gstAmount = (subtotal * gstPercentage) / 100;
     const grandTotal = subtotal + gstAmount;
@@ -352,17 +495,33 @@ const AdminBOQGeneration = () => {
 
   // Generate PI
   const handleGeneratePI = async () => {
+    console.log('🔄 Starting PI generation...');
+    
     if (!projectData || !projectId) {
+      console.error('❌ Project data missing:', { projectData, projectId });
       toast({ title: 'Error', description: 'Project data not loaded', variant: 'destructive' });
       return;
     }
 
     if (boqItems.length === 0) {
+      console.error('❌ No BOQ items found');
       toast({ title: 'Error', description: 'No appliances found', variant: 'destructive' });
       return;
     }
 
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.error('❌ User ID not available');
+      toast({ title: 'Error', description: 'User not authenticated', variant: 'destructive' });
+      return;
+    }
+
+    console.log('✅ All validations passed. Creating PI with:', {
+      projectId,
+      userId: user.id,
+      boqItemsCount: boqItems.length,
+      automationType,
+      gstPercentage
+    });
 
     setLoadingPI(true);
     try {
@@ -376,27 +535,658 @@ const AdminBOQGeneration = () => {
       );
 
       if (pi) {
+        console.log('✅ PI created successfully:', pi);
+        console.log('📋 PI object keys:', Object.keys(pi));
+        console.log('📋 PI pi_number:', pi.pi_number);
+        console.log('📋 PI status:', pi.status);
+        console.log('📋 PI created_at:', pi.created_at);
+        console.log('📋 PI boq_items type:', typeof pi.boq_items);
+        console.log('📋 Full PI object:', JSON.stringify(pi, null, 2));
+        
+        // Set piGenerated FIRST
         setPiGenerated(pi);
-        toast({ title: 'Success', description: `Proforma Invoice ${pi.pi_number} generated` });
+        console.log('🔄 setPiGenerated called with:', pi);
+        
+        // THEN show the modal in next render cycle
+        setTimeout(() => {
+          console.log('📱 Opening PI preview modal - calling setShowPIPreview(true)');
+          console.log('📱 Current piGenerated:', piGenerated ? 'exists' : 'null');
+          setShowPIPreview(true);
+          console.log('📱 Modal state updated. Dialog should render now.');
+          console.log('📱 Check: piGenerated && showPIPreview =', !!(piGenerated && showPIPreview));
+        }, 100);
+        
+        toast({ title: 'Success', description: `Proforma Invoice ${pi.pi_number} generated - Opening preview...` });
+      } else {
+        console.error('❌ PI creation returned null');
+        toast({ 
+          title: 'Error', 
+          description: 'PI creation failed. Check console logs for details (admin check or RLS policy issue).', 
+          variant: 'destructive' 
+        });
       }
     } catch (error) {
       console.error('❌ Error generating PI:', error);
-      toast({ title: 'Error', description: 'Failed to generate PI', variant: 'destructive' });
+      toast({ title: 'Error', description: `Failed to generate PI: ${error instanceof Error ? error.message : 'Unknown error'}`, variant: 'destructive' });
     } finally {
       setLoadingPI(false);
     }
   };
 
   const handleSendPI = async () => {
-    if (!piGenerated?.id) return;
+    if (!piGenerated?.id) {
+      console.error('❌ No PI to send');
+      return;
+    }
 
     try {
+      console.log('📧 Sending PI to client:', piGenerated.id);
       await proformaInvoiceService.updateProformaInvoiceStatus(piGenerated.id, 'sent', notes);
       setPiGenerated({ ...piGenerated, status: 'sent' });
+      console.log('✅ PI sent successfully');
       toast({ title: 'Success', description: 'PI sent to client' });
     } catch (error) {
-      console.error('❌ Error:', error);
+      console.error('❌ Error sending PI:', error);
       toast({ title: 'Error', description: 'Failed to send PI', variant: 'destructive' });
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    if (!piGenerated) {
+      console.error('❌ No PI to download as PDF');
+      return;
+    }
+
+    try {
+      console.log('📄 Generating PDF for PI:', piGenerated.pi_number);
+      
+      // Extract BOQ items safely
+      let boqItems = [];
+      if (piGenerated.boq_items) {
+        if (Array.isArray(piGenerated.boq_items)) {
+          boqItems = piGenerated.boq_items;
+        } else if (typeof piGenerated.boq_items === 'string') {
+          boqItems = JSON.parse(piGenerated.boq_items);
+        } else if (typeof piGenerated.boq_items === 'object') {
+          boqItems = Object.values(piGenerated.boq_items);
+        }
+      }
+
+      // Create a print-optimized HTML document
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        toast({ title: 'Error', description: 'Please allow pop-ups to download PDF', variant: 'destructive' });
+        return;
+      }
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>${piGenerated.pi_number}</title>
+          <style>
+            @page {
+              size: A4;
+              margin: 15mm;
+            }
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              line-height: 1.6;
+              color: #1e293b;
+              font-size: 12pt;
+            }
+            .container {
+              max-width: 100%;
+              margin: 0 auto;
+            }
+            .header {
+              background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+              color: white;
+              padding: 30px;
+              margin-bottom: 30px;
+              border-radius: 8px;
+            }
+            .header h1 {
+              font-size: 32px;
+              margin-bottom: 8px;
+              letter-spacing: 1px;
+            }
+            .header .pi-number {
+              color: #14b8a6;
+              font-size: 16px;
+              font-weight: 600;
+            }
+            .header .status {
+              display: inline-block;
+              background: rgba(20, 184, 166, 0.2);
+              border: 2px solid #14b8a6;
+              padding: 8px 16px;
+              border-radius: 6px;
+              margin-top: 15px;
+              font-size: 14px;
+              font-weight: bold;
+              text-transform: uppercase;
+              color: #14b8a6;
+            }
+            .info-grid {
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 20px;
+              margin-bottom: 25px;
+              padding-bottom: 25px;
+              border-bottom: 2px solid #e2e8f0;
+            }
+            .info-item label {
+              display: block;
+              font-size: 10px;
+              text-transform: uppercase;
+              color: #64748b;
+              font-weight: 600;
+              letter-spacing: 0.5px;
+              margin-bottom: 4px;
+            }
+            .info-item value {
+              display: block;
+              font-size: 13px;
+              color: #0f172a;
+              font-weight: 500;
+            }
+            .section {
+              margin-bottom: 30px;
+            }
+            .section-title {
+              font-size: 14px;
+              font-weight: bold;
+              color: #0f172a;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-bottom: 15px;
+              padding-bottom: 10px;
+              border-bottom: 2px solid #cbd5e1;
+            }
+            .client-info {
+              background: #f8fafc;
+              padding: 20px;
+              border-radius: 6px;
+              border-left: 4px solid #14b8a6;
+            }
+            .client-info .info-row {
+              display: flex;
+              margin-bottom: 8px;
+            }
+            .client-info .info-row:last-child {
+              margin-bottom: 0;
+            }
+            .client-info .label {
+              font-weight: 600;
+              color: #475569;
+              min-width: 100px;
+            }
+            .client-info .value {
+              color: #0f172a;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 15px;
+              font-size: 11pt;
+            }
+            thead {
+              background: #f1f5f9;
+            }
+            th {
+              padding: 12px 10px;
+              text-align: left;
+              font-weight: 600;
+              color: #475569;
+              border-bottom: 2px solid #cbd5e1;
+              font-size: 11px;
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
+            }
+            td {
+              padding: 10px;
+              border-bottom: 1px solid #e2e8f0;
+              color: #334155;
+            }
+            tbody tr:hover {
+              background: #f8fafc;
+            }
+            .text-right {
+              text-align: right;
+            }
+            .summary-box {
+              float: right;
+              width: 350px;
+              background: #f8fafc;
+              border: 1px solid #cbd5e1;
+              border-radius: 8px;
+              overflow: hidden;
+              margin-top: 20px;
+            }
+            .summary-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 12px 20px;
+              font-size: 13px;
+            }
+            .summary-row.subtotal {
+              border-bottom: 1px solid #e2e8f0;
+            }
+            .summary-row.gst {
+              border-bottom: 2px solid #14b8a6;
+            }
+            .summary-row.total {
+              background: #14b8a6;
+              color: white;
+              font-weight: bold;
+              font-size: 16px;
+              padding: 15px 20px;
+            }
+            .summary-row .label {
+              color: #475569;
+            }
+            .summary-row .value {
+              font-weight: 600;
+              color: #0f172a;
+            }
+            .summary-row.total .label,
+            .summary-row.total .value {
+              color: white;
+            }
+            .terms {
+              clear: both;
+              background: #f8fafc;
+              padding: 15px;
+              border-radius: 6px;
+              border: 1px solid #e2e8f0;
+              margin-top: 30px;
+              font-size: 10px;
+              color: #64748b;
+              line-height: 1.5;
+            }
+            .terms strong {
+              color: #475569;
+              display: block;
+              margin-bottom: 8px;
+            }
+            .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 1px solid #e2e8f0;
+              text-align: center;
+              font-size: 10px;
+              color: #94a3b8;
+            }
+            @media print {
+              body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .header {
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                  <h1>PROFORMA INVOICE</h1>
+                  <div class="pi-number">${piGenerated.pi_number}</div>
+                </div>
+                <div class="status">${piGenerated.status}</div>
+              </div>
+            </div>
+
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Invoice Date</label>
+                <value>${new Date(piGenerated.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</value>
+              </div>
+              <div class="info-item">
+                <label>Automation Type</label>
+                <value>${piGenerated.automation_type === 'wireless' ? 'Wireless' : 'Wired (KNX)'}</value>
+              </div>
+              <div class="info-item">
+                <label>Validity Period</label>
+                <value>${piGenerated.validity_days || 30} days</value>
+              </div>
+              <div class="info-item">
+                <label>Project Name</label>
+                <value>${piGenerated.project_name || 'N/A'}</value>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Bill To</div>
+              <div class="client-info">
+                <div class="info-row">
+                  <span class="label">Name:</span>
+                  <span class="value">${piGenerated.client_name || 'Not provided'}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Email:</span>
+                  <span class="value">${piGenerated.client_email || 'Not provided'}</span>
+                </div>
+                ${piGenerated.client_phone ? `
+                <div class="info-row">
+                  <span class="label">Phone:</span>
+                  <span class="value">${piGenerated.client_phone}</span>
+                </div>
+                ` : ''}
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Bill of Quantities</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Room</th>
+                    <th>Item Description</th>
+                    <th>Category</th>
+                    <th style="text-align: center; width: 60px;">Qty</th>
+                    <th class="text-right" style="width: 120px;">Unit Price</th>
+                    <th class="text-right" style="width: 120px;">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${boqItems.length > 0 ? boqItems.map((item: any) => `
+                    <tr>
+                      <td>${item.roomName || '-'}</td>
+                      <td style="font-weight: 500;">${item.applianceName || item.panelName || '-'}</td>
+                      <td style="color: #64748b;">${item.category || '-'}</td>
+                      <td style="text-align: center;">${item.quantity || 1}</td>
+                      <td class="text-right" style="font-weight: 500;">₹${(item.unitPrice || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                      <td class="text-right" style="font-weight: 600; color: #14b8a6;">₹${(item.totalPrice || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                    </tr>
+                  `).join('') : '<tr><td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;">No items found</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="summary-box">
+              <div class="summary-row subtotal">
+                <span class="label">Subtotal</span>
+                <span class="value">₹${(piGenerated.total_amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+              </div>
+              <div class="summary-row gst">
+                <span class="label">GST (18%)</span>
+                <span class="value">₹${(piGenerated.gst_amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+              </div>
+              <div class="summary-row total">
+                <span class="label">GRAND TOTAL</span>
+                <span class="value">₹${(piGenerated.grand_total || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+              </div>
+            </div>
+
+            <div class="terms">
+              <strong>Terms & Conditions:</strong>
+              This is a proforma invoice valid for ${piGenerated.validity_days || 30} days from the date of issue. 
+              Prices are subject to change based on final project requirements and specifications. 
+              All prices are in Indian Rupees (INR) and include GST as applicable.
+            </div>
+
+            <div class="footer">
+              <p>Generated on ${new Date(piGenerated.created_at).toLocaleDateString('en-IN')} | Status: ${piGenerated.status.toUpperCase()}</p>
+              <p style="margin-top: 5px;">This is a system-generated document. For inquiries, please contact your administrator.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `);
+
+      printWindow.document.close();
+      
+      // Wait for content to load, then trigger print
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+          console.log('✅ Print dialog opened - User can save as PDF');
+          toast({ 
+            title: 'Print Dialog Opened', 
+            description: 'Choose "Save as PDF" in the print dialog to download the invoice as PDF',
+            duration: 5000
+          });
+        }, 250);
+      };
+
+    } catch (error) {
+      console.error('❌ Error generating PDF:', error);
+      toast({ title: 'Error', description: 'Failed to generate PDF', variant: 'destructive' });
+    }
+  };
+
+  const handleDownloadHTML = () => {
+    if (!piGenerated) {
+      console.error('❌ No PI to download');
+      return;
+    }
+
+    try {
+      console.log('📥 Downloading PI:', piGenerated.pi_number);
+      
+      // Safely extract boq_items - handle various formats from Supabase JSONB
+      let boqItems = [];
+      if (piGenerated.boq_items) {
+        if (Array.isArray(piGenerated.boq_items)) {
+          boqItems = piGenerated.boq_items;
+          console.log('✅ BOQ items is already an array:', boqItems.length, 'items');
+        } else if (typeof piGenerated.boq_items === 'string') {
+          boqItems = JSON.parse(piGenerated.boq_items);
+          console.log('✅ BOQ items was stringified, parsed:', boqItems.length, 'items');
+        } else if (typeof piGenerated.boq_items === 'object') {
+          boqItems = Object.values(piGenerated.boq_items);
+          console.log('✅ BOQ items was object, converted:', boqItems.length, 'items');
+        }
+      }
+
+      if (boqItems.length === 0) {
+        console.warn('⚠️  Warning: No BOQ items found, proceeding with empty table');
+      }
+
+      console.log('📋 Sample BOQ items (first 2):', boqItems.slice(0, 2));
+
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>${piGenerated.pi_number}</title>
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 900px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 3px solid #0891b2;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .header h1 {
+              color: #0891b2;
+              margin: 0;
+              font-size: 28px;
+            }
+            .pi-number {
+              color: #666;
+              font-size: 14px;
+              margin-top: 5px;
+            }
+            .section {
+              margin-bottom: 30px;
+            }
+            .section-title {
+              font-size: 18px;
+              font-weight: bold;
+              color: #0891b2;
+              margin-bottom: 15px;
+              border-bottom: 2px solid #e2e8f0;
+              padding-bottom: 10px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+            }
+            th, td {
+              padding: 12px;
+              text-align: left;
+              border-bottom: 1px solid #e2e8f0;
+            }
+            th {
+              background-color: #f1f5f9;
+              color: #0891b2;
+              font-weight: bold;
+            }
+            .amount {
+              text-align: right;
+            }
+            .summary-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 10px 0;
+              font-size: 16px;
+            }
+            .summary-row.total {
+              font-weight: bold;
+              font-size: 18px;
+              color: #0891b2;
+              border-top: 2px solid #0891b2;
+              margin-top: 20px;
+              padding-top: 20px;
+            }
+            .client-info {
+              background: #f8fafc;
+              padding: 15px;
+              border-radius: 5px;
+              margin-bottom: 20px;
+            }
+            .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 1px solid #e2e8f0;
+              font-size: 12px;
+              color: #666;
+              text-align: center;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Proforma Invoice</h1>
+            <div class="pi-number">${piGenerated.pi_number}</div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Client Information</div>
+            <div class="client-info">
+              <p><strong>Name:</strong> ${piGenerated.client_name || 'N/A'}</p>
+              <p><strong>Email:</strong> ${piGenerated.client_email || 'N/A'}</p>
+              <p><strong>Phone:</strong> ${piGenerated.client_phone || 'N/A'}</p>
+              <p><strong>Project:</strong> ${piGenerated.project_name || 'N/A'}</p>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Bill of Quantities (${boqItems.length} items)</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Room</th>
+                  <th>Item</th>
+                  <th>Category</th>
+                  <th>Qty</th>
+                  <th class="amount">Unit Price</th>
+                  <th class="amount">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${boqItems.map((item: any) => `
+                  <tr>
+                    <td>${item.roomName || '-'}</td>
+                    <td>${item.applianceName || item.panelName || '-'}</td>
+                    <td>${item.category || '-'}</td>
+                    <td>${item.quantity || 1}</td>
+                    <td class="amount">₹${((item.unitPrice || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td class="amount">₹${((item.totalPrice || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Summary</div>
+            <div class="summary-row">
+              <span>Subtotal:</span>
+              <span>₹${(piGenerated.total_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div class="summary-row">
+              <span>GST (18%):</span>
+              <span>₹${(piGenerated.gst_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div class="summary-row total">
+              <span>Grand Total:</span>
+              <span>₹${(piGenerated.grand_total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div style="margin-top: 20px; padding: 15px; background: #f1f5f9; border-radius: 5px;">
+              <p><strong>Automation Type:</strong> ${piGenerated.automation_type === 'wireless' ? 'Wireless (Normal)' : 'Wired (KNX)'}</p>
+              <p><strong>Validity:</strong> ${piGenerated.validity_days || 30} days</p>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>Generated on ${new Date(piGenerated.created_at).toLocaleDateString()} | Status: ${piGenerated.status}</p>
+            <p>This is an automated quote. For inquiries, contact your administrator.</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      console.log('📄 HTML content generated, length:', htmlContent.length);
+
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      console.log('💾 Blob created, size:', blob.size, 'bytes');
+
+      const url = window.URL.createObjectURL(blob);
+      console.log('🔗 Object URL created');
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${piGenerated.pi_number}.html`;
+      document.body.appendChild(link);
+
+      console.log('⬇️  Triggering download for:', link.download);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log('✅ PI download completed successfully');
+      toast({ title: 'Success', description: `PI ${piGenerated.pi_number} downloaded` });
+    } catch (error) {
+      console.error('❌ Error downloading PI:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        if (error.stack) console.error('Stack trace:', error.stack);
+      }
+      toast({ title: 'Error', description: `Failed to download PI: ${error instanceof Error ? error.message : String(error)}`, variant: 'destructive' });
     }
   };
 
@@ -419,7 +1209,7 @@ const AdminBOQGeneration = () => {
       console.log('💾 Saving appliance tweaks to database...', newRooms[editingRoom].appliances[editingAppliance.appIdx]);
       
       // Save to database
-      await projectService.updateProject(projectId, { rooms: newRooms });
+      await projectService.updateProject(projectId, { rooms: newRooms as any });
       
       console.log('✅ Appliance tweaks saved successfully');
       
@@ -427,8 +1217,9 @@ const AdminBOQGeneration = () => {
       const updatedProject = await projectService.getProject(projectId);
       if (updatedProject) {
         setProjectData(updatedProject);
-        setRooms(updatedProject.rooms || []);
-        generateBOQItems(updatedProject.rooms || []);
+        const roomsData = (updatedProject.rooms || []) as Room[];
+        setRooms(roomsData);
+        generateBOQItems(roomsData);
       }
       
       setShowEditDialog(false);
@@ -452,7 +1243,7 @@ const AdminBOQGeneration = () => {
       
       // Save to database
       if (projectId) {
-        await projectService.updateProject(projectId, { rooms: newRooms });
+        await projectService.updateProject(projectId, { rooms: newRooms as any });
         
         console.log('✅ Appliance deleted successfully');
         
@@ -460,8 +1251,9 @@ const AdminBOQGeneration = () => {
         const updatedProject = await projectService.getProject(projectId);
         if (updatedProject) {
           setProjectData(updatedProject);
-          setRooms(updatedProject.rooms || []);
-          generateBOQItems(updatedProject.rooms || []);
+          const roomsData = (updatedProject.rooms || []) as Room[];
+          setRooms(roomsData);
+          generateBOQItems(roomsData);
         }
       }
       
@@ -491,7 +1283,7 @@ const AdminBOQGeneration = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate('/admin/projects')} className="border-slate-700">
+            <Button variant="outline" onClick={() => navigate('/admin/projects')} className="border-slate-700 text-white hover:bg-teal-500 hover:text-black hover:border-teal-500">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
@@ -501,13 +1293,13 @@ const AdminBOQGeneration = () => {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => navigate(`/admin/projects/${projectId}/timeline`)} variant="outline" className="border-slate-700">
+            <Button onClick={() => navigate(`/admin/projects/${projectId}/timeline`)} variant="outline" className="border-slate-700 text-white hover:bg-teal-500 hover:text-black hover:border-teal-500">
               <Clock className="w-4 h-4 mr-2" />
               Timeline
             </Button>
             <Button onClick={handleGeneratePI} disabled={loadingPI || boqItems.length === 0} className="bg-gradient-to-r from-teal-500 to-teal-600">
               <FileText className="w-4 h-4 mr-2" />
-              Generate PI
+              {loadingPI ? 'Generating...' : 'Generate PI'}
             </Button>
           </div>
         </div>
@@ -540,6 +1332,58 @@ const AdminBOQGeneration = () => {
           </CardContent>
         </Card>
 
+        {/* PI Generated Card - Top Level for Maximum Visibility */}
+        {piGenerated && (
+          <Card ref={piCardRef} className="border-teal-500/30 bg-gradient-to-r from-teal-900/40 to-cyan-900/40 shadow-lg shadow-teal-500/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-teal-400 text-xl">
+                <FileText className="w-6 h-6" />
+                Proforma Invoice Generated
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-4 gap-4">
+                <div className="bg-slate-800/50 p-3 rounded">
+                  <p className="text-xs text-slate-400 mb-1">PI Number</p>
+                  <p className="text-lg font-bold text-teal-300">{piGenerated.pi_number}</p>
+                </div>
+                <div className="bg-slate-800/50 p-3 rounded">
+                  <p className="text-xs text-slate-400 mb-1">Status</p>
+                  <Badge className={piGenerated.status === 'sent' ? 'bg-blue-900/50 border-blue-600 text-blue-300' : 'bg-slate-800 border-slate-600 text-slate-300'}>
+                    {piGenerated.status.toUpperCase()}
+                  </Badge>
+                </div>
+                <div className="bg-slate-800/50 p-3 rounded">
+                  <p className="text-xs text-slate-400 mb-1">Grand Total</p>
+                  <p className="text-lg font-bold text-teal-300">₹{(piGenerated.grand_total || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
+                </div>
+                <div className="bg-slate-800/50 p-3 rounded">
+                  <p className="text-xs text-slate-400 mb-1">Created</p>
+                  <p className="text-sm text-white">{new Date(piGenerated.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <Button 
+                  onClick={handleDownloadPDF} 
+                  className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Download PDF
+                </Button>
+                <Button 
+                  onClick={handleSendPI}
+                  disabled={piGenerated.status === 'sent'}
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {piGenerated.status === 'sent' ? 'Sent' : 'Send to Client'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Main Content Grid */}
         <div className="grid grid-cols-3 gap-6">
           {/* Left: Appliances by Room */}
@@ -549,52 +1393,87 @@ const AdminBOQGeneration = () => {
                 <CardTitle className="text-white">Appliances by Room</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {rooms.map((room, roomIdx) => (
-                  <div key={room.id} className="border border-slate-700 rounded-lg overflow-hidden">
-                    <button
-                      onClick={() => setExpandedRoom(expandedRoom === room.id ? null : room.id)}
-                      className="w-full flex items-center justify-between p-4 bg-slate-800/50 hover:bg-slate-800 transition"
-                    >
-                      <div className="flex items-center gap-2">
-                        {expandedRoom === room.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        <span className="font-semibold text-white">{room.name}</span>
-                        <Badge className="bg-slate-700">{room.appliances.length} items</Badge>
-                      </div>
-                    </button>
+                {rooms.map((room, roomIdx) => {
+                  const totalItems = (room.appliances?.length || 0) + (room.panels?.length || 0);
+                  return (
+                    <div key={room.id} className="border border-slate-700 rounded-lg overflow-hidden">
+                      <button
+                        onClick={() => setExpandedRoom(expandedRoom === room.id ? null : room.id)}
+                        className="w-full flex items-center justify-between p-4 bg-slate-800/50 hover:bg-slate-800 transition"
+                      >
+                        <div className="flex items-center gap-2">
+                          {expandedRoom === room.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          <span className="font-semibold text-white">{room.name}</span>
+                          <Badge className="bg-slate-700">{totalItems} items</Badge>
+                        </div>
+                      </button>
 
-                    {expandedRoom === room.id && (
-                      <div className="p-4 space-y-2">
-                        {room.appliances.length === 0 ? (
-                          <div className="p-4 text-center bg-slate-800/30 rounded text-slate-400">
-                            <p className="text-sm mb-3">No appliances added yet</p>
-                            <Button size="sm" onClick={() => navigate('/planner')} className="bg-teal-600 hover:bg-teal-700">
-                              + Add in Planner
-                            </Button>
-                          </div>
-                        ) : (
-                          <>
-                            {room.appliances.map((app, appIdx) => (
-                              <div key={appIdx} className="flex items-center justify-between p-3 bg-slate-800/30 rounded">
-                                <div className="flex-1">
-                                  <p className="font-semibold text-white">{app.name}</p>
-                                  <p className="text-xs text-slate-400">{app.category} • Qty: {app.quantity}</p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Button size="sm" variant="ghost" onClick={() => handleEditAppliance(roomIdx, appIdx)} className="text-blue-500 hover:text-blue-400">
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                  <Button size="sm" variant="ghost" onClick={() => handleDeleteAppliance(roomIdx, appIdx)} className="text-red-500 hover:text-red-400">
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
+                      {expandedRoom === room.id && (
+                        <div className="p-4 space-y-4">
+                          {/* Appliances Section */}
+                          {(room.appliances?.length || 0) > 0 && (
+                            <div>
+                              <p className="font-semibold text-white mb-2">Appliances ({room.appliances.length})</p>
+                              <div className="space-y-2">
+                                {room.appliances.map((app, appIdx) => (
+                                  <div key={appIdx} className="flex items-center justify-between p-3 bg-slate-800/30 rounded">
+                                    <div className="flex-1">
+                                      <p className="font-semibold text-white">{app.name}</p>
+                                      <p className="text-xs text-slate-400">{app.category} • Qty: {app.quantity}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Button size="sm" variant="ghost" onClick={() => handleEditAppliance(roomIdx, appIdx)} className="text-blue-500 hover:text-blue-400">
+                                        <Edit className="w-4 h-4" />
+                                      </Button>
+                                      <Button size="sm" variant="ghost" onClick={() => handleDeleteAppliance(roomIdx, appIdx)} className="text-red-500 hover:text-red-400">
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                            </div>
+                          )}
+
+                          {/* Panels Section */}
+                          {(room.panels?.length || 0) > 0 && (
+                            <div>
+                              <p className="font-semibold text-white mb-2">Panels ({room.panels.length})</p>
+                              <div className="space-y-2">
+                                {room.panels.map((panel, panelIdx) => (
+                                  <div key={panelIdx} className="flex items-center justify-between p-3 bg-slate-800/30 rounded border border-teal-500/30">
+                                    <div className="flex-1">
+                                      <p className="font-semibold text-white">{panel.name}</p>
+                                      <p className="text-xs text-slate-400">Panel • Modules: {panel.totalModulesUsed}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Button size="sm" variant="ghost" onClick={() => {
+                                        const newRooms = [...rooms];
+                                        newRooms[roomIdx].panels = newRooms[roomIdx].panels?.filter((_, i) => i !== panelIdx);
+                                        setRooms(newRooms);
+                                      }} className="text-red-500 hover:text-red-400">
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {totalItems === 0 && (
+                            <div className="p-4 text-center bg-slate-800/30 rounded text-slate-400">
+                              <p className="text-sm mb-3">No appliances or panels added yet</p>
+                              <Button size="sm" onClick={() => navigate('/planner')} className="bg-teal-600 hover:bg-teal-700">
+                                + Add in Planner
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </CardContent>
             </Card>
 
@@ -609,9 +1488,10 @@ const AdminBOQGeneration = () => {
                     <TableHead>
                       <TableRow className="border-white/10">
                         <TableHead className="text-slate-300">Room</TableHead>
-                        <TableHead className="text-slate-300">Appliance</TableHead>
+                        <TableHead className="text-slate-300">Item</TableHead>
                         <TableHead className="text-slate-300">Category</TableHead>
                         <TableHead className="text-slate-300 text-right">Qty</TableHead>
+                        <TableHead className="text-slate-300">Brand/Vendor</TableHead>
                         <TableHead className="text-slate-300 text-right">Unit Price</TableHead>
                         <TableHead className="text-slate-300 text-right">Total</TableHead>
                       </TableRow>
@@ -620,11 +1500,51 @@ const AdminBOQGeneration = () => {
                       {boqItems.map((item, idx) => (
                         <TableRow key={idx} className="border-white/10">
                           <TableCell className="text-white text-sm">{item.roomName}</TableCell>
-                          <TableCell className="text-slate-300 text-sm">{item.applianceName}</TableCell>
+                          <TableCell className="text-slate-300 text-sm font-medium">
+                            {item.itemType === 'panel' ? `${item.panelName} (${item.subcategory})` : item.applianceName}
+                          </TableCell>
                           <TableCell className="text-slate-300 text-sm">{item.category}</TableCell>
                           <TableCell className="text-right text-white text-sm">{item.quantity}</TableCell>
-                          <TableCell className="text-right text-teal-400 text-sm">₹{item.unitPrice.toLocaleString('en-IN')}</TableCell>
-                          <TableCell className="text-right text-white font-semibold text-sm">₹{item.totalPrice.toLocaleString('en-IN')}</TableCell>
+                          
+                          {/* Vendor tag selector for panels */}
+                          {item.itemType === 'panel' ? (
+                            <TableCell className="text-sm">
+                              <Select 
+                                value={panelVendorSelection[item.panelKey]?.vendorTag || item.vendorTag || ''} 
+                                onValueChange={(vendorTag) => {
+                                  const vendorData = item.availableVendors?.find((v: any) => v.vendorTag === vendorTag);
+                                  setPanelVendorSelection(prev => ({
+                                    ...prev,
+                                    [item.panelKey]: {
+                                      panelId: item.panelId,
+                                      vendorTag,
+                                      price: vendorData?.price || item.unitPrice
+                                    }
+                                  }));
+                                }}
+                              >
+                                <SelectTrigger className="w-full bg-slate-800 border-slate-700 text-white h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-slate-900 border-slate-700">
+                                  {item.availableVendors?.map((vendor: any, i: number) => (
+                                    <SelectItem key={i} value={vendor.vendorTag || 'Unspecified'}>
+                                      {vendor.vendorTag} - ₹{vendor.price.toLocaleString('en-IN')}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                          ) : (
+                            <TableCell className="text-slate-400 text-sm">-</TableCell>
+                          )}
+                          
+                          <TableCell className="text-right text-teal-400 text-sm">
+                            ₹{(panelVendorSelection[item.panelKey]?.price || item.unitPrice).toLocaleString('en-IN')}
+                          </TableCell>
+                          <TableCell className="text-right text-white font-semibold text-sm">
+                            ₹{((panelVendorSelection[item.panelKey]?.price || item.unitPrice) * item.quantity).toLocaleString('en-IN')}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -705,36 +1625,6 @@ const AdminBOQGeneration = () => {
                   </CardContent>
                 </Card>
               </div>
-            )}
-
-            {/* PI Generated */}
-            {piGenerated && (
-              <Card className="border-teal-500/20 bg-teal-900/10">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-teal-400">
-                    <FileText className="w-5 h-5" />
-                    Proforma Invoice Generated
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-sm text-slate-400">PI Number</p>
-                      <p className="text-lg font-bold text-white">{piGenerated.pi_number}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-400">Status</p>
-                      <Badge className={piGenerated.status === 'sent' ? 'bg-blue-900/30 border-blue-600 text-blue-400' : 'bg-slate-800/30'}>
-                        {piGenerated.status}
-                      </Badge>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-400">Created</p>
-                      <p className="text-white text-sm">{new Date(piGenerated.created_at).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             )}
           </div>
 
@@ -867,27 +1757,183 @@ const AdminBOQGeneration = () => {
                 />
               </CardContent>
             </Card>
-
-            {/* Actions */}
-            {piGenerated && (
-              <div className="space-y-2">
-                <Button
-                  onClick={handleSendPI}
-                  disabled={piGenerated.status === 'sent'}
-                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  {piGenerated.status === 'sent' ? 'Sent' : 'Send to Client'}
-                </Button>
-                <Button variant="outline" className="w-full border-slate-700">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download PDF
-                </Button>
-              </div>
-            )}
           </div>
         </div>
       </div>
+
+      {/* PI Preview Modal - Professional Invoice Template */}
+      {piGenerated && showPIPreview && (
+        <Dialog open={true} onOpenChange={(open) => {
+          console.log('📱 Dialog onOpenChange called with:', open);
+          if (!open) {
+            setShowPIPreview(false);
+          }
+        }}>
+          <DialogContent className="w-full max-w-5xl max-h-[95vh] bg-white border-slate-300 p-0 overflow-hidden flex flex-col">
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-8 py-6 print:hidden">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h1 className="text-3xl font-bold text-white mb-1">PROFORMA INVOICE</h1>
+                  <p className="text-teal-400 font-semibold">{piGenerated.pi_number}</p>
+                </div>
+                <div className="text-right">
+                  <div className="inline-block px-4 py-2 rounded-lg bg-teal-500/20 border border-teal-500">
+                    <p className="text-xs text-slate-400 uppercase tracking-wider">Status</p>
+                    <p className="text-lg font-bold text-teal-400 uppercase">{piGenerated.status}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto bg-white px-8 py-6">
+              <div className="space-y-6">
+                
+                {/* Invoice Details Grid */}
+                <div className="grid grid-cols-4 gap-4 pb-6 border-b border-slate-200">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Invoice Date</p>
+                    <p className="text-sm font-medium text-slate-900">{new Date(piGenerated.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Automation Type</p>
+                    <p className="text-sm font-medium text-slate-900 capitalize">{piGenerated.automation_type}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Validity</p>
+                    <p className="text-sm font-medium text-slate-900">{piGenerated.validity_days || 30} days</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Project</p>
+                    <p className="text-sm font-medium text-slate-900">{piGenerated.project_name || 'N/A'}</p>
+                  </div>
+                </div>
+
+                {/* Client Information */}
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3 pb-2 border-b border-slate-300">Bill To</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex">
+                      <span className="w-32 font-semibold text-slate-600">Name:</span>
+                      <span className="text-slate-900">{piGenerated.client_name || 'Not provided'}</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-32 font-semibold text-slate-600">Email:</span>
+                      <span className="text-slate-900">{piGenerated.client_email || 'Not provided'}</span>
+                    </div>
+                    {piGenerated.client_phone && (
+                      <div className="flex">
+                        <span className="w-32 font-semibold text-slate-600">Phone:</span>
+                        <span className="text-slate-900">{piGenerated.client_phone}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* BOQ Items Table */}
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3 pb-2 border-b border-slate-300">Bill of Quantities</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-100 border-b-2 border-slate-300">
+                          <th className="px-4 py-3 text-left font-semibold text-slate-700">Room</th>
+                          <th className="px-4 py-3 text-left font-semibold text-slate-700">Item Description</th>
+                          <th className="px-4 py-3 text-left font-semibold text-slate-700">Category</th>
+                          <th className="px-4 py-3 text-center font-semibold text-slate-700 w-12">Qty</th>
+                          <th className="px-4 py-3 text-right font-semibold text-slate-700 w-28">Unit Price</th>
+                          <th className="px-4 py-3 text-right font-semibold text-slate-700 w-28">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {piGenerated.boq_items && Array.isArray(piGenerated.boq_items) && piGenerated.boq_items.length > 0 ? (
+                          piGenerated.boq_items.map((item: any, idx: number) => (
+                            <tr key={idx} className="border-b border-slate-200 hover:bg-slate-50">
+                              <td className="px-4 py-3 text-slate-700">{item.roomName || '-'}</td>
+                              <td className="px-4 py-3 text-slate-900 font-medium">{item.applianceName || item.panelName || '-'}</td>
+                              <td className="px-4 py-3 text-slate-600">{item.category || '-'}</td>
+                              <td className="px-4 py-3 text-center text-slate-700">{item.quantity || 1}</td>
+                              <td className="px-4 py-3 text-right font-medium text-slate-900">₹{(item.unitPrice || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                              <td className="px-4 py-3 text-right font-semibold text-teal-600">₹{(item.totalPrice || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={6} className="px-4 py-6 text-center text-slate-500">No items found</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Cost Summary - Right Aligned */}
+                <div className="flex justify-end">
+                  <div className="w-full max-w-sm">
+                    <div className="bg-slate-50 rounded-lg border border-slate-200 overflow-hidden">
+                      <div className="px-6 py-4 space-y-3">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-600">Subtotal</span>
+                          <span className="font-medium text-slate-900">₹{(piGenerated.total_amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                        </div>
+                        <div className="flex justify-between text-sm border-t pt-3">
+                          <span className="text-slate-600">GST (18%)</span>
+                          <span className="font-medium text-slate-900">₹{(piGenerated.gst_amount || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                        </div>
+                        <div className="flex justify-between border-t-2 border-teal-500 pt-3">
+                          <span className="font-bold text-slate-900 uppercase">Grand Total</span>
+                          <span className="text-2xl font-bold text-teal-600">₹{(piGenerated.grand_total || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Terms Section */}
+                <div className="bg-slate-50 rounded-lg p-4 border border-slate-200 text-xs text-slate-600">
+                  <p className="font-semibold text-slate-700 mb-2">Terms & Conditions:</p>
+                  <p>This is a proforma invoice valid for {piGenerated.validity_days || 30} days from the date of issue. Prices are subject to change based on final project requirements and specifications.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Action Buttons */}
+            <div className="bg-slate-50 border-t border-slate-200 px-8 py-4 flex gap-3 justify-end print:hidden">
+              <Button 
+                onClick={() => setShowPIPreview(false)}
+                variant="outline"
+                className="border-slate-300 hover:bg-slate-100"
+              >
+                Close
+              </Button>
+              <Button 
+                onClick={handleDownloadPDF}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Download PDF
+              </Button>
+              <Button 
+                onClick={handleDownloadHTML}
+                variant="outline"
+                className="border-teal-600 text-teal-600 hover:bg-teal-50"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Save HTML
+              </Button>
+              <Button 
+                onClick={handleSendPI}
+                disabled={piGenerated.status === 'sent'}
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                {piGenerated.status === 'sent' ? 'Sent' : 'Send to Client'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Edit Appliance Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>

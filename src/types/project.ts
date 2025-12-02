@@ -46,9 +46,29 @@ export interface Room {
   id: string
   name: string
   type: string
+  automationType?: 'wired' | 'wireless'  // NEW: Automation type for this room
+  panels?: PanelPreset[]                  // NEW: Panel presets (wireless only)
   appliances: Appliance[]
   requirements?: RoomRequirements
   [key: string]: any
+}
+
+export interface PanelComponentConfig {
+  type: 'on_off' | 'socket' | 'fan_speed' | 'scene_controller' | 'dimmer'
+  quantity: number                      // In pairs: 1 pair = 2M
+  modulesPerPair: number                // Fixed: 2M per pair
+  totalModulesUsed: number              // quantity × modulesPerPair
+}
+
+export interface PanelPreset {
+  id: string
+  name: string                          // e.g., "6M-4S-1ST-1F"
+  moduleSize: 2 | 4 | 6 | 8 | 12
+  components: PanelComponentConfig[]
+  totalModulesUsed: number              // Sum of all components
+  isFull: boolean                       // totalModulesUsed === moduleSize
+  linkedInventoryId?: string            // Reference to inventory table
+  notes?: string
 }
 
 export interface Appliance {
@@ -60,13 +80,7 @@ export interface Appliance {
   quantity: number
   price?: number
   specifications?: Record<string, any>
-  panelType?: string
-  moduleChannels?: number
-  channelConfig?: Array<{
-    channelNumber: number
-    label: string
-    details: string
-  }>
+  linkedInventoryId?: string            // Link to inventory table
   [key: string]: any
 }
 

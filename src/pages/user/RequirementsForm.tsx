@@ -4,12 +4,16 @@ import { Button } from '@/components/ui/button';
 import { projectService } from '@/supabase/projectService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Copy, ChevronDown } from 'lucide-react';
+import { Copy, ChevronDown, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SectionItemsDialog, type SectionItem, ProjectDetailsModal } from '@/components/features';
+import PanelConfigUI from '@/components/features/PanelConfigUI';
+import { panelService } from '@/supabase/panelService';
+import type { PanelPreset } from '@/types/project';
 
 const defaultRoomReq = {
   curtains: false,
@@ -307,7 +311,7 @@ const RequirementSheet2 = () => {
         {rooms.map((room, roomIndex) => (
           <Card key={room.id} className="border-white/10">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <CardTitle className="text-lg text-white">{room.name} ({room.type})</CardTitle>
                 <Button
                   variant="outline"
@@ -322,8 +326,65 @@ const RequirementSheet2 = () => {
                   Duplicate
                 </Button>
               </div>
+              
+              {/* Automation Type Selector */}
+              <div className="space-y-2">
+                <Label className="text-sm text-slate-300">Automation Type</Label>
+                <div className="flex gap-2">
+                  <Button
+                    variant={room.automationType === 'wireless' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const updatedRooms = [...rooms];
+                      updatedRooms[roomIndex] = { ...room, automationType: 'wireless', panels: room.panels || [] };
+                      setRooms(updatedRooms);
+                    }}
+                    className={room.automationType === 'wireless' ? 'bg-teal-600' : 'border-white/20 text-white hover:bg-white/10'}
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Wireless
+                  </Button>
+                  <Button
+                    variant={room.automationType === 'wired' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const updatedRooms = [...rooms];
+                      updatedRooms[roomIndex] = { ...room, automationType: 'wired', panels: [] };
+                      setRooms(updatedRooms);
+                    }}
+                    className={room.automationType === 'wired' ? 'bg-teal-600' : 'border-white/20 text-white hover:bg-white/10'}
+                  >
+                    Wired
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Panels Section - Only for Wireless */}
+              {room.automationType === 'wireless' && (
+                <div className="border-t border-white/10 pt-4">
+                  <PanelConfigUI 
+                    roomName={room.name}
+                    selectedPanels={room.panels || []}
+                    onAddPanel={(panel) => {
+                      const updatedRooms = [...rooms];
+                      const updatedRoom = { ...room, panels: [...(room.panels || []), panel] };
+                      updatedRooms[roomIndex] = updatedRoom;
+                      setRooms(updatedRooms);
+                    }}
+                    onRemovePanel={(panelId) => {
+                      const updatedRooms = [...rooms];
+                      const updatedRoom = { 
+                        ...room, 
+                        panels: (room.panels || []).filter(p => p.id !== panelId) 
+                      };
+                      updatedRooms[roomIndex] = updatedRoom;
+                      setRooms(updatedRooms);
+                    }}
+                  />
+                </div>
+              )}
+              
               {/* Sections per room */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">

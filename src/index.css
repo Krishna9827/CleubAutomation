@@ -1,3 +1,6 @@
+/* Import Luxury Fonts - Must be first */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&family=Montserrat:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -101,5 +104,272 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Cinematic Luxury Styles */
+@layer components {
+  /* Smooth scrolling with Lenis feel */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  html.lenis, html.lenis body {
+    height: auto;
+  }
+
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
+  .lenis.lenis-scrolling iframe {
+    pointer-events: none;
+  }
+
+  /* Luxury Typography */
+  .font-luxury-serif {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+  
+  .font-luxury-sans {
+    font-family: 'Montserrat', system-ui, sans-serif;
+  }
+
+  /* Hero Title - Massive & Impactful */
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 8vw, 7rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-weight: 400;
+  }
+
+  /* Section Titles */
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 4rem);
+    line-height: 1.1;
+    font-weight: 400;
+  }
+
+  /* Luxury Pill Button */
+  .btn-luxury {
+    @apply px-8 py-3 rounded-full border border-current bg-transparent transition-all duration-500 ease-out;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .btn-luxury:hover {
+    @apply bg-luxury-black text-luxury-white;
+  }
+
+  .btn-luxury-light {
+    @apply border-luxury-white text-luxury-white;
+  }
+
+  .btn-luxury-light:hover {
+    @apply bg-luxury-white text-luxury-black;
+  }
+
+  .btn-luxury-dark {
+    @apply border-luxury-black text-luxury-black;
+  }
+
+  .btn-luxury-dark:hover {
+    @apply bg-luxury-black text-luxury-white;
+  }
+
+  /* Bento Grid with thin borders */
+  .bento-grid {
+    display: grid;
+    border: 1px solid rgba(107, 107, 107, 0.3);
+  }
+
+  .bento-item {
+    border: 1px solid rgba(107, 107, 107, 0.3);
+    padding: 2rem;
+  }
+
+  /* Sharp edges - no border radius */
+  .sharp {
+    border-radius: 0 !important;
+  }
+
+  /* Text reveal animation helper */
+  .text-reveal {
+    clip-path: inset(0 0 100% 0);
+  }
+
+  .text-reveal.revealed {
+    clip-path: inset(0 0 0 0);
+  }
+
+  /* Parallax container */
+  .parallax-container {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+
+  /* Image zoom effect */
+  .img-zoom {
+    transform: scale(1.1);
+    transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .img-zoom.zoomed {
+    transform: scale(1);
+  }
+
+  /* Luxury section transitions */
+  .section-dark {
+    background-color: #0A0A0A;
+    color: #F5F5F3;
+  }
+
+  .section-light {
+    background-color: #F5F5F3;
+    color: #0A0A0A;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Counter animation number */
+  .counter-number {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  /* Luxury Asymmetric Layouts */
+  .asymmetric-35 {
+    width: 35%;
+  }
+  
+  .asymmetric-65 {
+    width: 65%;
+  }
+  
+  .asymmetric-40 {
+    width: 40%;
+  }
+  
+  .asymmetric-60 {
+    width: 60%;
+  }
+
+  /* Offset Elements for Visual Tension */
+  .offset-left {
+    margin-left: -5%;
+  }
+  
+  .offset-right {
+    margin-right: -5%;
+  }
+  
+  .offset-top {
+    margin-top: -3rem;
+  }
+  
+  .offset-bottom {
+    margin-bottom: -3rem;
+  }
+
+  /* Ultra-smooth scrolling */
+  * {
+    scroll-behavior: smooth;
+  }
+  
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* Generous negative space utilities */
+  .space-luxury {
+    padding: clamp(3rem, 8vw, 8rem) clamp(1.5rem, 4vw, 4rem);
+  }
+  
+  .space-luxury-y {
+    padding-top: clamp(3rem, 8vw, 8rem);
+    padding-bottom: clamp(3rem, 8vw, 8rem);
+  }
+  
+  .space-luxury-x {
+    padding-left: clamp(1.5rem, 4vw, 4rem);
+    padding-right: clamp(1.5rem, 4vw, 4rem);
+  }
+
+  /* Small wide sans-serif for labels */
+  .label-luxury {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+}
+
+/* Print styles for PI preview */
+@media print {
+  /* Hide everything except the modal content */
+  body > *:not([role="dialog"]) {
+    display: none !important;
+  }
+  
+  /* Show only the dialog content */
+  [role="dialog"] {
+    position: static !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Hide overlay and close button */
+  [data-radix-dialog-overlay],
+  button {
+    display: none !important;
+  }
+  
+  /* Optimize for printing */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  /* Page breaks */
+  .space-y-6 > div {
+    page-break-inside: avoid;
+  }
+  
+  table {
+    page-break-inside: auto;
+  }
+  
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
   }
 }

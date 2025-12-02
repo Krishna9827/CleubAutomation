@@ -20,14 +20,9 @@ import {
 import {
   getCategoryColor,
   DEFAULT_INVENTORY_PRICES,
-  TOUCH_PANEL_TYPES,
-  TOUCH_PANEL_MODULES,
-  TOUCH_PANEL_CHANNEL_OPTIONS
 } from '@/constants/inventory';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
-import type { TouchPanelChannelConfig } from '@/types/inventory';
 interface Appliance {
   name: string;
   category: string;
@@ -35,10 +30,7 @@ interface Appliance {
   quantity: number;
   wattage?: number;
   specifications: Record<string, any>;
-  // Touch panel specific fields (optional)
-  panelType?: string;
-  moduleChannels?: number;
-  channelConfig?: TouchPanelChannelConfig[];
+  linkedInventoryId?: string;
 }
 
 interface AddApplianceDialogProps {
@@ -73,10 +65,6 @@ const applianceCategories = {
     subcategories: ['Camera', 'DVR/NVR', 'Access Control', 'Intercom'],
     commonWattages: [5, 10, 15, 25, 50]
   },
-  'Touch Panels': {
-    subcategories: ['2 Channel', '4 Channel', '6 Channel', '8 Channel', '12 Channel', 'Tactile Panel', 'Touch Screen', 'Dialer Knob', 'IR Blaster'],
-    commonWattages: [5, 10, 15, 20]
-  },
   'Retrofit Relays': {
     subcategories: ['1 Channel 10A', '2 Channel 10A', '4 Channel 10A', '1 Channel 16A', '2 Channel 16A', '1 Channel 40A', 'Dimmer Module'],
     commonWattages: [5, 10, 15]
@@ -104,35 +92,21 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
   const [customWattage, setCustomWattage] = useState('');
   const [notes, setNotes] = useState('');
   // Touch panel specific state
-  const [panelType, setPanelType] = useState<string>('');
-  const [moduleChannels, setModuleChannels] = useState<number | null>(null);
-  const [channelConfig, setChannelConfig] = useState<{ label: string; details: string }[]>([]);
+  const [linkedInventoryId, setLinkedInventoryId] = useState<string>('');
 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (appliance.name.trim() && appliance.category) {
-      let finalAppliance = {
+      const finalAppliance: Appliance = {
         ...appliance,
         wattage: customWattage ? parseInt(customWattage) : appliance.wattage,
+        linkedInventoryId: linkedInventoryId || undefined,
         specifications: {
           ...appliance.specifications,
           notes: notes.trim() || undefined
         }
       };
-      // If Touch Panel, add extra config
-      if (appliance.category === 'Touch Panels') {
-        finalAppliance = {
-          ...finalAppliance,
-          panelType: panelType || undefined,
-          moduleChannels: moduleChannels || undefined,
-          channelConfig: channelConfig.map((c, idx) => ({
-            channelNumber: idx + 1,
-            label: c.label,
-            details: c.details
-          }))
-        };
-      }
       onAdd(finalAppliance);
       resetForm();
     }
@@ -150,9 +124,7 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
     });
     setCustomWattage('');
     setNotes('');
-    setPanelType('');
-    setModuleChannels(null);
-    setChannelConfig([]);
+    setLinkedInventoryId('');
   };
 
   const handleClose = () => {
@@ -250,87 +222,18 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
                   </div>
                 )}
               </div>
-              {/* Touch Panel Extra Config */}
-              {appliance.category === 'Touch Panels' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <div className="space-y-2">
-                    <Label className="text-slate-700 font-medium">Panel Type</Label>
-                    <Select value={panelType} onValueChange={setPanelType}>
-                      <SelectTrigger className="border-slate-300 focus:border-teal-500">
-                        <SelectValue placeholder="Select panel type" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-slate-200">
-                        {TOUCH_PANEL_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-700 font-medium">Module (Channels)</Label>
-                    <Select
-                      value={moduleChannels ? String(moduleChannels) : ''}
-                      onValueChange={(val) => {
-                        const num = parseInt(val);
-                        setModuleChannels(num);
-                        setChannelConfig(Array(num).fill({ label: '', details: '' }));
-                      }}
-                    >
-                      <SelectTrigger className="border-slate-300 focus:border-teal-500">
-                        <SelectValue placeholder="Select module" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-slate-200">
-                        {TOUCH_PANEL_MODULES.map((mod) => (
-                          <SelectItem key={mod} value={String(mod)}>{mod} Channel</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-              {/* Per-Channel Config */}
-              {appliance.category === 'Touch Panels' && moduleChannels && (
-                <div className="mt-4">
-                  <Label className="text-slate-700 font-medium mb-2 block">Channel Configuration</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Array.from({ length: moduleChannels }).map((_, idx) => (
-                      <div key={idx} className="flex flex-col gap-2 border p-2 rounded-md bg-slate-50">
-                        <span className="font-semibold text-slate-700">Channel {idx + 1}</span>
-                        <Select
-                          value={channelConfig[idx]?.label || ''}
-                          onValueChange={(val) => {
-                            setChannelConfig((prev) => {
-                              const arr = [...prev];
-                              arr[idx] = { ...arr[idx], label: val };
-                              return arr;
-                            });
-                          }}
-                        >
-                          <SelectTrigger className="border-slate-300 focus:border-teal-500">
-                            <SelectValue placeholder="Select device" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white border-slate-200">
-                            {TOUCH_PANEL_CHANNEL_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Input
-                          placeholder="Details (e.g., 12W LED, TV Brand)"
-                          value={channelConfig[idx]?.details || ''}
-                          onChange={(e) => {
-                            setChannelConfig((prev) => {
-                              const arr = [...prev];
-                              arr[idx] = { ...arr[idx], details: e.target.value };
-                              return arr;
-                            });
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Inventory Linking */}
+              <div className="space-y-2">
+                <Label className="text-slate-700 font-medium">Link to Inventory Item (Optional)</Label>
+                <Input
+                  type="text"
+                  placeholder="Enter inventory item ID"
+                  value={linkedInventoryId}
+                  onChange={(e) => setLinkedInventoryId(e.target.value)}
+                  className="border-slate-300 focus:border-teal-500"
+                />
+                <p className="text-xs text-slate-500">Link this appliance to an inventory item for automatic pricing</p>
+              </div>
             </CardContent>
           </Card>
 

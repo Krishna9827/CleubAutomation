@@ -592,36 +592,71 @@ export const adminService = {
 
   /**
    * Bulk insert inventory items (alias for bulkImportInventory)
+   * Properly handles data transformation and error reporting
    */
   async bulkInsertInventory(items: any[]): Promise<boolean> {
     try {
-      console.log('💾 Bulk inserting', items.length, 'inventory items...');
-
-      // Transform items to match database schema
-      const transformedItems = items.map(item => ({
-        product_name: item.product_name || item.name || '',
-        category: item.category || 'General',
-        subcategory: item.subcategory || item.sub_category || 'Other',
-        price_per_unit: item.price_per_unit || item.price || 0,
-        wattage: item.wattage || null,
-        notes: item.notes || null,
-        vendor: item.vendor || null,
-        protocol: item.protocol || null,
-      }));
-
-      const { error } = await supabase
-        .from('inventory')
-        .insert(transformedItems);
-
-      if (error) {
-        console.error('❌ Bulk insert error:', error);
+      if (!items || items.length === 0) {
+        console.error('❌ No items to insert');
         return false;
       }
 
+      console.log('💾 Bulk inserting', items.length, 'inventory items...');
+
+      // Transform items to match database schema EXACTLY
+      const transformedItems = items.map((item, idx) => {
+        // Validate required fields
+        if (!item.product_name && !item.category) {
+          console.warn(`⚠️ Row ${idx + 1}: Missing product_name and category, skipping`);
+          return null;
+        }
+
+        return {
+          product_name: (item.product_name || item.name || '').trim(),
+          category: (item.category || 'General').trim(),
+          subcategory: (item.subcategory || item.sub_category || '').trim() || null,
+          price_per_unit: parseFloat(item.price_per_unit || item.price || 0),
+          wattage: item.wattage ? parseInt(item.wattage) : null,
+          notes: (item.notes || '').trim() || null,
+          vendor: (item.vendor || '').trim() || null,
+          protocol: (item.protocol || '').trim() || null,
+        };
+      }).filter(item => item !== null);
+
+      if (transformedItems.length === 0) {
+        console.error('❌ No valid items after transformation');
+        return false;
+      }
+
+      console.log('📝 Transformed items sample:', JSON.stringify(transformedItems[0], null, 2));
+
+      // Insert with detailed error handling
+      const { data, error, status } = await supabase
+        .from('inventory')
+        .insert(transformedItems)
+        .select();
+
+      if (error) {
+        console.error('❌ Bulk insert error details:', {
+          status,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        });
+        throw new Error(`Database error: ${error.message}`);
+      }
+
       console.log('✅ Successfully inserted', transformedItems.length, 'items');
+      if (data) {
+        console.log('📊 First inserted item:', JSON.stringify(data[0], null, 2));
+      }
       return true;
     } catch (error: any) {
-      console.error('❌ Bulk insert exception:', error);
+      console.error('❌ Bulk insert exception:', {
+        message: error.message,
+        stack: error.stack,
+      });
       return false;
     }
   },

@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,28 @@ import { projectService } from '@/supabase/projectService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import SiteNav from '@/components/ui/site-nav';
+
+const luxuryEasing = [0.22, 1, 0.36, 1] as const;
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.8, ease: luxuryEasing }
+  }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.2
+    }
+  }
+};
 
 const ProjectPlanning = () => {
   const navigate = useNavigate();
@@ -96,180 +119,257 @@ const ProjectPlanning = () => {
   const isFormValid = formData.projectName.trim() && formData.clientName.trim();
 
   return (
-    <div>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black flex flex-col transition-colors">
-      <SiteNav
-        brand="Cleub Automation"
-        links={[
-          { label: 'Home', href: '/' },
-        ]}
-        rightActions={
-          <Button 
+    <div className="min-h-screen bg-[#0A0A0A]">
+      {/* Fixed Navigation */}
+      <motion.nav 
+        className="fixed top-0 left-0 w-full z-50 mix-blend-difference px-8 lg:px-16 py-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, ease: luxuryEasing }}
+      >
+        <div className="flex justify-between items-center">
+          <motion.button
+            onClick={() => navigate('/')}
+            className="font-serif text-2xl text-[#F5F5F3]"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: luxuryEasing }}
+          >
+            Cleub
+          </motion.button>
+          <motion.button
             onClick={() => navigate('/my-projects')}
-            variant="outline"
-            className="border-teal-600 text-teal-400 hover:bg-teal-600/10"
+            className="text-[10px] tracking-[0.35em] uppercase text-[#F5F5F3] hover:opacity-60 transition-opacity duration-500"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: luxuryEasing }}
           >
             Project History
-          </Button>
-        }
-      />
+          </motion.button>
+        </div>
+      </motion.nav>
 
       {/* Hero Section */}
-      <div className="flex-grow flex items-center justify-center">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-              Plan Your Smart Home with Ease
-            </h2>
-            <p className="mt-3 text-slate-300">
+      <div className="flex items-center justify-center min-h-screen pt-32 pb-16">
+        <div className="max-w-[1800px] mx-auto px-8 lg:px-16 w-full">
+          <motion.div 
+            className="text-center mb-16"
+            initial="hidden"
+            animate="visible"
+            variants={staggerContainer}
+          >
+            <motion.p 
+              className="text-[9px] tracking-[0.4em] uppercase text-[#F5F5F3]/30 mb-8"
+              variants={fadeInUp}
+            >
+              Begin Your Journey
+            </motion.p>
+            <motion.h2 
+              className="font-serif text-[clamp(2.5rem,6vw,6rem)] leading-[0.95] text-[#F5F5F3] mb-6"
+              variants={fadeInUp}
+            >
+              Plan Your<br />Smart Home.
+            </motion.h2>
+            <motion.p 
+              className="text-[#F5F5F3]/60 max-w-2xl mx-auto text-sm"
+              variants={fadeInUp}
+            >
               Start by providing some basic project details to begin planning your home automation setup.
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
 
           {/* Features */}
-          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="bg-black/40 backdrop-blur-sm shadow-xl border border-white/10 hover:shadow-2xl transition-shadow">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-teal-100 text-teal-600 rounded-xl mb-4 flex items-center justify-center">
-                  <Users className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Manage Clients</h3>
-                <p className="text-slate-300">Keep track of your clients and their project requirements efficiently.</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-black/40 backdrop-blur-sm shadow-xl border border-white/10 hover:shadow-2xl transition-shadow">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-blue-900 text-blue-400 rounded-xl mb-4 flex items-center justify-center">
-                  <Lightbulb className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Appliance Planning</h3>
-                <p className="text-slate-300">Plan and manage all the appliances and electrical components in your project.</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-black/40 backdrop-blur-sm shadow-xl border border-white/10 hover:shadow-2xl transition-shadow">
-              <CardContent className="p-6">
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-400 rounded-xl mb-4 flex items-center justify-center">
-                  <Settings className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">Customizable Settings</h3>
-                <p className="text-slate-300">Customize appliance types, wattage presets, and export formats.</p>
-              </CardContent>
-            </Card>
-          </div>
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-3 gap-1 bg-[#1A1A1A]/30 mb-16"
+            initial="hidden"
+            animate="visible"
+            variants={staggerContainer}
+          >
+            <motion.div 
+              className="bg-[#0A0A0A] border border-[#1A1A1A] p-12 group hover:border-[#F5F5F3]/20 transition-colors duration-500"
+              variants={fadeInUp}
+            >
+              <Users className="w-8 h-8 text-[#F5F5F3]/30 mb-6 group-hover:text-[#F5F5F3]/60 transition-colors duration-500" />
+              <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-3">Feature 01</p>
+              <h3 className="text-lg text-[#F5F5F3] mb-3 font-serif">Manage Clients</h3>
+              <p className="text-[#F5F5F3]/60 text-sm">Keep track of your clients and their project requirements efficiently.</p>
+            </motion.div>
+            <motion.div 
+              className="bg-[#0A0A0A] border border-[#1A1A1A] p-12 group hover:border-[#F5F5F3]/20 transition-colors duration-500"
+              variants={fadeInUp}
+            >
+              <Lightbulb className="w-8 h-8 text-[#F5F5F3]/30 mb-6 group-hover:text-[#F5F5F3]/60 transition-colors duration-500" />
+              <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-3">Feature 02</p>
+              <h3 className="text-lg text-[#F5F5F3] mb-3 font-serif">Appliance Planning</h3>
+              <p className="text-[#F5F5F3]/60 text-sm">Plan and manage all the appliances and electrical components in your project.</p>
+            </motion.div>
+            <motion.div 
+              className="bg-[#0A0A0A] border border-[#1A1A1A] p-12 group hover:border-[#F5F5F3]/20 transition-colors duration-500"
+              variants={fadeInUp}
+            >
+              <Settings className="w-8 h-8 text-[#F5F5F3]/30 mb-6 group-hover:text-[#F5F5F3]/60 transition-colors duration-500" />
+              <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-3">Feature 03</p>
+              <h3 className="text-lg text-[#F5F5F3] mb-3 font-serif">Customizable Settings</h3>
+              <p className="text-[#F5F5F3]/60 text-sm">Customize appliance types, wattage presets, and export formats.</p>
+            </motion.div>
+          </motion.div>
 
           {/* Form */}
-          <Card className="mt-12 bg-black/40 backdrop-blur-sm shadow-xl border border-white/10">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold text-white">Project Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="projectName" className="text-white">Project Name</Label>
-                <Input
-                  type="text"
-                  id="projectName"
-                  placeholder="Enter project name"
-                  value={formData.projectName}
-                  onChange={(e) => handleInputChange('projectName', e.target.value)}
-                  className="bg-slate-800/50 text-white border-slate-700 placeholder:text-slate-400"
-                />
+          <motion.div 
+            className="max-w-3xl mx-auto"
+            initial="hidden"
+            animate="visible"
+            variants={staggerContainer}
+          >
+            <motion.p 
+              className="text-[9px] tracking-[0.4em] uppercase text-[#F5F5F3]/30 mb-8 text-center"
+              variants={fadeInUp}
+            >
+              Project Information
+            </motion.p>
+            <motion.form 
+              className="space-y-8"
+              variants={fadeInUp}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <Label htmlFor="projectName" className="text-[9px] tracking-[0.3em] uppercase text-[#F5F5F3]/40 block">
+                    Project Name *
+                  </Label>
+                  <Input
+                    type="text"
+                    id="projectName"
+                    placeholder="Enter project name"
+                    value={formData.projectName}
+                    onChange={(e) => handleInputChange('projectName', e.target.value)}
+                    className="bg-transparent text-[#F5F5F3] border-0 border-b border-[#F5F5F3]/20 rounded-none px-0 py-3 placeholder:text-[#F5F5F3]/20 focus-visible:ring-0 focus-visible:border-[#F5F5F3]/60 transition-colors duration-500"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="clientName" className="text-[9px] tracking-[0.3em] uppercase text-[#F5F5F3]/40 block">
+                    Client Name *
+                  </Label>
+                  <Input
+                    type="text"
+                    id="clientName"
+                    placeholder="Enter client name"
+                    value={formData.clientName}
+                    onChange={(e) => handleInputChange('clientName', e.target.value)}
+                    className="bg-transparent text-[#F5F5F3] border-0 border-b border-[#F5F5F3]/20 rounded-none px-0 py-3 placeholder:text-[#F5F5F3]/20 focus-visible:ring-0 focus-visible:border-[#F5F5F3]/60 transition-colors duration-500"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="clientName" className="text-white">Client Name</Label>
-                <Input
-                  type="text"
-                  id="clientName"
-                  placeholder="Enter client name"
-                  value={formData.clientName}
-                  onChange={(e) => handleInputChange('clientName', e.target.value)}
-                  className="bg-slate-800/50 text-white border-slate-700 placeholder:text-slate-400"
-                />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <Label htmlFor="clientEmail" className="text-[9px] tracking-[0.3em] uppercase text-[#F5F5F3]/40 block">
+                    Client Email
+                  </Label>
+                  <Input
+                    type="email"
+                    id="clientEmail"
+                    placeholder="client@email.com"
+                    value={formData.clientEmail}
+                    onChange={(e) => handleInputChange('clientEmail', e.target.value)}
+                    className="bg-transparent text-[#F5F5F3] border-0 border-b border-[#F5F5F3]/20 rounded-none px-0 py-3 placeholder:text-[#F5F5F3]/20 focus-visible:ring-0 focus-visible:border-[#F5F5F3]/60 transition-colors duration-500"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="clientPhone" className="text-[9px] tracking-[0.3em] uppercase text-[#F5F5F3]/40 block">
+                    Client Phone
+                  </Label>
+                  <Input
+                    type="tel"
+                    id="clientPhone"
+                    placeholder="+91 9876543210"
+                    value={formData.clientPhone}
+                    onChange={(e) => handleInputChange('clientPhone', e.target.value)}
+                    className="bg-transparent text-[#F5F5F3] border-0 border-b border-[#F5F5F3]/20 rounded-none px-0 py-3 placeholder:text-[#F5F5F3]/20 focus-visible:ring-0 focus-visible:border-[#F5F5F3]/60 transition-colors duration-500"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="clientEmail" className="text-white">Client Email (Optional)</Label>
-                <Input
-                  type="email"
-                  id="clientEmail"
-                  placeholder="Enter client email"
-                  value={formData.clientEmail}
-                  onChange={(e) => handleInputChange('clientEmail', e.target.value)}
-                  className="bg-slate-800/50 text-white border-slate-700 placeholder:text-slate-400"
-                />
-              </div>
-              <div>
-                <Label htmlFor="clientPhone" className="text-white">Client Phone (Optional)</Label>
-                <Input
-                  type="tel"
-                  id="clientPhone"
-                  placeholder="Enter client phone"
-                  value={formData.clientPhone}
-                  onChange={(e) => handleInputChange('clientPhone', e.target.value)}
-                  className="bg-slate-800/50 text-white border-slate-700 placeholder:text-slate-400"
-                />
-              </div>
-              <div>
-                <Label htmlFor="clientAddress" className="text-white">Client Address (Optional)</Label>
+
+              <div className="space-y-3">
+                <Label htmlFor="clientAddress" className="text-[9px] tracking-[0.3em] uppercase text-[#F5F5F3]/40 block">
+                  Client Address
+                </Label>
                 <Input
                   type="text"
                   id="clientAddress"
                   placeholder="Enter client address"
                   value={formData.clientAddress}
                   onChange={(e) => handleInputChange('clientAddress', e.target.value)}
-                  className="bg-slate-800/50 text-white border-slate-700 placeholder:text-slate-400"
+                  className="bg-transparent text-[#F5F5F3] border-0 border-b border-[#F5F5F3]/20 rounded-none px-0 py-3 placeholder:text-[#F5F5F3]/20 focus-visible:ring-0 focus-visible:border-[#F5F5F3]/60 transition-colors duration-500"
                 />
               </div>
-              <div>
-                <Label htmlFor="architectName" className="text-white">Architect Name (Optional)</Label>
-                <Input
-                  type="text"
-                  id="architectName"
-                  placeholder="Enter architect name"
-                  value={formData.architectName}
-                  onChange={(e) => handleInputChange('architectName', e.target.value)}
-                  className="bg-slate-800/50 text-white border-slate-700 placeholder:text-slate-400"
-                />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <Label htmlFor="architectName" className="text-[9px] tracking-[0.3em] uppercase text-[#F5F5F3]/40 block">
+                    Architect Name
+                  </Label>
+                  <Input
+                    type="text"
+                    id="architectName"
+                    placeholder="Architect name"
+                    value={formData.architectName}
+                    onChange={(e) => handleInputChange('architectName', e.target.value)}
+                    className="bg-transparent text-[#F5F5F3] border-0 border-b border-[#F5F5F3]/20 rounded-none px-0 py-3 placeholder:text-[#F5F5F3]/20 focus-visible:ring-0 focus-visible:border-[#F5F5F3]/60 transition-colors duration-500"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <Label htmlFor="designerName" className="text-[9px] tracking-[0.3em] uppercase text-[#F5F5F3]/40 block">
+                    Interior Designer
+                  </Label>
+                  <Input
+                    type="text"
+                    id="designerName"
+                    placeholder="Designer name"
+                    value={formData.designerName}
+                    onChange={(e) => handleInputChange('designerName', e.target.value)}
+                    className="bg-transparent text-[#F5F5F3] border-0 border-b border-[#F5F5F3]/20 rounded-none px-0 py-3 placeholder:text-[#F5F5F3]/20 focus-visible:ring-0 focus-visible:border-[#F5F5F3]/60 transition-colors duration-500"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="designerName" className="text-white">Interior Designer (Optional)</Label>
-                <Input
-                  type="text"
-                  id="designerName"
-                  placeholder="Enter designer name"
-                  value={formData.designerName}
-                  onChange={(e) => handleInputChange('designerName', e.target.value)}
-                  className="bg-slate-800/50 text-white border-slate-700 placeholder:text-slate-400"
-                />
-              </div>
-              <div>
-                <Label htmlFor="notes" className="text-white">Project Notes (Optional)</Label>
+
+              <div className="space-y-3">
+                <Label htmlFor="notes" className="text-[9px] tracking-[0.3em] uppercase text-[#F5F5F3]/40 block">
+                  Project Notes
+                </Label>
                 <Textarea
                   id="notes"
-                  placeholder="Enter any project notes"
+                  placeholder="Any additional notes or requirements..."
                   value={formData.notes}
                   onChange={(e) => handleInputChange('notes', e.target.value)}
-                  className="bg-slate-800/50 text-white border-slate-700 placeholder:text-slate-400"
+                  className="bg-transparent text-[#F5F5F3] border border-[#F5F5F3]/20 rounded-none px-4 py-4 placeholder:text-[#F5F5F3]/20 focus-visible:ring-0 focus-visible:border-[#F5F5F3]/60 transition-colors duration-500 min-h-[120px] resize-none"
                 />
               </div>
-              <Button
-                className="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
-                onClick={handleStartPlanning}
-                disabled={!isFormValid || isLoading}
-              >
-                {isLoading ? 'Creating Project...' : 'Start Planning'}
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
+
+              <div className="flex justify-center pt-8">
+                <motion.button
+                  type="button"
+                  onClick={handleStartPlanning}
+                  disabled={!isFormValid || isLoading}
+                  className="px-16 py-4 rounded-full border-2 border-[#F5F5F3] text-[#F5F5F3] text-xs tracking-[0.2em] uppercase hover:bg-[#F5F5F3] hover:text-[#0A0A0A] transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_40px_rgba(245,245,243,0.2)]"
+                  whileHover={{ scale: (!isFormValid || isLoading) ? 1 : 1.02 }}
+                  whileTap={{ scale: (!isFormValid || isLoading) ? 1 : 0.98 }}
+                >
+                  {isLoading ? 'Creating Project...' : 'Start Planning'}
+                </motion.button>
+              </div>
+            </motion.form>
+          </motion.div>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 bg-black/40 backdrop-blur-sm py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-300">
-          &copy; {new Date().getFullYear()} Home Automation Planning System. All rights reserved.
+      <footer className="border-t border-[#1A1A1A] bg-[#0A0A0A] py-12">
+        <div className="max-w-[1800px] mx-auto px-8 lg:px-16 text-center">
+          <p className="text-[9px] tracking-[0.35em] text-[#F5F5F3]/20 uppercase">
+            &copy; {new Date().getFullYear()} Cleub Automation. All rights reserved.
+          </p>
         </div>
       </footer>
-      </div>
     </div>
   );
 };

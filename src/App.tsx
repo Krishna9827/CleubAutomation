@@ -25,6 +25,7 @@ import UserHistory from "./pages/user/ProjectHistory"
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin"
 import AdminSettings from "./pages/admin/AdminSettings"
+import AdminPanelPresets from "./pages/admin/AdminPanelPresets"
 import AdminTestimonials from "./pages/admin/AdminTestimonials"
 import AdminInquiries from "./pages/admin/AdminInquiries"
 import AdminProjects from "./pages/admin/AdminProjects"
@@ -79,6 +80,7 @@ const App = () => (
             <Route path="/my-projects" element={<UserHistory />} />
             <Route path="/admin" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
             <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
+            <Route path="/admin/panel-presets" element={<ProtectedAdminRoute><AdminPanelPresets /></ProtectedAdminRoute>} />
             <Route path="/admin/inquiries" element={<ProtectedAdminRoute><AdminInquiries /></ProtectedAdminRoute>} />
             <Route path="/admin/projects" element={<ProtectedAdminRoute><AdminProjects /></ProtectedAdminRoute>} />
             <Route path="/admin/projects/:projectId/timeline" element={<ProtectedAdminRoute><AdminProjectTimeline /></ProtectedAdminRoute>} />

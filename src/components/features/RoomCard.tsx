@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Settings, Lightbulb, Fan, Thermometer, MoreHorizontal } from 'lucide-react';
+import { Plus, Settings, Lightbulb, Fan, Thermometer, MoreHorizontal, Zap } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +11,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import AddApplianceDialog from './AddApplianceDialog';
+import PanelConfigUI from './PanelConfigUI';
+import { PanelPreset } from '@/types/project';
 
 interface Appliance {
   id: string;
@@ -20,12 +22,15 @@ interface Appliance {
   quantity: number;
   wattage?: number;
   specifications: Record<string, any>;
+  linkedInventoryId?: string;
 }
 
 interface Room {
   id: string;
   name: string;
   type: string;
+  automationType?: 'wired' | 'wireless';
+  panels?: PanelPreset[];
   appliances: Appliance[];
 }
 
@@ -37,6 +42,7 @@ interface RoomCardProps {
 
 const RoomCard = ({ room, onUpdate, onDelete }: RoomCardProps) => {
   const [showAddAppliance, setShowAddAppliance] = useState(false);
+  const [automationType, setAutomationType] = useState<'wired' | 'wireless'>(room.automationType || 'wireless');
 
   const addAppliance = (appliance: Omit<Appliance, 'id'>) => {
     const newAppliance: Appliance = {
@@ -57,6 +63,32 @@ const RoomCard = ({ room, onUpdate, onDelete }: RoomCardProps) => {
     const updatedRoom = {
       ...room,
       appliances: room.appliances.filter(app => app.id !== applianceId)
+    };
+    onUpdate(room.id, updatedRoom);
+  };
+
+  const handleAutomationTypeChange = (type: 'wired' | 'wireless') => {
+    setAutomationType(type);
+    const updatedRoom = {
+      ...room,
+      automationType: type,
+      panels: type === 'wireless' ? (room.panels || []) : []  // Clear panels if switching to wired
+    };
+    onUpdate(room.id, updatedRoom);
+  };
+
+  const addPanel = (panel: PanelPreset) => {
+    const updatedRoom = {
+      ...room,
+      panels: [...(room.panels || []), panel]
+    };
+    onUpdate(room.id, updatedRoom);
+  };
+
+  const removePanel = (panelId: string) => {
+    const updatedRoom = {
+      ...room,
+      panels: (room.panels || []).filter(p => p.id !== panelId)
     };
     onUpdate(room.id, updatedRoom);
   };
@@ -126,8 +158,55 @@ const RoomCard = ({ room, onUpdate, onDelete }: RoomCardProps) => {
           </div>
         </CardHeader>
         
-        <CardContent className="pt-0">
-          <div className="space-y-4">
+        <CardContent className="pt-0 space-y-4">
+          {/* Automation Type Selector */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-slate-700">Automation Type:</label>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => handleAutomationTypeChange('wireless')}
+                variant={automationType === 'wireless' ? 'default' : 'outline'}
+                size="sm"
+                className={
+                  automationType === 'wireless'
+                    ? 'bg-teal-600 hover:bg-teal-700'
+                    : 'border-slate-300 hover:border-teal-400'
+                }
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Wireless
+              </Button>
+              <Button
+                onClick={() => handleAutomationTypeChange('wired')}
+                variant={automationType === 'wired' ? 'default' : 'outline'}
+                size="sm"
+                className={
+                  automationType === 'wired'
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : 'border-slate-300 hover:border-blue-400'
+                }
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Wired (KNX)
+              </Button>
+            </div>
+          </div>
+
+          {/* Panels Section - Only for Wireless */}
+          {automationType === 'wireless' && (
+            <div className="border-t pt-4">
+              <PanelConfigUI
+                roomName={room.name}
+                selectedPanels={room.panels || []}
+                onAddPanel={addPanel}
+                onRemovePanel={removePanel}
+              />
+            </div>
+          )}
+
+          {/* Room Appliances Section */}
+          <div className="border-t pt-4 space-y-3">
+            <h4 className="text-sm font-semibold text-slate-700">Room Appliances:</h4>
             {Object.keys(appliancesByCategory).length === 0 ? (
               <div className="text-center py-6">
                 <div className="w-12 h-12 bg-slate-100 rounded-xl mx-auto mb-3 flex items-center justify-center">
