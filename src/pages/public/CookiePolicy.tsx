@@ -1,164 +1,443 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState, useRef } from 'react';
+import { motion, useInView, Variants } from 'framer-motion';
+import { Cookie, Mail, Phone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import SiteNav from '@/components/ui/site-nav';
+
+const luxuryEasing: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+const fadeInUp: Variants = {
+  hidden: { opacity: 0, y: 80 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 1.2, ease: luxuryEasing }
+  }
+};
+
+const staggerContainer: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.3,
+      delayChildren: 0.2
+    }
+  }
+};
+
+const textReveal: Variants = {
+  hidden: { y: "120%", opacity: 0 },
+  visible: { 
+    y: 0, 
+    opacity: 1,
+    transition: { duration: 1.4, ease: luxuryEasing }
+  }
+};
+
+const AnimatedSection = ({ 
+  children, 
+  className = '', 
+  dark = true,
+  id = ''
+}: { 
+  children: React.ReactNode; 
+  className?: string; 
+  dark?: boolean;
+  id?: string;
+}) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  
+  return (
+    <motion.section
+      id={id}
+      ref={ref}
+      className={`${dark ? 'bg-[#0A0A0A] text-[#F5F5F3]' : 'bg-[#F5F5F3] text-[#0A0A0A]'} ${className}`}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+      variants={staggerContainer}
+    >
+      {children}
+    </motion.section>
+  );
+};
 
 const CookiePolicy = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
-      <SiteNav
-        brand="Cleub Automation"
-        links={[
-          { label: 'Home', href: '/' },
-          { label: 'About Us', href: '/about' },
-        ]}
-      />
-
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl sm:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-100 via-white to-slate-300 mb-4">
-            Cookie Policy
-          </h1>
-          <p className="text-slate-400">Last Updated: {new Date().toLocaleDateString()}</p>
+    <div className="min-h-screen bg-[#0A0A0A] font-sans">
+      
+      {/* ============================================ */}
+      {/* FIXED NAVIGATION */}
+      {/* ============================================ */}
+      <motion.nav 
+        className="fixed top-0 left-0 right-0 z-50 mix-blend-difference"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 1.2, ease: luxuryEasing as any, delay: 0.5 }}
+      >
+        <div className="max-w-[1800px] mx-auto px-8 lg:px-12 py-8 flex justify-between items-center">
+          <motion.button 
+            onClick={() => navigate('/')}
+            className="text-[#F5F5F3] font-serif text-2xl tracking-tight"
+            whileHover={{ opacity: 0.6 }}
+            transition={{ duration: 0.4 }}
+          >
+            Cleub Automation
+          </motion.button>
+          <div className="hidden md:flex items-center gap-16">
+            {[
+              { label: 'Home', href: '/' },
+              { label: 'About Us', href: '/about' },
+            ].map((link) => (
+              <motion.button
+                key={link.label}
+                onClick={() => navigate(link.href)}
+                className="text-[#F5F5F3] text-[10px] tracking-[0.35em] uppercase hover:opacity-50 transition-opacity duration-500"
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.3 }}
+              >
+                {link.label}
+              </motion.button>
+            ))}
+          </div>
         </div>
+      </motion.nav>
 
-        <Card className="bg-slate-900/70 backdrop-blur-sm border border-slate-800 mb-8">
-          <CardContent className="p-8 space-y-6 text-slate-300">
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">What Are Cookies</h2>
-              <p className="leading-relaxed">
-                Cookies are small text files that are placed on your device when you visit our website. They help us provide a better user experience by remembering your preferences, enabling certain features, and analyzing how you use our services.
-              </p>
-            </section>
+      <main>
+        {/* ============================================ */}
+        {/* HERO SECTION */}
+        {/* ============================================ */}
+        <section className="min-h-screen flex items-center pt-32 pb-16">
+          <div className="max-w-[1800px] mx-auto px-8 lg:px-16 w-full">
+            <motion.div
+              className="max-w-[95%] lg:max-w-[85%]"
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+            >
+              <motion.div className="flex items-center gap-3 mb-8" variants={fadeInUp}>
+                <Cookie className="w-5 h-5 text-[#F5F5F3]/40" />
+                <p className="text-[#F5F5F3]/40 text-[10px] tracking-[0.4em] uppercase">
+                  Cookie Protocol
+                </p>
+              </motion.div>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Types of Cookies We Use</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-teal-400 mb-2">Essential Cookies</h3>
-                  <p className="leading-relaxed">
-                    These cookies are necessary for the website to function properly. They enable core functionality such as security, authentication, and access to secure areas. The website cannot function properly without these cookies.
-                  </p>
-                  <p className="text-sm text-slate-400 mt-2">Examples: Session management, authentication tokens, security features</p>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-teal-400 mb-2">Performance Cookies</h3>
-                  <p className="leading-relaxed">
-                    These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously. This data helps us improve the website's performance and user experience.
-                  </p>
-                  <p className="text-sm text-slate-400 mt-2">Examples: Page load times, error tracking, usage analytics</p>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-teal-400 mb-2">Functional Cookies</h3>
-                  <p className="leading-relaxed">
-                    These cookies enable personalized features and remember your choices (such as language preferences or project settings) to provide a more personalized experience.
-                  </p>
-                  <p className="text-sm text-slate-400 mt-2">Examples: Language selection, saved project preferences, UI customization</p>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-teal-400 mb-2">Analytics Cookies</h3>
-                  <p className="leading-relaxed">
-                    We use analytics cookies to understand user behavior, track website traffic, and measure the effectiveness of our content. This information is used solely for improving our services.
-                  </p>
-                  <p className="text-sm text-slate-400 mt-2">Examples: Google Analytics, user journey tracking, conversion metrics</p>
-                </div>
+              <div className="overflow-hidden mb-4">
+                <motion.h1 
+                  className="font-serif text-[clamp(2.5rem,7vw,7rem)] leading-[0.95] text-[#F5F5F3] tracking-tight"
+                  variants={textReveal}
+                >
+                  Ensuring Flawless Interaction.
+                </motion.h1>
               </div>
-            </section>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Third-Party Cookies</h2>
-              <p className="leading-relaxed mb-3">
-                We may use third-party services that set cookies on our behalf. These include:
-              </p>
-              <ul className="list-disc list-inside space-y-2 leading-relaxed">
-                <li><strong>Firebase Authentication:</strong> For secure user authentication and session management</li>
-                <li><strong>Supabase:</strong> For database operations and real-time data synchronization</li>
-                <li><strong>Analytics Providers:</strong> For website usage analysis and performance monitoring</li>
-              </ul>
-              <p className="leading-relaxed mt-3">
-                These third parties have their own privacy policies and may use cookies according to their terms.
-              </p>
-            </section>
+              <motion.p 
+                className="text-[#F5F5F3]/60 text-sm tracking-[0.3em] uppercase mt-8"
+                variants={fadeInUp}
+              >
+                Last Updated: 12/2/2025
+              </motion.p>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">How to Manage Cookies</h2>
-              <p className="leading-relaxed mb-3">
-                You have the right to accept or reject cookies. Most web browsers automatically accept cookies, but you can modify your browser settings to decline cookies if you prefer. Here's how:
-              </p>
-              <ul className="list-disc list-inside space-y-2 leading-relaxed">
-                <li><strong>Chrome:</strong> Settings → Privacy and security → Cookies and other site data</li>
-                <li><strong>Firefox:</strong> Options → Privacy & Security → Cookies and Site Data</li>
-                <li><strong>Safari:</strong> Preferences → Privacy → Manage Website Data</li>
-                <li><strong>Edge:</strong> Settings → Privacy, search, and services → Cookies</li>
-              </ul>
-              <p className="leading-relaxed mt-3 text-amber-400">
-                Note: Disabling cookies may affect the functionality of our website and prevent you from using certain features.
-              </p>
-            </section>
+              <motion.p 
+                className="text-[#F5F5F3]/70 text-base lg:text-lg leading-relaxed max-w-[800px] mt-8"
+                variants={fadeInUp}
+              >
+                At Cleub Automation, every digital touchpoint is engineered for uninterrupted performance and absolute security. This Cookie Protocol outlines the highly controlled use of digital identifiers on your device. We use these essential tools to ensure the reliability of your service portal and to provide the bespoke, high-fidelity experience you demand.
+              </motion.p>
+            </motion.div>
+          </div>
+        </section>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Cookie Duration</h2>
-              <div className="space-y-3">
-                <div>
-                  <h3 className="text-lg font-semibold text-teal-400 mb-2">Session Cookies</h3>
-                  <p className="leading-relaxed">
-                    Temporary cookies that expire when you close your browser. Used primarily for authentication and navigation.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-teal-400 mb-2">Persistent Cookies</h3>
-                  <p className="leading-relaxed">
-                    Remain on your device for a set period or until you delete them. Used to remember your preferences and improve your experience on repeat visits.
-                  </p>
-                </div>
+        {/* ============================================ */}
+        {/* CATEGORIES OF IDENTIFIERS */}
+        {/* ============================================ */}
+        <AnimatedSection className="py-32" dark={true}>
+          <div className="max-w-[1800px] mx-auto px-8 lg:px-16">
+            <motion.div className="max-w-[85%] lg:max-w-[75%] mb-20" variants={staggerContainer}>
+              <motion.p 
+                className="text-[9px] tracking-[0.4em] uppercase text-[#F5F5F3]/40 mb-8"
+                variants={fadeInUp}
+              >
+                Categories of Digital Identifiers
+              </motion.p>
+
+              <motion.p 
+                className="text-[#F5F5F3]/70 text-base leading-relaxed mb-12 max-w-[700px]"
+                variants={fadeInUp}
+              >
+                Our use of cookies is strictly tied to reliability, security, and the integrity of your system management portal.
+              </motion.p>
+            </motion.div>
+
+            {/* Cookies Table */}
+            <motion.div className="space-y-1" variants={staggerContainer}>
+              {[
+                {
+                  title: "Integrity & Security Cookies",
+                  role: "Mandatory for service access. These secure your user session, authenticate your identity, and safeguard your account from unauthorized access.",
+                  technical: "Authentication Tokens, Session Management, Fraud Prevention."
+                },
+                {
+                  title: "System Precision Cookies",
+                  role: "These identifiers ensure the precise functionality and consistency of your project tools and preferences. They remember your custom settings.",
+                  technical: "Language Selection, Saved Project Preferences, High-Fidelity UI Customization."
+                },
+                {
+                  title: "Performance Assurance Cookies",
+                  role: "Used strictly for internal performance auditing. These anonymously track system bottlenecks, page load integrity, and error reporting.",
+                  technical: "Page Load Metrics, Error Trapping, System Uptime Analysis."
+                },
+                {
+                  title: "Authority Validation Cookies (Third-Party)",
+                  role: "We leverage highly vetted third-party services for essential operations, ensuring the absolute security and stability of our platform backbone.",
+                  technical: "Firebase Authentication, Supabase Data Integrity Checks, Secure Analytics Providers."
+                }
+              ].map((cookie, idx) => (
+                <motion.div
+                  key={idx}
+                  className="bg-[#0A0A0A] border border-[#1A1A1A] p-8 lg:p-12 group hover:border-[#F5F5F3]/20 transition-colors duration-500"
+                  variants={fadeInUp}
+                >
+                  <h3 className="font-serif text-xl lg:text-2xl text-[#F5F5F3] mb-4">{cookie.title}</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                      <p className="text-[9px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-3">Role in Your Experience</p>
+                      <p className="text-[#F5F5F3]/60 text-sm leading-relaxed">{cookie.role}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-3">Technical Assurance</p>
+                      <p className="text-[#F5F5F3]/60 text-sm leading-relaxed">Example: {cookie.technical}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </AnimatedSection>
+
+        {/* ============================================ */}
+        {/* ARCHITECTURE OF CONSENT */}
+        {/* ============================================ */}
+        <AnimatedSection className="py-32" dark={false}>
+          <div className="max-w-[1800px] mx-auto px-8 lg:px-16">
+            <motion.div className="max-w-[85%] lg:max-w-[75%] mb-16" variants={staggerContainer}>
+              <motion.p 
+                className="text-[9px] tracking-[0.4em] uppercase text-[#6B6B6B]/60 mb-8"
+                variants={fadeInUp}
+              >
+                Consent & Control
+              </motion.p>
+
+              <div className="overflow-hidden mb-12">
+                <motion.h2 
+                  className="font-serif text-[clamp(2rem,5vw,4rem)] leading-[0.95] text-[#0A0A0A] tracking-tight"
+                  variants={textReveal}
+                >
+                  The Architecture of Consent.
+                </motion.h2>
               </div>
-            </section>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Your Consent</h2>
-              <p className="leading-relaxed">
-                By using our website, you consent to the use of cookies as described in this policy. If you do not agree to our use of cookies, you should disable them through your browser settings or refrain from using our services.
-              </p>
-            </section>
+              <motion.p 
+                className="text-[#6B6B6B] text-base leading-relaxed mb-12 max-w-[700px]"
+                variants={fadeInUp}
+              >
+                By accessing the Cleub Automation portal, you acknowledge the necessity of these digital identifiers to facilitate the secure and seamless service we provide.
+              </motion.p>
+            </motion.div>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Updates to This Policy</h2>
-              <p className="leading-relaxed">
-                We may update this Cookie Policy from time to time to reflect changes in technology, legislation, or our business practices. The updated policy will be posted on this page with a revised date.
-              </p>
-            </section>
+            {/* Consent Pillars */}
+            <motion.div className="space-y-4 max-w-[900px]" variants={staggerContainer}>
+              {[
+                {
+                  title: "Zero Monetization",
+                  desc: "Cleub Automation does not monetize or sell any cookie-derived data. All information is used exclusively for internal service provision, security, and optimization."
+                },
+                {
+                  title: "Third-Party Oversight",
+                  desc: "We vet our third-party partners (e.g., Firebase, Supabase) for their adherence to stringent data security protocols. We choose partners who reflect our commitment to discretion and technical excellence."
+                },
+                {
+                  title: "Your Digital Control",
+                  desc: "You maintain the right to manage cookies, though disabling them will critically compromise your ability to use our secured management portal and certain essential service features."
+                },
+                {
+                  title: "Browser Management",
+                  desc: "You can modify your browser settings to decline most non-essential cookies. Instructions are available via your specific browser's preferences panel."
+                }
+              ].map((item, idx) => (
+                <motion.div
+                  key={idx}
+                  className="bg-white border border-[#E5E5E5] p-6 lg:p-8 group hover:bg-[#0A0A0A] hover:text-[#F5F5F3] transition-all duration-700"
+                  variants={fadeInUp}
+                >
+                  <h3 className="font-serif text-lg text-[#0A0A0A] group-hover:text-[#F5F5F3] mb-3 transition-colors duration-700">{item.title}</h3>
+                  <p className="text-[#6B6B6B] group-hover:text-[#F5F5F3]/70 text-sm leading-relaxed transition-colors duration-700">{item.desc}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </AnimatedSection>
 
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Contact Us</h2>
-              <p className="leading-relaxed">
-                If you have questions about our use of cookies, please contact us at:
-              </p>
-              <div className="mt-3 space-y-1">
-                <p>Email: <a href="mailto:support@cleub.com" className="text-teal-400 hover:underline">support@cleub.com</a></p>
-                <p>Phone: <a href="tel:+919667603999" className="text-teal-400 hover:underline">+91 9667603999</a></p>
-              </div>
-            </section>
-          </CardContent>
-        </Card>
+        {/* ============================================ */}
+        {/* COOKIE DURATION */}
+        {/* ============================================ */}
+        <AnimatedSection className="py-32" dark={true}>
+          <div className="max-w-[1800px] mx-auto px-8 lg:px-16">
+            <motion.div className="max-w-[85%] lg:max-w-[75%] mb-16" variants={staggerContainer}>
+              <motion.p 
+                className="text-[9px] tracking-[0.4em] uppercase text-[#F5F5F3]/40 mb-8"
+                variants={fadeInUp}
+              >
+                Duration & Persistence
+              </motion.p>
 
-        <div className="text-center">
-          <Button onClick={() => navigate('/')} variant="outline" className="border-teal-600 text-teal-400 hover:bg-teal-600/10">
-            Back to Home
-          </Button>
-        </div>
+              <motion.p 
+                className="text-[#F5F5F3]/70 text-base leading-relaxed max-w-[700px]"
+                variants={fadeInUp}
+              >
+                We use Session Cookies (temporary, essential for login) and Persistent Cookies (remain to remember your preferences for seamless repeat visits).
+              </motion.p>
+            </motion.div>
+
+            {/* Duration Types */}
+            <motion.div className="space-y-4 max-w-[700px]" variants={staggerContainer}>
+              {[
+                {
+                  title: "Session Cookies",
+                  desc: "Temporary cookies that expire when you close your browser. Used primarily for authentication and navigation."
+                },
+                {
+                  title: "Persistent Cookies",
+                  desc: "Remain on your device for a set period or until you delete them. Used to remember your preferences and improve your experience on repeat visits."
+                }
+              ].map((item, idx) => (
+                <motion.div
+                  key={idx}
+                  className="bg-[#0A0A0A] border border-[#1A1A1A] p-6 group hover:border-[#F5F5F3]/20 transition-colors duration-500"
+                  variants={fadeInUp}
+                >
+                  <h3 className="font-serif text-lg text-[#F5F5F3] mb-2">{item.title}</h3>
+                  <p className="text-[#F5F5F3]/60 text-sm leading-relaxed">{item.desc}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </AnimatedSection>
+
+        {/* ============================================ */}
+        {/* PROTOCOL UPDATES */}
+        {/* ============================================ */}
+        <AnimatedSection className="py-32" dark={false}>
+          <div className="max-w-[1800px] mx-auto px-8 lg:px-16">
+            <motion.div className="max-w-[85%] lg:max-w-[75%] mb-12" variants={staggerContainer}>
+              <motion.p 
+                className="text-[9px] tracking-[0.4em] uppercase text-[#6B6B6B]/60 mb-8"
+                variants={fadeInUp}
+              >
+                Policy Updates
+              </motion.p>
+
+              <motion.p 
+                className="text-[#6B6B6B] text-base leading-relaxed max-w-[700px]"
+                variants={fadeInUp}
+              >
+                We reserve the right to refine this protocol as technology or security standards evolve. Any significant changes will be communicated clearly and posted on this page with a revised date.
+              </motion.p>
+            </motion.div>
+          </div>
+        </AnimatedSection>
+
+        {/* ============================================ */}
+        {/* CONTACT SECTION */}
+        {/* ============================================ */}
+        <AnimatedSection className="py-40" dark={true}>
+          <div className="max-w-[1800px] mx-auto px-8 lg:px-16">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+              {/* Left - Heading */}
+              <motion.div variants={staggerContainer}>
+                <motion.p 
+                  className="text-[9px] tracking-[0.4em] uppercase text-[#F5F5F3]/40 mb-8"
+                  variants={fadeInUp}
+                >
+                  Contact Us
+                </motion.p>
+
+                <div className="overflow-hidden mb-12">
+                  <motion.h2 
+                    className="font-serif text-[clamp(2rem,5vw,4rem)] leading-[0.95] text-[#F5F5F3] tracking-tight"
+                    variants={textReveal}
+                  >
+                    Questions About Our Protocol.
+                  </motion.h2>
+                </div>
+
+                <motion.p 
+                  className="text-[#F5F5F3]/70 text-base leading-relaxed max-w-[600px]"
+                  variants={fadeInUp}
+                >
+                  For questions regarding our Digital Protocol, please contact our Chief Discretion Officer (CDO) directly.
+                </motion.p>
+              </motion.div>
+
+              {/* Right - Contact Info */}
+              <motion.div className="space-y-6" variants={staggerContainer}>
+                <motion.a 
+                  href="mailto:privacy@cleub.com"
+                  className="block group"
+                  variants={fadeInUp}
+                >
+                  <div className="flex items-center gap-4 p-6 bg-[#0A0A0A] border border-[#1A1A1A] group-hover:border-[#F5F5F3]/20 transition-all duration-700">
+                    <Mail className="w-5 h-5 text-[#F5F5F3]/40 group-hover:text-[#F5F5F3] transition-colors duration-700" />
+                    <div className="flex-1">
+                      <p className="text-[9px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-1">Email</p>
+                      <p className="font-serif text-lg text-[#F5F5F3]">privacy@cleub.com</p>
+                    </div>
+                  </div>
+                </motion.a>
+
+                <motion.a 
+                  href="tel:+919667603999"
+                  className="block group"
+                  variants={fadeInUp}
+                >
+                  <div className="flex items-center gap-4 p-6 bg-[#0A0A0A] border border-[#1A1A1A] group-hover:border-[#F5F5F3]/20 transition-all duration-700">
+                    <Phone className="w-5 h-5 text-[#F5F5F3]/40 group-hover:text-[#F5F5F3] transition-colors duration-700" />
+                    <div className="flex-1">
+                      <p className="text-[9px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-1">Phone (Direct Line)</p>
+                      <p className="font-serif text-lg text-[#F5F5F3]">+91 9667603999</p>
+                    </div>
+                  </div>
+                </motion.a>
+              </motion.div>
+            </div>
+          </div>
+        </AnimatedSection>
+
+        {/* ============================================ */}
+        {/* FOOTER CTA */}
+        {/* ============================================ */}
+        <AnimatedSection className="py-20" dark={true}>
+          <div className="max-w-[1800px] mx-auto px-8 lg:px-16">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-8">
+              <motion.button
+                onClick={() => navigate('/')}
+                className="text-[#F5F5F3] text-[10px] tracking-[0.35em] uppercase hover:opacity-50 transition-opacity duration-500"
+                variants={fadeInUp}
+              >
+                Back to Home
+              </motion.button>
+              <motion.p 
+                className="text-[9px] tracking-[0.35em] text-[#F5F5F3]/30"
+                variants={fadeInUp}
+              >
+                © 2025 Cleub Automation. The standard in system certainty.
+              </motion.p>
+            </div>
+          </div>
+        </AnimatedSection>
       </main>
-
-      <footer className="border-t border-white/10 bg-black/20 backdrop-blur-xl py-6 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-400">
-          &copy; {new Date().getFullYear()} Cleub Automation. All rights reserved.
-        </div>
-      </footer>
     </div>
   );
 };
