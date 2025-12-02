@@ -422,7 +422,10 @@ const CookiePolicy = () => {
           <div className="max-w-[1800px] mx-auto px-8 lg:px-16">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-8">
               <motion.button
-                onClick={() => navigate('/')}
+                onClick={() => {
+                  navigate('/');
+                  setTimeout(() => window.scrollTo(0, 0), 50);
+                }}
                 className="text-[#F5F5F3] text-[10px] tracking-[0.35em] uppercase hover:opacity-50 transition-opacity duration-500"
                 variants={fadeInUp}
               >

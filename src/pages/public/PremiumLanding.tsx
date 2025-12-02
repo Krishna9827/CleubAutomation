@@ -1021,7 +1021,10 @@ const PremiumLanding = () => {
                 ].map((link) => (
                   <motion.button
                     key={link.label}
-                    onClick={() => navigate(link.path)}
+                    onClick={() => {
+                      navigate(link.path);
+                      setTimeout(() => window.scrollTo(0, 0), 50);
+                    }}
                     className="text-[10px] tracking-[0.3em] uppercase text-[#F5F5F3]/30 hover:text-[#F5F5F3]/70 transition-colors duration-500"
                     whileHover={{ y: -2 }}
                   >
