@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,29 @@ const ProjectPlanning = () => {
     notes: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Handle scroll to show/hide navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Show nav if at top or scrolling up
+      if (currentScrollY < 50 || currentScrollY < lastScrollY) {
+        setIsNavVisible(true);
+      } 
+      // Hide nav if scrolling down
+      else if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setIsNavVisible(false);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   // Redirect if not logged in (only after auth state is loaded)
   if (!loading && !user) {
@@ -126,12 +149,16 @@ const ProjectPlanning = () => {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A]">
-      {/* Fixed Navigation */}
+      {/* Smart Navigation - Hides on scroll down, shows on scroll up */}
       <motion.nav 
         className="fixed top-0 left-0 w-full z-50 mix-blend-difference px-8 lg:px-16 py-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, ease: luxuryEasing }}
+        initial={{ opacity: 1, y: 0 }}
+        animate={{ 
+          opacity: isNavVisible ? 1 : 0,
+          y: isNavVisible ? 0 : -100,
+          pointerEvents: isNavVisible ? 'auto' : 'none'
+        }}
+        transition={{ duration: 0.4, ease: luxuryEasing }}
       >
         <div className="flex justify-between items-center">
           <motion.button

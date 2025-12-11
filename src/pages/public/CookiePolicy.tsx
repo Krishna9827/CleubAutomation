@@ -1,7 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, useInView, Variants } from 'framer-motion';
 import { Cookie, Mail, Phone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import ProfileMenu from '@/components/ui/profile-menu';
 
 const luxuryEasing: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -64,18 +66,43 @@ const AnimatedSection = ({
 
 const CookiePolicy = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isNavVisible, setIsNavVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Handle scroll to show/hide navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY < 50 || currentScrollY < lastScrollY) {
+        setIsNavVisible(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setIsNavVisible(false);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] font-sans">
       
       {/* ============================================ */}
-      {/* FIXED NAVIGATION */}
+      {/* SMART NAVIGATION - HIDES ON SCROLL */}
       {/* ============================================ */}
       <motion.nav 
         className="fixed top-0 left-0 right-0 z-50 mix-blend-difference"
         initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 1.2, ease: luxuryEasing as any, delay: 0.5 }}
+        animate={{ 
+          opacity: isNavVisible ? 1 : 0,
+          y: isNavVisible ? 0 : -100,
+          pointerEvents: isNavVisible ? 'auto' : 'none'
+        }}
+        transition={{ duration: 0.4, ease: luxuryEasing as any }}
       >
         <div className="max-w-[1800px] mx-auto px-8 lg:px-12 py-8 flex justify-between items-center">
           <motion.button 
@@ -101,6 +128,20 @@ const CookiePolicy = () => {
                 {link.label}
               </motion.button>
             ))}
+            {user ? (
+              <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.3 }}>
+                <ProfileMenu />
+              </motion.div>
+            ) : (
+              <motion.button
+                onClick={() => navigate('/login')}
+                className="text-[#F5F5F3] text-[10px] tracking-[0.35em] uppercase hover:opacity-50 transition-opacity duration-500"
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.3 }}
+              >
+                Sign In
+              </motion.button>
+            )}
           </div>
         </div>
       </motion.nav>
