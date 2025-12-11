@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, useInView, Variants } from 'framer-motion';
-import { Film, Headphones, Cpu, Star, Phone, Mail, Lightbulb, Settings, Play } from 'lucide-react';
+import { Film, Headphones, Cpu, Star, Phone, Mail, Lightbulb, Settings, Play, Zap, Volume2, Lock, Wifi, Grid3x3, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BrandLogos } from "@/components/features";
 import { TestimonialDialog } from "@/components/features";
@@ -287,12 +287,16 @@ const PremiumLanding = () => {
     { src: "/videos/curtain.mp4", title: "Smart Curtains", description: "Automated curtain control"}
   ];
 
-  // Services data - keeping your existing content
+  // Services data - comprehensive automation solutions
   const services = [
-    { icon: <Lightbulb className='w-6 h-6' />, title: 'Home Automation', desc: 'Wired/Hybrid systems, app/voice, scene control.' },
-    { icon: <Headphones className='w-6 h-6' />, title: 'Home Theaters', desc: 'Acoustics, AVR, immersive setups.' },
-    { icon: <Cpu className='w-6 h-6' />, title: 'Studios', desc: 'Production, podcast, creator studios.' },
-    { icon: <Settings className='w-6 h-6' />, title: 'Consult & Supply', desc: 'Advisory, site audits, premium products.' }
+    { icon: <Zap className='w-7 h-7' />, title: 'Automation', desc: 'Intelligent home control systems for seamless integration.' },
+    { icon: <Volume2 className='w-7 h-7' />, title: 'Audio-Video Theatres', desc: 'Cinema-grade systems with premium acoustics.' },
+    { icon: <Lightbulb className='w-7 h-7' />, title: 'Lighting & Switches', desc: 'Smart lighting with adaptive control.' },
+    { icon: <Lock className='w-7 h-7' />, title: 'Digital Locks', desc: 'Biometric and smart access control systems.' },
+    { icon: <Wifi className='w-7 h-7' />, title: 'Networking', desc: 'Robust connectivity infrastructure.' },
+    { icon: <Grid3x3 className='w-7 h-7' />, title: 'Curtain & Gate Motor', desc: 'Automated window treatments and gates.' },
+    { icon: <Camera className='w-7 h-7' />, title: 'Security & Surveillance', desc: '24/7 monitoring with intelligent analytics.' },
+    { icon: <Settings className='w-7 h-7' />, title: 'Consult & Supply', desc: 'Expert advisory and premium product sourcing.' }
   ];
 
   // Why Choose Us data
@@ -678,63 +682,217 @@ const PremiumLanding = () => {
         </AnimatedSection>
 
         {/* ============================================ */}
-        {/* SERVICES - ASYMMETRIC SPLIT LAYOUT */}
+        {/* SERVICES - ASYMMETRIC MASONRY LAYOUT */}
         {/* ============================================ */}
-        <AnimatedSection className="py-32" dark={false}>
+        <AnimatedSection className="py-40" dark={false}>
           <div className="max-w-[1800px] mx-auto px-8">
-            {/* 35/65 Split Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24">
-              {/* Left Side - 35% Width - Title + Context */}
-              <motion.div className="lg:col-span-4" variants={staggerContainer}>
-                <div className="lg:sticky lg:top-32">
-                  <motion.div className="overflow-hidden mb-3" variants={textReveal}>
-                    <h2 className="font-serif text-[clamp(3rem,7vw,6rem)] leading-[0.95] text-[#0A0A0A] tracking-tight">
-                      Services
-                    </h2>
+            {/* Header */}
+            <motion.div className="mb-24" variants={staggerContainer}>
+              <motion.div className="overflow-hidden mb-3" variants={textReveal}>
+                <h2 className="font-serif text-[clamp(3rem,7vw,6rem)] leading-[0.95] text-[#0A0A0A] tracking-tight">
+                  Our Services
+                </h2>
+              </motion.div>
+              <motion.p 
+                className="text-[#6B6B6B] text-[9px] tracking-[0.4em] uppercase mb-4"
+                variants={fadeInUp}
+              >
+                Comprehensive Automation Solutions
+              </motion.p>
+              <motion.p 
+                className="text-sm text-[#6B6B6B] leading-relaxed max-w-[600px]"
+                variants={fadeInUp}
+              >
+                From intelligent automation to premium audio-visual systems, we integrate cutting-edge technologies seamlessly into your lifestyle.
+              </motion.p>
+            </motion.div>
+
+            {/* True Masonry Grid - Dense Packing, No Gaps */}
+            <div className="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-6 gap-3 auto-rows-[140px]">
+              {/* ROW 1: Automation (Dark 2x2) + Audio-Video + Lighting + Digital Locks */}
+              
+              {/* Service 1: Automation - Large Dark Card */}
+              <motion.div 
+                className="col-span-2 row-span-2 bg-[#0A0A0A] text-[#F5F5F3] rounded-2xl p-6 lg:p-8 cursor-pointer group overflow-hidden relative flex flex-col justify-between"
+                variants={fadeInUp}
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ duration: 0.3, type: 'spring', stiffness: 100 }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-[#F5F5F3]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                <div className="relative z-10">
+                  <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-[#F5F5F3]/10 flex items-center justify-center group-hover:bg-[#F5F5F3]/25 transition-colors duration-500 mb-4" style={{ perspective: '1000px' }}>
+                    <motion.div whileHover={{ rotateX: 360, rotateY: -20 }} transition={{ duration: 0.6, type: 'spring' }}>
+                      <Zap className="w-6 h-6 lg:w-7 lg:h-7 text-[#F5F5F3]" />
+                    </motion.div>
+                  </div>
+                  <h3 className="font-serif text-xl lg:text-2xl text-[#F5F5F3] mb-2 leading-tight">
+                    {services[0].title}
+                  </h3>
+                  <p className="text-[11px] text-[#F5F5F3]/70 leading-relaxed line-clamp-3">
+                    {services[0].desc}
+                  </p>
+                </div>
+                <div className="text-[#F5F5F3]/30 text-[10px] uppercase tracking-wider">Premium</div>
+              </motion.div>
+
+              {/* Service 2: Audio-Video */}
+              <motion.div 
+                className="col-span-1 row-span-1 bg-white border border-[#0A0A0A]/10 rounded-2xl p-5 cursor-pointer group hover:border-[#0A0A0A]/30 transition-all duration-500 flex flex-col justify-between"
+                variants={fadeInUp}
+                whileHover={{ scale: 1.04, y: -2 }}
+                transition={{ duration: 0.3, type: 'spring', stiffness: 120 }}
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#F5F5F3] flex items-center justify-center group-hover:bg-[#0A0A0A] transition-colors duration-500 mb-3" style={{ perspective: '1000px' }}>
+                  <motion.div whileHover={{ rotateX: -360, rotateY: 20 }} transition={{ duration: 0.6, type: 'spring' }}>
+                    <Volume2 className="w-5 h-5 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
                   </motion.div>
-                  <motion.p 
-                    className="text-[#6B6B6B] text-[9px] tracking-[0.4em] uppercase mb-8"
-                    variants={fadeInUp}
-                  >
-                    Comprehensive automation solutions
-                  </motion.p>
-                  <motion.p 
-                    className="text-sm text-[#6B6B6B] leading-relaxed max-w-[400px]"
-                    variants={fadeInUp}
-                  >
-                    From concept to completion, we deliver integrated systems that anticipate your needs and adapt to your lifestyle.
-                  </motion.p>
+                </div>
+                <div>
+                  <h3 className="font-serif text-xs lg:text-sm text-[#0A0A0A] mb-1 leading-tight">
+                    {services[1].title}
+                  </h3>
+                  <p className="text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
+                    {services[1].desc}
+                  </p>
                 </div>
               </motion.div>
-              
-              {/* Right Side - 65% Width - Service Cards with Offset */}
-              <motion.div className="lg:col-span-8" variants={staggerContainer}>
-                <div className="space-y-1">
-                  {services.map((s, idx) => (
-                    <motion.div 
-                      key={idx} 
-                      className="group bg-[#FAFAFA] hover:bg-[#0A0A0A] transition-all duration-700 cursor-pointer border-b border-[#0A0A0A]/5"
-                      variants={fadeInUp}
-                      style={{ 
-                        marginLeft: idx % 2 === 0 ? '0' : '8%',
-                        padding: '3rem 2.5rem'
-                      }}
-                    >
-                      <div className="flex items-start gap-6">
-                        <div className="text-[#6B6B6B] group-hover:text-[#F5F5F3] transition-colors duration-700 mt-1">
-                          {s.icon}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-serif text-[clamp(1.5rem,3vw,2.5rem)] mb-3 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-700 leading-tight">
-                            {s.title}
-                          </h3>
-                          <p className="text-sm text-[#6B6B6B] leading-relaxed group-hover:text-[#F5F5F3]/60 transition-colors duration-700">
-                            {s.desc}
-                          </p>
-                        </div>
-                      </div>
+
+              {/* Service 3: Security */}
+              <motion.div 
+                className="col-span-1 row-span-1 bg-white border border-[#0A0A0A]/10 rounded-2xl p-5 cursor-pointer group hover:border-[#0A0A0A]/30 transition-all duration-500 flex flex-col justify-between"
+                variants={fadeInUp}
+                whileHover={{ scale: 1.04, y: -2 }}
+                transition={{ duration: 0.3, type: 'spring', stiffness: 120 }}
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#F5F5F3] flex items-center justify-center group-hover:bg-[#0A0A0A] transition-colors duration-500 mb-3" style={{ perspective: '1000px' }}>
+                  <motion.div whileHover={{ rotateX: -360, rotateY: -20 }} transition={{ duration: 0.6, type: 'spring' }}>
+                    <Camera className="w-5 h-5 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
+                  </motion.div>
+                </div>
+                <div>
+                  <h3 className="font-serif text-xs lg:text-sm text-[#0A0A0A] mb-1 leading-tight">
+                    {services[6].title}
+                  </h3>
+                  <p className="text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
+                    {services[6].desc}
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Service 7: Lighting - Large Light Card (2x2) */}
+              <motion.div 
+                className="col-span-2 row-span-2 bg-white border-2 border-[#0A0A0A] rounded-2xl p-6 lg:p-8 cursor-pointer group hover:bg-[#0A0A0A] transition-all duration-700 overflow-hidden relative flex flex-col justify-between"
+                variants={fadeInUp}
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ duration: 0.3, type: 'spring', stiffness: 100 }}
+              >
+                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-[#F5F5F3]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-full -mr-20 -mt-20" />
+                <div className="relative z-10">
+                  <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-[#0A0A0A]/10 flex items-center justify-center group-hover:bg-[#F5F5F3]/20 transition-colors duration-500 mb-4" style={{ perspective: '1000px' }}>
+                    <motion.div whileHover={{ rotateX: 360, rotateY: -20 }} transition={{ duration: 0.6, type: 'spring' }}>
+                      <Lightbulb className="w-6 h-6 lg:w-7 lg:h-7 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
                     </motion.div>
-                  ))}
+                  </div>
+                  <h3 className="font-serif text-xl lg:text-2xl text-[#0A0A0A] group-hover:text-[#F5F5F3] mb-2 leading-tight transition-colors duration-700">
+                    {services[2].title}
+                  </h3>
+                  <p className="text-[11px] text-[#6B6B6B] group-hover:text-[#F5F5F3]/70 leading-relaxed line-clamp-3 transition-colors duration-700">
+                    {services[2].desc}
+                  </p>
+                </div>
+                <div className="text-[#0A0A0A] group-hover:text-[#F5F5F3]/30 text-[10px] uppercase tracking-wider transition-colors duration-700">Lighting</div>
+              </motion.div>
+
+              {/* ROW 2: Digital Locks + Networking (Dark 2x2) */}
+              
+              {/* Service 4: Digital Locks */}
+              <motion.div 
+                className="col-span-1 row-span-1 bg-white border border-[#0A0A0A]/10 rounded-2xl p-5 cursor-pointer group hover:border-[#0A0A0A]/30 transition-all duration-500 flex flex-col justify-between"
+                variants={fadeInUp}
+                whileHover={{ scale: 1.04, y: -2 }}
+                transition={{ duration: 0.3, type: 'spring', stiffness: 120 }}
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#F5F5F3] flex items-center justify-center group-hover:bg-[#0A0A0A] transition-colors duration-500 mb-3" style={{ perspective: '1000px' }}>
+                  <motion.div whileHover={{ rotateX: 360, rotateY: 20 }} transition={{ duration: 0.6, type: 'spring' }}>
+                    <Lock className="w-5 h-5 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
+                  </motion.div>
+                </div>
+                <div>
+                  <h3 className="font-serif text-xs lg:text-sm text-[#0A0A0A] mb-1 leading-tight">
+                    {services[3].title}
+                  </h3>
+                  <p className="text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
+                    {services[3].desc}
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Service 6: Curtain & Gate */}
+              <motion.div 
+                className="col-span-1 row-span-1 bg-white border border-[#0A0A0A]/10 rounded-2xl p-5 cursor-pointer group hover:border-[#0A0A0A]/30 transition-all duration-500 flex flex-col justify-between"
+                variants={fadeInUp}
+                whileHover={{ scale: 1.04, y: -2 }}
+                transition={{ duration: 0.3, type: 'spring', stiffness: 120 }}
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#F5F5F3] flex items-center justify-center group-hover:bg-[#0A0A0A] transition-colors duration-500 mb-3" style={{ perspective: '1000px' }}>
+                  <motion.div whileHover={{ rotateX: 360, rotateY: -20 }} transition={{ duration: 0.6, type: 'spring' }}>
+                    <Grid3x3 className="w-5 h-5 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
+                  </motion.div>
+                </div>
+                <div>
+                  <h3 className="font-serif text-xs lg:text-sm text-[#0A0A0A] mb-1 leading-tight">
+                    {services[5].title}
+                  </h3>
+                  <p className="text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
+                    {services[5].desc}
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* ROW 3: Networking (Dark) + Consult & Supply */}
+              
+              {/* Service 5: Networking - Medium Dark Card */}
+              <motion.div 
+                className="col-span-3 row-span-1 bg-gradient-to-br from-[#0A0A0A] to-[#1A1A1A] text-[#F5F5F3] rounded-2xl p-5 lg:p-6 cursor-pointer group overflow-hidden relative flex items-center justify-between"
+                variants={fadeInUp}
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ duration: 0.3, type: 'spring', stiffness: 100 }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#F5F5F3]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                <div className="relative z-10 flex-1">
+                  <h3 className="font-serif text-base lg:text-lg text-[#F5F5F3] mb-1 leading-tight">
+                    {services[4].title}
+                  </h3>
+                  <p className="text-[10px] text-[#F5F5F3]/70 leading-relaxed line-clamp-2">
+                    {services[4].desc}
+                  </p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-[#F5F5F3]/10 flex items-center justify-center group-hover:bg-[#F5F5F3]/25 transition-colors duration-500 ml-4 flex-shrink-0" style={{ perspective: '1000px' }}>
+                  <motion.div whileHover={{ rotateX: -360, rotateY: 20 }} transition={{ duration: 0.6, type: 'spring' }}>
+                    <Wifi className="w-6 h-6 text-[#F5F5F3]" />
+                  </motion.div>
+                </div>
+              </motion.div>
+
+              {/* Service 8: Consult & Supply - Medium Light Horizontal */}
+              <motion.div 
+                className="col-span-3 row-span-1 bg-gradient-to-br from-[#F5F5F3] via-[#FAFAFA] to-[#F0F0F0] rounded-2xl p-5 lg:p-6 cursor-pointer group hover:shadow-2xl transition-all duration-500 border border-[#0A0A0A]/5 flex items-center justify-between"
+                variants={fadeInUp}
+                whileHover={{ scale: 1.02, y: -2 }}
+                transition={{ duration: 0.3, type: 'spring', stiffness: 120 }}
+              >
+                <div className="flex-1">
+                  <h3 className="font-serif text-base lg:text-lg text-[#0A0A0A] mb-1 leading-tight">
+                    {services[7].title}
+                  </h3>
+                  <p className="text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
+                    {services[7].desc}
+                  </p>
+                </div>
+                <div className="w-12 h-12 rounded-lg bg-[#0A0A0A] flex items-center justify-center group-hover:bg-gradient-to-br group-hover:from-[#0A0A0A] group-hover:to-[#1A1A1A] transition-all duration-500 ml-4 flex-shrink-0" style={{ perspective: '1000px' }}>
+                  <motion.div whileHover={{ rotateX: -360, rotateY: -20 }} transition={{ duration: 0.6, type: 'spring' }}>
+                    <Settings className="w-6 h-6 text-[#F5F5F3]" />
+                  </motion.div>
                 </div>
               </motion.div>
             </div>
