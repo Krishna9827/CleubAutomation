@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom"
+import { useEffect } from "react"
 import { AuthProvider, useAuth } from "@/contexts/AuthContext"
 // Public pages
 import PremiumLanding from "./pages/public/PremiumLanding"
@@ -57,49 +58,59 @@ const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<PremiumLanding />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/inquiry" element={<Inquiry />} />
-            <Route path="/about" element={<AboutUs />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/cookie-policy" element={<CookiePolicy />} />
-            <Route path="/terms" element={<TermsAndConditions />} />
-            <Route path="/project-planning" element={<ProjectPlanning />} />
-            <Route path="/room-selection" element={<RoomSelection />} />
-            <Route path="/requirements" element={<RequirementsForm />} />
-            <Route path="/final-review" element={<FinalReview />} />
-            <Route path="/planner" element={<Planner />} />
-            <Route path="/my-projects" element={<UserHistory />} />
-            <Route path="/history" element={<UserHistory />} />
-            <Route path="/admin" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
-            <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
-            <Route path="/admin/panel-presets" element={<ProtectedAdminRoute><AdminPanelPresets /></ProtectedAdminRoute>} />
-            <Route path="/admin/inquiries" element={<ProtectedAdminRoute><AdminInquiries /></ProtectedAdminRoute>} />
-            <Route path="/admin/projects" element={<ProtectedAdminRoute><AdminProjects /></ProtectedAdminRoute>} />
-            <Route path="/admin/projects/:projectId/timeline" element={<ProtectedAdminRoute><AdminProjectTimeline /></ProtectedAdminRoute>} />
-            <Route path="/admin/projects/:projectId/boq" element={<ProtectedAdminRoute><AdminBOQGeneration /></ProtectedAdminRoute>} />
-            <Route path="/admin/inventory" element={<ProtectedAdminRoute><AdminInventory /></ProtectedAdminRoute>} />
-            <Route path="/admin/testimonials" element={<ProtectedAdminRoute><AdminTestimonials /></ProtectedAdminRoute>} />
-            <Route path="/admin-login" element={<AdminLogin />} />
-            {/* Legacy routes for backward compatibility */}
-            <Route path="/intake" element={<ProjectPlanning />} />
-            <Route path="/premium" element={<PremiumLanding />} />
-            <Route path="/requirements-v2" element={<RequirementsForm />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-    </TooltipProvider>
-  </AuthProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Clean up OAuth hash from URL after Supabase processes it
+  useEffect(() => {
+    if (window.location.hash.includes('access_token')) {
+      // Replace the URL to remove the token hash
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<PremiumLanding />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/inquiry" element={<Inquiry />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/cookie-policy" element={<CookiePolicy />} />
+              <Route path="/terms" element={<TermsAndConditions />} />
+              <Route path="/project-planning" element={<ProjectPlanning />} />
+              <Route path="/room-selection" element={<RoomSelection />} />
+              <Route path="/requirements" element={<RequirementsForm />} />
+              <Route path="/final-review" element={<FinalReview />} />
+              <Route path="/planner" element={<Planner />} />
+              <Route path="/my-projects" element={<UserHistory />} />
+              <Route path="/history" element={<UserHistory />} />
+              <Route path="/admin" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
+              <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
+              <Route path="/admin/panel-presets" element={<ProtectedAdminRoute><AdminPanelPresets /></ProtectedAdminRoute>} />
+              <Route path="/admin/inquiries" element={<ProtectedAdminRoute><AdminInquiries /></ProtectedAdminRoute>} />
+              <Route path="/admin/projects" element={<ProtectedAdminRoute><AdminProjects /></ProtectedAdminRoute>} />
+              <Route path="/admin/projects/:projectId/timeline" element={<ProtectedAdminRoute><AdminProjectTimeline /></ProtectedAdminRoute>} />
+              <Route path="/admin/projects/:projectId/boq" element={<ProtectedAdminRoute><AdminBOQGeneration /></ProtectedAdminRoute>} />
+              <Route path="/admin/inventory" element={<ProtectedAdminRoute><AdminInventory /></ProtectedAdminRoute>} />
+              <Route path="/admin/testimonials" element={<ProtectedAdminRoute><AdminTestimonials /></ProtectedAdminRoute>} />
+              <Route path="/admin-login" element={<AdminLogin />} />
+              {/* Legacy routes for backward compatibility */}
+              <Route path="/intake" element={<ProjectPlanning />} />
+              <Route path="/premium" element={<PremiumLanding />} />
+              <Route path="/requirements-v2" element={<RequirementsForm />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
