@@ -78,6 +78,7 @@ const App = () => (
             <Route path="/final-review" element={<FinalReview />} />
             <Route path="/planner" element={<Planner />} />
             <Route path="/my-projects" element={<UserHistory />} />
+            <Route path="/history" element={<UserHistory />} />
             <Route path="/admin" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
             <Route path="/admin/settings" element={<ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>} />
             <Route path="/admin/panel-presets" element={<ProtectedAdminRoute><AdminPanelPresets /></ProtectedAdminRoute>} />
