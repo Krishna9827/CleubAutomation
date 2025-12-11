@@ -11,6 +11,7 @@ import { Building2, Users, Lightbulb, ChevronRight, Settings } from 'lucide-reac
 import { projectService } from '@/supabase/projectService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import ProfileMenu from '@/components/ui/profile-menu';
 import SiteNav from '@/components/ui/site-nav';
 
 const luxuryEasing = [0.22, 1, 0.36, 1] as const;
@@ -51,22 +52,27 @@ const ProjectPlanning = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
 
+  // Redirect if not logged in (only after auth state is loaded)
+  if (!loading && !user) {
+    navigate('/login', { replace: true });
+    return null;
+  }
+
+  // Show loading screen while auth is initializing
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0A0A0A]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#F5F5F3]"></div>
+      </div>
+    );
+  }
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleStartPlanning = async () => {
-    // Check if user is authenticated
-    if (!user) {
-      toast({
-        title: 'Authentication Required',
-        description: 'Please log in to create a new project',
-        variant: 'destructive'
-      });
-      navigate('/login');
-      return;
-    }
-
+    // User is guaranteed to be authenticated at this point
     if (!formData.projectName.trim() || !formData.clientName.trim()) {
       toast({
         title: 'Error',
@@ -78,9 +84,9 @@ const ProjectPlanning = () => {
     
     setIsLoading(true);
     try {
-      console.log('🚀 Creating project for user:', user.id);
+      console.log('🚀 Creating project for user:', user?.id);
       
-      // Create project with Supabase (using user.id not user.uid - Supabase Auth uses .id)
+      // Create project with Supabase
       const projectId = await projectService.createProject({
         client_info: {
           name: formData.clientName,
@@ -93,7 +99,7 @@ const ProjectPlanning = () => {
           size: 0,
           budget: 0,
         }
-      }, user.id);
+      }, user!.id);
 
       // Store project ID for next page
       localStorage.setItem('currentProjectId', projectId);
@@ -137,15 +143,25 @@ const ProjectPlanning = () => {
           >
             Cleub
           </motion.button>
-          <motion.button
-            onClick={() => navigate('/my-projects')}
-            className="text-[10px] tracking-[0.35em] uppercase text-[#F5F5F3] hover:opacity-60 transition-opacity duration-500"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: luxuryEasing }}
-          >
-            Project History
-          </motion.button>
+          <div className="flex items-center gap-8">
+            <motion.button
+              onClick={() => navigate('/my-projects')}
+              className="text-[10px] tracking-[0.35em] uppercase text-[#F5F5F3] hover:opacity-60 transition-opacity duration-500"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, ease: luxuryEasing }}
+            >
+              Project History
+            </motion.button>
+            {/* User Profile Menu */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, ease: luxuryEasing }}
+            >
+              <ProfileMenu />
+            </motion.div>
+          </div>
         </div>
       </motion.nav>
 
