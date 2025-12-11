@@ -68,10 +68,10 @@ export const adminService = {
       console.log(`🔍 Checking admin status for email: ${email}`);
 
       const { data, error } = await supabase
-        .from('admins')
-        .select('*')
+        .from('users')
+        .select('id, email, first_name, last_name, is_admin')
         .eq('email', email.toLowerCase().trim())
-        .eq('is_active', true)
+        .eq('is_admin', true)
         .single();
 
       if (error) {
@@ -80,7 +80,6 @@ export const adminService = {
           console.log(`ℹ️ User ${email} is not an admin`);
           return null;
         }
-        // Other errors (RLS, network) are suppressed to reduce console noise
         console.log(`ℹ️ Admin check returned error (not necessarily a problem):`, error.code);
         return null;
       }
@@ -90,7 +89,14 @@ export const adminService = {
         return null;
       }
 
-      const adminData = data as Admin;
+      const adminData: Admin = {
+        id: data.id,
+        email: data.email,
+        full_name: `${data.first_name} ${data.last_name}`,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       console.log(`✅ Verified admin access for: ${adminData.full_name} (${adminData.email})`);
       return adminData;
     } catch (error: any) {
@@ -105,16 +111,81 @@ export const adminService = {
   async getAllAdmins(): Promise<Admin[]> {
     try {
       const { data, error } = await supabase
-        .from('admins')
-        .select('*')
-        .eq('is_active', true)
-        .order('full_name', { ascending: true });
+        .from('users')
+        .select('id, email, first_name, last_name, is_admin')
+        .eq('is_admin', true)
+        .order('first_name', { ascending: true });
 
       if (error) throw error;
-      return data || [];
+      
+      return (data || []).map(user => ({
+        id: user.id,
+        email: user.email,
+        full_name: `${user.first_name} ${user.last_name}`,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
     } catch (error: any) {
       console.error('❌ Error fetching admins:', error);
       return [];
+    }
+  },
+
+  /**
+   * Add/update admin status for a user by email
+   */
+  async addAdmin(email: string): Promise<Admin | null> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .update({ is_admin: true })
+        .eq('email', email.toLowerCase().trim())
+        .select('id, email, first_name, last_name, is_admin')
+        .single();
+
+      if (error) {
+        console.error('❌ Error adding admin:', error);
+        return null;
+      }
+
+      const admin: Admin = {
+        id: data.id,
+        email: data.email,
+        full_name: `${data.first_name} ${data.last_name}`,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log(`✅ Admin added: ${admin.full_name} (${admin.email})`);
+      return admin;
+    } catch (error: any) {
+      console.error('❌ Error in addAdmin:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Remove admin status from a user by email
+   */
+  async removeAdmin(email: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ is_admin: false })
+        .eq('email', email.toLowerCase().trim());
+
+      if (error) {
+        console.error('❌ Error removing admin:', error);
+        return false;
+      }
+
+      console.log(`✅ Admin removed: ${email}`);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Error in removeAdmin:', error);
+      return false;
     }
   },
 

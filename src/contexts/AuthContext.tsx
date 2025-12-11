@@ -62,23 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (profile) {
         console.log('✅ User profile found');
         setUserProfile(profile);
+        // Check admin status from is_admin field in users table
+        setIsAdmin((profile as any)?.is_admin || false);
       } else if (!fetchError) {
         // Profile doesn't exist - create it for first-time login
         console.log('📝 Profile not found, creating for first-time login...');
         await createUserProfileOnFirstLogin(userId, email);
       } else {
         console.log('ℹ️ Could not fetch user profile:', fetchError.message);
-      }
-
-      // Check admin status
-      if (email) {
-        const { data: adminData } = await supabase
-          .from('admins')
-          .select('is_active')
-          .eq('email', email)
-          .maybeSingle();
-
-        setIsAdmin((adminData as any)?.is_active || false);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
