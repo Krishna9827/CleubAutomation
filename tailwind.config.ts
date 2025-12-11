@@ -93,7 +93,7 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'scroll': 'scroll 20s linear infinite',
+				'scroll': 'scroll 30s linear infinite',
 				'parallax': 'parallax 1s ease-out',
 				'reveal': 'reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
 				'zoom-out': 'zoom-out 1.2s cubic-bezier(0.16, 1, 0.3, 1)',

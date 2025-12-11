@@ -1005,14 +1005,74 @@ const PremiumLanding = () => {
               </p>
             </motion.div>
             
-            {/* Right - Links (65%) */}
+            {/* Right - Locations Grid (65%) */}
             <motion.div 
-              className="lg:col-span-8 flex flex-col justify-between"
+              className="lg:col-span-8"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, ease: luxuryEasing as any, delay: 0.2 }}
             >
-              <div className="flex flex-wrap items-center gap-x-10 gap-y-4 mb-12 lg:justify-end">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                {/* Jammu & Kashmir Corporate Office */}
+                <motion.div 
+                  className="bg-[#1A1A1A]/30 border border-[#1A1A1A] p-6 group hover:border-[#F5F5F3]/20 transition-all duration-500"
+                  variants={fadeInUp}
+                >
+                  <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-3">Corporate Office</p>
+                  <p className="font-serif text-sm text-[#F5F5F3] mb-2 leading-tight">M/S Cleub Automation Private Limited</p>
+                  <p className="text-[10px] leading-relaxed text-[#F5F5F3]/60">
+                    Cabin A Academic Block Second Floor<br/>
+                    Shri Mata Vaishno Devi University<br/>
+                    Katra, Jammu and Kashmir 182320<br/>
+                    India
+                  </p>
+                </motion.div>
+
+                {/* Noida Corporate Office */}
+                <motion.div 
+                  className="bg-[#1A1A1A]/30 border border-[#1A1A1A] p-6 group hover:border-[#F5F5F3]/20 transition-all duration-500"
+                  variants={fadeInUp}
+                >
+                  <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-3">Corporate Office</p>
+                  <p className="font-serif text-sm text-[#F5F5F3] mb-2 leading-tight">Unitech Unihomes</p>
+                  <p className="text-[10px] leading-relaxed text-[#F5F5F3]/60">
+                    F1-406, Sector 117<br/>
+                    Noida 201304<br/>
+                    Uttar Pradesh, India
+                  </p>
+                </motion.div>
+
+                {/* Gurgaon Experience Centre */}
+                <motion.div 
+                  className="bg-[#1A1A1A]/30 border border-[#1A1A1A] p-6 group hover:border-[#F5F5F3]/20 transition-all duration-500"
+                  variants={fadeInUp}
+                >
+                  <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-3">Experience Centre</p>
+                  <p className="font-serif text-sm text-[#F5F5F3] mb-2 leading-tight">Akashneem Marg</p>
+                  <p className="text-[10px] leading-relaxed text-[#F5F5F3]/60">
+                    78 Akashneem Marg, DLF Phase 2<br/>
+                    Gurgaon, Haryana<br/>
+                    (Second Floor), India
+                  </p>
+                </motion.div>
+
+                {/* Delhi Experience Centre */}
+                <motion.div 
+                  className="bg-[#1A1A1A]/30 border border-[#1A1A1A] p-6 group hover:border-[#F5F5F3]/20 transition-all duration-500"
+                  variants={fadeInUp}
+                >
+                  <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-3">Experience Centre</p>
+                  <p className="font-serif text-sm text-[#F5F5F3] mb-2 leading-tight">Saket Location</p>
+                  <p className="text-[10px] leading-relaxed text-[#F5F5F3]/60">
+                    M-50, Block M, Saket<br/>
+                    New Delhi 110017<br/>
+                    (Basement), India
+                  </p>
+                </motion.div>
+              </div>
+
+              {/* Footer Links */}
+              <div className="flex flex-wrap items-center gap-x-8 gap-y-3 pt-8 border-t border-[#1A1A1A]">
                 {[
                   { label: 'About Us', path: '/about' },
                   { label: 'Privacy Policy', path: '/privacy-policy' },
@@ -1025,15 +1085,15 @@ const PremiumLanding = () => {
                       navigate(link.path);
                       setTimeout(() => window.scrollTo(0, 0), 50);
                     }}
-                    className="text-[10px] tracking-[0.3em] uppercase text-[#F5F5F3]/30 hover:text-[#F5F5F3]/70 transition-colors duration-500"
-                    whileHover={{ y: -2 }}
+                    className="text-[9px] tracking-[0.3em] uppercase text-[#F5F5F3]/30 hover:text-[#F5F5F3]/70 transition-colors duration-500"
+                    whileHover={{ y: -1 }}
                   >
                     {link.label}
                   </motion.button>
                 ))}
               </div>
               
-              <div className="text-right">
+              <div className="text-right mt-8">
                 <p className="text-[9px] tracking-[0.35em] text-[#F5F5F3]/20">
                   &copy; {new Date().getFullYear()} Cleub Automation. All rights reserved.
                 </p>

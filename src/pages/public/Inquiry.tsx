@@ -432,32 +432,56 @@ Requirements: ${formData.requirements || 'Not specified'}
           <motion.p className="text-[9px] tracking-[0.4em] uppercase text-[#F5F5F3]/30 mb-12 text-center" variants={fadeInUp}>
             Alternative Contact Methods
           </motion.p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-1 bg-[#1A1A1A]/30">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-1 bg-[#1A1A1A]/30">
             <motion.a 
               href="mailto:support@cleub.com"
-              className="bg-[#0A0A0A] border border-[#1A1A1A] p-12 text-center group hover:border-[#F5F5F3]/20 transition-colors duration-500"
+              className="bg-[#0A0A0A] border border-[#1A1A1A] p-8 text-center group hover:border-[#F5F5F3]/20 transition-colors duration-500"
               variants={fadeInUp}
             >
-              <Mail className="w-6 h-6 text-[#F5F5F3]/30 mx-auto mb-4 group-hover:text-[#F5F5F3]/60 transition-colors duration-500" />
+              <Mail className="w-5 h-5 text-[#F5F5F3]/30 mx-auto mb-3 group-hover:text-[#F5F5F3]/60 transition-colors duration-500" />
               <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-2">Email</p>
-              <p className="text-[#F5F5F3]/60 text-sm">support@cleub.com</p>
+              <p className="text-[#F5F5F3]/60 text-xs">support@cleub.com</p>
             </motion.a>
             <motion.a 
               href="tel:+919667603999"
-              className="bg-[#0A0A0A] border border-[#1A1A1A] p-12 text-center group hover:border-[#F5F5F3]/20 transition-colors duration-500"
+              className="bg-[#0A0A0A] border border-[#1A1A1A] p-8 text-center group hover:border-[#F5F5F3]/20 transition-colors duration-500"
               variants={fadeInUp}
             >
-              <Phone className="w-6 h-6 text-[#F5F5F3]/30 mx-auto mb-4 group-hover:text-[#F5F5F3]/60 transition-colors duration-500" />
+              <Phone className="w-5 h-5 text-[#F5F5F3]/30 mx-auto mb-3 group-hover:text-[#F5F5F3]/60 transition-colors duration-500" />
               <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-2">Phone</p>
-              <p className="text-[#F5F5F3]/60 text-sm">+91 9667603999</p>
+              <p className="text-[#F5F5F3]/60 text-xs">+91 9667603999</p>
             </motion.a>
             <motion.div 
-              className="bg-[#0A0A0A] border border-[#1A1A1A] p-12 text-center"
+              className="bg-[#0A0A0A] border border-[#1A1A1A] p-8 text-center group hover:border-[#F5F5F3]/20 transition-colors duration-500"
               variants={fadeInUp}
             >
-              <MapPin className="w-6 h-6 text-[#F5F5F3]/30 mx-auto mb-4" />
-              <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-2">Office</p>
-              <p className="text-[#F5F5F3]/60 text-sm">Bangalore, India</p>
+              <MapPin className="w-5 h-5 text-[#F5F5F3]/30 mx-auto mb-3 group-hover:text-[#F5F5F3]/60 transition-colors duration-500" />
+              <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-2">Jammu & Kashmir</p>
+              <p className="text-[#F5F5F3]/60 text-xs">Corporate Office</p>
+            </motion.div>
+            <motion.div 
+              className="bg-[#0A0A0A] border border-[#1A1A1A] p-8 text-center group hover:border-[#F5F5F3]/20 transition-colors duration-500"
+              variants={fadeInUp}
+            >
+              <MapPin className="w-5 h-5 text-[#F5F5F3]/30 mx-auto mb-3 group-hover:text-[#F5F5F3]/60 transition-colors duration-500" />
+              <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-2">Delhi</p>
+              <p className="text-[#F5F5F3]/60 text-xs">Experience Centre</p>
+            </motion.div>
+            <motion.div 
+              className="bg-[#0A0A0A] border border-[#1A1A1A] p-8 text-center group hover:border-[#F5F5F3]/20 transition-colors duration-500"
+              variants={fadeInUp}
+            >
+              <MapPin className="w-5 h-5 text-[#F5F5F3]/30 mx-auto mb-3 group-hover:text-[#F5F5F3]/60 transition-colors duration-500" />
+              <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-2">Haryana</p>
+              <p className="text-[#F5F5F3]/60 text-xs">Experience Centre</p>
+            </motion.div>
+            <motion.div 
+              className="bg-[#0A0A0A] border border-[#1A1A1A] p-8 text-center group hover:border-[#F5F5F3]/20 transition-colors duration-500"
+              variants={fadeInUp}
+            >
+              <MapPin className="w-5 h-5 text-[#F5F5F3]/30 mx-auto mb-3 group-hover:text-[#F5F5F3]/60 transition-colors duration-500" />
+              <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-2">Noida</p>
+              <p className="text-[#F5F5F3]/60 text-xs">Corporate Office</p>
             </motion.div>
           </div>
         </motion.div>
