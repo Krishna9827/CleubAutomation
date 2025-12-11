@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,15 +35,19 @@ const staggerContainer = {
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { signInWithEmail, signInWithGoogle, signUpWithEmail, user, loading } = useAuth();
+
+  // Get the returnTo path from location state
+  const returnTo = (location.state as any)?.returnTo || '/history';
 
   // Redirect if already logged in (only after auth state is loaded)
   useEffect(() => {
     if (!loading && user) {
-      navigate('/history', { replace: true });
+      navigate(returnTo, { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, returnTo]);
 
   // Login state
   const [loginEmail, setLoginEmail] = useState('');

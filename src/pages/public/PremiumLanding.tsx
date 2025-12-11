@@ -1154,7 +1154,13 @@ const PremiumLanding = () => {
                   </motion.div>
                   <motion.div variants={fadeInUp}>
                     <LuxuryButton 
-                      onClick={() => navigate('/project-planning')} 
+                      onClick={() => {
+                        if (user) {
+                          navigate('/project-planning');
+                        } else {
+                          navigate('/login', { state: { returnTo: '/project-planning' } });
+                        }
+                      }} 
                       variant="dark"
                       className="w-full opacity-70 hover:opacity-100"
                     >
