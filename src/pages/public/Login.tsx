@@ -38,10 +38,10 @@ const Login = () => {
   const { toast } = useToast();
   const { signInWithEmail, signInWithGoogle, signUpWithEmail, user, loading } = useAuth();
 
-  // Redirect if already logged in
+  // Redirect if already logged in (only after auth state is loaded)
   useEffect(() => {
     if (!loading && user) {
-      navigate('/', { replace: true });
+      navigate('/history', { replace: true });
     }
   }, [user, loading, navigate]);
 

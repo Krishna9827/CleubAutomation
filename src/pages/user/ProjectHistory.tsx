@@ -30,7 +30,7 @@ interface LocalProjectData {
 const UserHistory = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, logout } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
   const [projects, setProjects] = useState<LocalProjectData[]>([]);
   const [filteredProjects, setFilteredProjects] = useState<LocalProjectData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,12 +38,12 @@ const UserHistory = () => {
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
-  // Redirect if not logged in
+  // Redirect if not logged in (only after auth state is loaded)
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
+    if (!authLoading && !user) {
+      navigate('/login', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   // Load user's projects from Supabase
   useEffect(() => {
@@ -123,6 +123,15 @@ const UserHistory = () => {
   };
 
   const getRoomCount = (rooms: any[]) => rooms?.length || 0;
+
+  // Show loading screen while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500"></div>
+      </div>
+    );
+  }
 
   if (!user) return null;
 
