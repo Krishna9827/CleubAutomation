@@ -214,7 +214,7 @@ const AboutUs = () => {
                 <span className="font-serif text-xl lg:text-2xl text-[#F5F5F3] block mb-4">
                   The Certainty of Seamless Living.
                 </span>
-                Cleub Automation was founded on a simple premise: True luxury is effortless. In a fragmented market where complexity and cheap solutions often lead to disappointment, we provide the definitive answer. We don't chase trends; we establish standards. We are the system integrators who remove the guesswork, ensuring that the technology in your exclusive space is felt only in its perfection, never in its failure.
+                <strong className="text-[#F5F5F3]">Cleub Automation</strong> was founded on a simple premise: True luxury is effortless. In a fragmented market where complexity and cheap solutions often lead to disappointment, we provide the definitive answer. We don't chase trends; we establish <strong className="text-[#F5F5F3]">The Cleub Standard</strong>—a benchmark for <strong className="text-[#F5F5F3]">High-Reliability Automation</strong>. We are the <strong className="text-[#F5F5F3]">Certified System Architects</strong> and integrators who remove the guesswork, ensuring that the technology in your exclusive space is felt only in its perfection, never in its failure.
               </motion.p>
             </motion.div>
           </div>
@@ -246,7 +246,7 @@ const AboutUs = () => {
                 className="text-[#F5F5F3]/70 text-base leading-relaxed mb-16 max-w-[700px]"
                 variants={fadeInUp}
               >
-                The automation market is riddled with systems that fail the moment the Wi-Fi falters—leaving high-end spaces vulnerable to daily friction. Our clients demand discretion, reliability, and control that mirrors their own discerning standards.
+                The automation market is riddled with systems that fail the moment the Wi-Fi falters—leaving high-end spaces vulnerable to daily friction. Our clients demand discretion, reliability, and control that mirrors their own discerning standards. We specialize in <strong className="text-[#F5F5F3]">KNX</strong>, <strong className="text-[#F5F5F3]">Crestron</strong>, and <strong className="text-[#F5F5F3]">DALI</strong> certified integration—systems proven for mission-critical reliability.
               </motion.p>
             </motion.div>
 
@@ -255,18 +255,18 @@ const AboutUs = () => {
               {[
                 {
                   title: "Integrity Over Incentive",
-                  problem: "We understand the industry's reliance on commissions and proprietary systems.",
-                  solution: "We offer unbiased expertise—integrating the best-in-class wired and hybrid platforms, independent of architectural or vendor incentives. Your estate's longevity is our only objective."
+                  problem: "We understand the industry's reliance on commissions and proprietary systems that prioritize profit over performance.",
+                  solution: "We offer unbiased expertise—integrating the best-in-class wired and hybrid platforms (KNX, Control4, Savant, Crestron), independent of architectural or vendor incentives. Your estate's longevity is our only objective. This is The Cleub Standard."
                 },
                 {
                   title: "True Local Control",
-                  problem: "Most systems hold your home hostage to the cloud, risking privacy and uptime.",
-                  solution: "Our solutions are engineered for uninterrupted local control, ensuring your critical systems operate flawlessly, with or without external internet, securing both your convenience and privacy."
+                  problem: "Most systems hold your home hostage to the cloud, risking privacy and uptime whenever internet connectivity fails.",
+                  solution: "Our solutions are engineered for uninterrupted local control using KNX Twisted Pair, hardwired Ethernet backbones, and hybrid protocols. Your critical systems operate flawlessly, with or without external internet, securing both your convenience and privacy."
                 },
                 {
                   title: "Future-Proof Systems",
-                  problem: "Conventional technology quickly becomes obsolete, requiring costly replacements.",
-                  solution: "We specialize in future-ready, high-compatibility integration, designing systems that evolve gracefully. Your investment today is a reliable asset for decades."
+                  problem: "Conventional technology quickly becomes obsolete, requiring costly replacements and complete system overhauls.",
+                  solution: "We specialize in future-ready, high-compatibility integration with open protocols (KNX, DALI, Zigbee), designing systems with Lifecycle Planning and backward compatibility. Your investment today is a reliable asset for decades, not years."
                 }
               ].map((item, idx) => (
                 <motion.div
@@ -317,22 +317,22 @@ const AboutUs = () => {
                 className="text-[#6B6B6B] text-base leading-relaxed mb-12 max-w-[700px]"
                 variants={fadeInUp}
               >
-                We are not resellers; we are system architects. The confidence we offer is built on rigorous, continuous validation.
+                We are not resellers; we are <strong className="text-[#0A0A0A]">Certified System Architects</strong>. The confidence we offer is built on rigorous, continuous validation—from <strong className="text-[#0A0A0A]">KNX Certified</strong> integration to <strong className="text-[#0A0A0A]">LOXONE</strong> and <strong className="text-[#0A0A0A]">Crestron</strong> standards. This is expertise backed by industry benchmarks, not marketing claims.
               </motion.p>
 
               {/* In-House R&D */}
               <motion.div className="space-y-8" variants={staggerContainer}>
                 <div variants={fadeInUp}>
-                  <h3 className="font-serif text-2xl text-[#0A0A0A] mb-3">In-House R&D</h3>
+                  <h3 className="font-serif text-2xl text-[#0A0A0A] mb-3">In-House R&D <span className="text-[#6B6B6B]/50 text-sm">(Research & Development)</span></h3>
                   <p className="text-[#6B6B6B] text-sm leading-relaxed max-w-[600px]">
-                    Every component, every protocol, and every integration method is put through demanding scrutiny by our dedicated R&D team. We deliver systems that are proven under pressure, far exceeding standard certifications.
+                    Every component, every protocol, and every integration method is put through demanding scrutiny by our dedicated <strong className="text-[#0A0A0A]">R&D team</strong>. We deliver systems that are proven under pressure, far exceeding standard certifications like <strong className="text-[#0A0A0A]">KNX</strong>, <strong className="text-[#0A0A0A]">LOXONE</strong>, and <strong className="text-[#0A0A0A]">Crestron</strong> standards. This ensures zero-failure reliability in mission-critical environments.
                   </p>
                 </div>
 
                 <div variants={fadeInUp}>
                   <h3 className="font-serif text-2xl text-[#0A0A0A] mb-3">The White-Glove Process</h3>
                   <p className="text-[#6B6B6B] text-sm leading-relaxed max-w-[600px]">
-                    From the initial, detailed site audit to the final hand-off, our service is meticulous and discreet. We align with discerning homeowners, architects, and builders who understand that excellence is in the detail.
+                    From the initial, detailed <strong className="text-[#0A0A0A]">System Audit</strong> to the final hand-off, our service is meticulous and discreet. We align with discerning homeowners, architects, and builders who understand that excellence is non-negotiable. Every project receives comprehensive <strong className="text-[#0A0A0A]">Lifecycle Planning</strong> and ongoing optimization.
                   </p>
                 </div>
               </motion.div>
@@ -349,19 +349,19 @@ const AboutUs = () => {
               {[
                 {
                   title: "Home Automation",
-                  desc: "Robust Wired and Hybrid systems for flawless app, voice, and scene control."
+                  desc: "Robust Wired and Hybrid systems for flawless app, voice, and Scene Control. Focus on Control4, Savant, and Crestron integration with KNX backbone."
                 },
                 {
                   title: "Private Entertainment",
-                  desc: "Cinema-Grade acoustic design and premium AVR setups for immersive home theaters."
+                  desc: "Cinema-Grade Acoustic Design and premium AVR setups for truly immersive Home Theaters. Dolby Atmos, THX-certified installations."
                 },
                 {
                   title: "Bespoke Production",
-                  desc: "State-of-the-art professional studios and creator spaces built to exact professional specifications."
+                  desc: "State-of-the-art professional studios and creator spaces built to exact Broadcast and Recording specifications. Pro-grade acoustics and signal routing."
                 },
                 {
                   title: "Expert Consultation",
-                  desc: "Unbiased advisory services that provide clarity and certainty in a fragmented market."
+                  desc: "Unbiased advisory services that provide clarity and certainty in a fragmented market, focusing on System Audit and Lifecycle Planning."
                 }
               ].map((pillar, idx) => (
                 <motion.div
@@ -412,7 +412,7 @@ const AboutUs = () => {
                   className="text-[#F5F5F3]/70 text-base leading-relaxed max-w-[600px]"
                   variants={fadeInUp}
                 >
-                  If your vision demands technology that is invisible, powerful, and utterly reliable, it's time to speak with our experts. We solve the problems others overlook.
+                  If your vision demands technology that is invisible, powerful, and utterly reliable, it's time to speak with our <strong className="text-[#F5F5F3]">Certified System Architects</strong>. <strong className="text-[#F5F5F3]">Cleub Automation</strong> solves the problems others overlook—delivering <strong className="text-[#F5F5F3]">The Cleub Standard</strong> every time.
                 </motion.p>
               </motion.div>
 

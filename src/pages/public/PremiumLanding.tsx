@@ -707,51 +707,51 @@ const PremiumLanding = () => {
               </motion.p>
             </motion.div>
 
-            {/* True Masonry Grid - Dense Packing, No Gaps */}
-            <div className="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-6 gap-3 auto-rows-[140px]">
-              {/* ROW 1: Automation (Dark 2x2) + Audio-Video + Lighting + Digital Locks */}
+            {/* True Masonry Grid - Dense Packing, No Gaps - Mobile Optimized */}
+            <div className="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-6 gap-3 auto-rows-[minmax(140px,auto)]">
+              {/* ROW 1: Automation (Dark 2x2) + Audio-Video + Security + Lighting */}
               
               {/* Service 1: Automation - Large Dark Card */}
               <motion.div 
-                className="col-span-2 row-span-2 bg-[#0A0A0A] text-[#F5F5F3] rounded-2xl p-6 lg:p-8 cursor-pointer group overflow-hidden relative flex flex-col justify-between"
+                className="col-span-2 row-span-2 md:col-span-2 md:row-span-2 bg-[#0A0A0A] text-[#F5F5F3] rounded-2xl p-5 md:p-6 lg:p-8 cursor-pointer group overflow-hidden relative flex flex-col justify-between min-h-[200px] md:min-h-[280px]"
                 variants={fadeInUp}
                 whileHover={{ scale: 1.02, y: -2 }}
                 transition={{ duration: 0.3, type: 'spring', stiffness: 100 }}
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-[#F5F5F3]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                 <div className="relative z-10">
-                  <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-[#F5F5F3]/10 flex items-center justify-center group-hover:bg-[#F5F5F3]/25 transition-colors duration-500 mb-4" style={{ perspective: '1000px' }}>
+                  <div className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-xl bg-[#F5F5F3]/10 flex items-center justify-center group-hover:bg-[#F5F5F3]/25 transition-colors duration-500 mb-3 md:mb-4" style={{ perspective: '1000px' }}>
                     <motion.div whileHover={{ rotateX: 360, rotateY: -20 }} transition={{ duration: 0.6, type: 'spring' }}>
-                      <Zap className="w-6 h-6 lg:w-7 lg:h-7 text-[#F5F5F3]" />
+                      <Zap className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 text-[#F5F5F3]" />
                     </motion.div>
                   </div>
-                  <h3 className="font-serif text-xl lg:text-2xl text-[#F5F5F3] mb-2 leading-tight">
+                  <h3 className="font-serif text-lg md:text-xl lg:text-2xl text-[#F5F5F3] mb-2 leading-tight">
                     {services[0].title}
                   </h3>
-                  <p className="text-[11px] text-[#F5F5F3]/70 leading-relaxed line-clamp-3">
+                  <p className="text-[10px] md:text-[11px] text-[#F5F5F3]/70 leading-relaxed line-clamp-3">
                     {services[0].desc}
                   </p>
                 </div>
-                <div className="text-[#F5F5F3]/30 text-[10px] uppercase tracking-wider">Premium</div>
+                <div className="text-[#F5F5F3]/30 text-[9px] md:text-[10px] uppercase tracking-wider">Premium</div>
               </motion.div>
 
               {/* Service 2: Audio-Video */}
               <motion.div 
-                className="col-span-1 row-span-1 bg-white border border-[#0A0A0A]/10 rounded-2xl p-5 cursor-pointer group hover:border-[#0A0A0A]/30 transition-all duration-500 flex flex-col justify-between"
+                className="col-span-1 row-span-1 bg-white border border-[#0A0A0A]/10 rounded-2xl p-4 md:p-5 cursor-pointer group hover:border-[#0A0A0A]/30 transition-all duration-500 flex flex-col justify-between min-h-[140px]"
                 variants={fadeInUp}
                 whileHover={{ scale: 1.04, y: -2 }}
                 transition={{ duration: 0.3, type: 'spring', stiffness: 120 }}
               >
-                <div className="w-10 h-10 rounded-lg bg-[#F5F5F3] flex items-center justify-center group-hover:bg-[#0A0A0A] transition-colors duration-500 mb-3" style={{ perspective: '1000px' }}>
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#F5F5F3] flex items-center justify-center group-hover:bg-[#0A0A0A] transition-colors duration-500 mb-2 md:mb-3" style={{ perspective: '1000px' }}>
                   <motion.div whileHover={{ rotateX: -360, rotateY: 20 }} transition={{ duration: 0.6, type: 'spring' }}>
-                    <Volume2 className="w-5 h-5 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
+                    <Volume2 className="w-4 h-4 md:w-5 md:h-5 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
                   </motion.div>
                 </div>
                 <div>
                   <h3 className="font-serif text-xs lg:text-sm text-[#0A0A0A] mb-1 leading-tight">
                     {services[1].title}
                   </h3>
-                  <p className="text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
+                  <p className="text-[9px] md:text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
                     {services[1].desc}
                   </p>
                 </div>
@@ -759,21 +759,21 @@ const PremiumLanding = () => {
 
               {/* Service 3: Security */}
               <motion.div 
-                className="col-span-1 row-span-1 bg-white border border-[#0A0A0A]/10 rounded-2xl p-5 cursor-pointer group hover:border-[#0A0A0A]/30 transition-all duration-500 flex flex-col justify-between"
+                className="col-span-1 row-span-1 bg-white border border-[#0A0A0A]/10 rounded-2xl p-4 md:p-5 cursor-pointer group hover:border-[#0A0A0A]/30 transition-all duration-500 flex flex-col justify-between min-h-[140px]"
                 variants={fadeInUp}
                 whileHover={{ scale: 1.04, y: -2 }}
                 transition={{ duration: 0.3, type: 'spring', stiffness: 120 }}
               >
-                <div className="w-10 h-10 rounded-lg bg-[#F5F5F3] flex items-center justify-center group-hover:bg-[#0A0A0A] transition-colors duration-500 mb-3" style={{ perspective: '1000px' }}>
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#F5F5F3] flex items-center justify-center group-hover:bg-[#0A0A0A] transition-colors duration-500 mb-2 md:mb-3" style={{ perspective: '1000px' }}>
                   <motion.div whileHover={{ rotateX: -360, rotateY: -20 }} transition={{ duration: 0.6, type: 'spring' }}>
-                    <Camera className="w-5 h-5 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
+                    <Camera className="w-4 h-4 md:w-5 md:h-5 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
                   </motion.div>
                 </div>
                 <div>
                   <h3 className="font-serif text-xs lg:text-sm text-[#0A0A0A] mb-1 leading-tight">
                     {services[6].title}
                   </h3>
-                  <p className="text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
+                  <p className="text-[9px] md:text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
                     {services[6].desc}
                   </p>
                 </div>
@@ -781,47 +781,47 @@ const PremiumLanding = () => {
 
               {/* Service 7: Lighting - Large Light Card (2x2) */}
               <motion.div 
-                className="col-span-2 row-span-2 bg-white border-2 border-[#0A0A0A] rounded-2xl p-6 lg:p-8 cursor-pointer group hover:bg-[#0A0A0A] transition-all duration-700 overflow-hidden relative flex flex-col justify-between"
+                className="col-span-2 row-span-2 md:col-span-2 md:row-span-2 bg-white border-2 border-[#0A0A0A] rounded-2xl p-5 md:p-6 lg:p-8 cursor-pointer group hover:bg-[#0A0A0A] transition-all duration-700 overflow-hidden relative flex flex-col justify-between min-h-[200px] md:min-h-[280px]"
                 variants={fadeInUp}
                 whileHover={{ scale: 1.02, y: -2 }}
                 transition={{ duration: 0.3, type: 'spring', stiffness: 100 }}
               >
                 <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-[#F5F5F3]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-full -mr-20 -mt-20" />
                 <div className="relative z-10">
-                  <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-[#0A0A0A]/10 flex items-center justify-center group-hover:bg-[#F5F5F3]/20 transition-colors duration-500 mb-4" style={{ perspective: '1000px' }}>
+                  <div className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-xl bg-[#0A0A0A]/10 flex items-center justify-center group-hover:bg-[#F5F5F3]/20 transition-colors duration-500 mb-3 md:mb-4" style={{ perspective: '1000px' }}>
                     <motion.div whileHover={{ rotateX: 360, rotateY: -20 }} transition={{ duration: 0.6, type: 'spring' }}>
-                      <Lightbulb className="w-6 h-6 lg:w-7 lg:h-7 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
+                      <Lightbulb className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
                     </motion.div>
                   </div>
-                  <h3 className="font-serif text-xl lg:text-2xl text-[#0A0A0A] group-hover:text-[#F5F5F3] mb-2 leading-tight transition-colors duration-700">
+                  <h3 className="font-serif text-lg md:text-xl lg:text-2xl text-[#0A0A0A] group-hover:text-[#F5F5F3] mb-2 leading-tight transition-colors duration-700">
                     {services[2].title}
                   </h3>
-                  <p className="text-[11px] text-[#6B6B6B] group-hover:text-[#F5F5F3]/70 leading-relaxed line-clamp-3 transition-colors duration-700">
+                  <p className="text-[10px] md:text-[11px] text-[#6B6B6B] group-hover:text-[#F5F5F3]/70 leading-relaxed line-clamp-3 transition-colors duration-700">
                     {services[2].desc}
                   </p>
                 </div>
-                <div className="text-[#0A0A0A] group-hover:text-[#F5F5F3]/30 text-[10px] uppercase tracking-wider transition-colors duration-700">Lighting</div>
+                <div className="text-[#0A0A0A] group-hover:text-[#F5F5F3]/30 text-[9px] md:text-[10px] uppercase tracking-wider transition-colors duration-700">Lighting</div>
               </motion.div>
 
-              {/* ROW 2: Digital Locks + Networking (Dark 2x2) */}
+              {/* ROW 2: Digital Locks + Curtain & Gate */}
               
               {/* Service 4: Digital Locks */}
               <motion.div 
-                className="col-span-1 row-span-1 bg-white border border-[#0A0A0A]/10 rounded-2xl p-5 cursor-pointer group hover:border-[#0A0A0A]/30 transition-all duration-500 flex flex-col justify-between"
+                className="col-span-1 row-span-1 bg-white border border-[#0A0A0A]/10 rounded-2xl p-4 md:p-5 cursor-pointer group hover:border-[#0A0A0A]/30 transition-all duration-500 flex flex-col justify-between min-h-[140px]"
                 variants={fadeInUp}
                 whileHover={{ scale: 1.04, y: -2 }}
                 transition={{ duration: 0.3, type: 'spring', stiffness: 120 }}
               >
-                <div className="w-10 h-10 rounded-lg bg-[#F5F5F3] flex items-center justify-center group-hover:bg-[#0A0A0A] transition-colors duration-500 mb-3" style={{ perspective: '1000px' }}>
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#F5F5F3] flex items-center justify-center group-hover:bg-[#0A0A0A] transition-colors duration-500 mb-2 md:mb-3" style={{ perspective: '1000px' }}>
                   <motion.div whileHover={{ rotateX: 360, rotateY: 20 }} transition={{ duration: 0.6, type: 'spring' }}>
-                    <Lock className="w-5 h-5 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
+                    <Lock className="w-4 h-4 md:w-5 md:h-5 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
                   </motion.div>
                 </div>
                 <div>
                   <h3 className="font-serif text-xs lg:text-sm text-[#0A0A0A] mb-1 leading-tight">
                     {services[3].title}
                   </h3>
-                  <p className="text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
+                  <p className="text-[9px] md:text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
                     {services[3].desc}
                   </p>
                 </div>
@@ -829,21 +829,21 @@ const PremiumLanding = () => {
 
               {/* Service 6: Curtain & Gate */}
               <motion.div 
-                className="col-span-1 row-span-1 bg-white border border-[#0A0A0A]/10 rounded-2xl p-5 cursor-pointer group hover:border-[#0A0A0A]/30 transition-all duration-500 flex flex-col justify-between"
+                className="col-span-1 row-span-1 bg-white border border-[#0A0A0A]/10 rounded-2xl p-4 md:p-5 cursor-pointer group hover:border-[#0A0A0A]/30 transition-all duration-500 flex flex-col justify-between min-h-[140px]"
                 variants={fadeInUp}
                 whileHover={{ scale: 1.04, y: -2 }}
                 transition={{ duration: 0.3, type: 'spring', stiffness: 120 }}
               >
-                <div className="w-10 h-10 rounded-lg bg-[#F5F5F3] flex items-center justify-center group-hover:bg-[#0A0A0A] transition-colors duration-500 mb-3" style={{ perspective: '1000px' }}>
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#F5F5F3] flex items-center justify-center group-hover:bg-[#0A0A0A] transition-colors duration-500 mb-2 md:mb-3" style={{ perspective: '1000px' }}>
                   <motion.div whileHover={{ rotateX: 360, rotateY: -20 }} transition={{ duration: 0.6, type: 'spring' }}>
-                    <Grid3x3 className="w-5 h-5 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
+                    <Grid3x3 className="w-4 h-4 md:w-5 md:h-5 text-[#0A0A0A] group-hover:text-[#F5F5F3] transition-colors duration-500" />
                   </motion.div>
                 </div>
                 <div>
                   <h3 className="font-serif text-xs lg:text-sm text-[#0A0A0A] mb-1 leading-tight">
                     {services[5].title}
                   </h3>
-                  <p className="text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
+                  <p className="text-[9px] md:text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
                     {services[5].desc}
                   </p>
                 </div>
@@ -853,45 +853,45 @@ const PremiumLanding = () => {
               
               {/* Service 5: Networking - Medium Dark Card */}
               <motion.div 
-                className="col-span-3 row-span-1 bg-gradient-to-br from-[#0A0A0A] to-[#1A1A1A] text-[#F5F5F3] rounded-2xl p-5 lg:p-6 cursor-pointer group overflow-hidden relative flex items-center justify-between"
+                className="col-span-2 md:col-span-3 row-span-1 bg-gradient-to-br from-[#0A0A0A] to-[#1A1A1A] text-[#F5F5F3] rounded-2xl p-4 md:p-5 lg:p-6 cursor-pointer group overflow-hidden relative flex items-center justify-between min-h-[120px] md:min-h-[140px]"
                 variants={fadeInUp}
                 whileHover={{ scale: 1.02, y: -2 }}
                 transition={{ duration: 0.3, type: 'spring', stiffness: 100 }}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-[#F5F5F3]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                 <div className="relative z-10 flex-1">
-                  <h3 className="font-serif text-base lg:text-lg text-[#F5F5F3] mb-1 leading-tight">
+                  <h3 className="font-serif text-sm md:text-base lg:text-lg text-[#F5F5F3] mb-1 leading-tight">
                     {services[4].title}
                   </h3>
-                  <p className="text-[10px] text-[#F5F5F3]/70 leading-relaxed line-clamp-2">
+                  <p className="text-[9px] md:text-[10px] text-[#F5F5F3]/70 leading-relaxed line-clamp-2">
                     {services[4].desc}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-[#F5F5F3]/10 flex items-center justify-center group-hover:bg-[#F5F5F3]/25 transition-colors duration-500 ml-4 flex-shrink-0" style={{ perspective: '1000px' }}>
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[#F5F5F3]/10 flex items-center justify-center group-hover:bg-[#F5F5F3]/25 transition-colors duration-500 ml-3 md:ml-4 flex-shrink-0" style={{ perspective: '1000px' }}>
                   <motion.div whileHover={{ rotateX: -360, rotateY: 20 }} transition={{ duration: 0.6, type: 'spring' }}>
-                    <Wifi className="w-6 h-6 text-[#F5F5F3]" />
+                    <Wifi className="w-5 h-5 md:w-6 md:h-6 text-[#F5F5F3]" />
                   </motion.div>
                 </div>
               </motion.div>
 
               {/* Service 8: Consult & Supply - Medium Light Horizontal */}
               <motion.div 
-                className="col-span-3 row-span-1 bg-gradient-to-br from-[#F5F5F3] via-[#FAFAFA] to-[#F0F0F0] rounded-2xl p-5 lg:p-6 cursor-pointer group hover:shadow-2xl transition-all duration-500 border border-[#0A0A0A]/5 flex items-center justify-between"
+                className="col-span-2 md:col-span-3 row-span-1 bg-gradient-to-br from-[#F5F5F3] via-[#FAFAFA] to-[#F0F0F0] rounded-2xl p-4 md:p-5 lg:p-6 cursor-pointer group hover:shadow-2xl transition-all duration-500 border border-[#0A0A0A]/5 flex items-center justify-between min-h-[120px] md:min-h-[140px]"
                 variants={fadeInUp}
                 whileHover={{ scale: 1.02, y: -2 }}
                 transition={{ duration: 0.3, type: 'spring', stiffness: 120 }}
               >
                 <div className="flex-1">
-                  <h3 className="font-serif text-base lg:text-lg text-[#0A0A0A] mb-1 leading-tight">
+                  <h3 className="font-serif text-sm md:text-base lg:text-lg text-[#0A0A0A] mb-1 leading-tight">
                     {services[7].title}
                   </h3>
-                  <p className="text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
+                  <p className="text-[9px] md:text-[10px] text-[#6B6B6B] leading-relaxed line-clamp-2">
                     {services[7].desc}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-[#0A0A0A] flex items-center justify-center group-hover:bg-gradient-to-br group-hover:from-[#0A0A0A] group-hover:to-[#1A1A1A] transition-all duration-500 ml-4 flex-shrink-0" style={{ perspective: '1000px' }}>
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-[#0A0A0A] flex items-center justify-center group-hover:bg-gradient-to-br group-hover:from-[#0A0A0A] group-hover:to-[#1A1A1A] transition-all duration-500 ml-3 md:ml-4 flex-shrink-0" style={{ perspective: '1000px' }}>
                   <motion.div whileHover={{ rotateX: -360, rotateY: -20 }} transition={{ duration: 0.6, type: 'spring' }}>
-                    <Settings className="w-6 h-6 text-[#F5F5F3]" />
+                    <Settings className="w-5 h-5 md:w-6 md:h-6 text-[#F5F5F3]" />
                   </motion.div>
                 </div>
               </motion.div>
