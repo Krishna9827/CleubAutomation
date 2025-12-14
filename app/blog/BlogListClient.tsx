@@ -80,90 +80,86 @@ export default function BlogListClient({ blogs }: BlogListClientProps) {
               </p>
             </motion.div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {blogs.map((blog, index) => (
-                <motion.div
-                  key={blog.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ 
-                    delay: 0.1 * index, 
-                    duration: 0.8, 
-                    ease: luxuryEase 
-                  }}
-                  className={index === 0 ? 'md:col-span-2 md:row-span-2' : ''}
-                >
-                  <Link href={`/blog/${blog.slug}`}>
-                    <article
-                      className={`group relative overflow-hidden rounded-2xl bg-white/[0.02] border border-white/5 
-                        hover:border-amber-500/30 transition-all duration-700 ease-out
-                        ${index === 0 ? 'h-full min-h-[500px]' : 'h-[320px]'}
-                      `}
-                    >
-                      {/* Cover Image */}
-                      {blog.cover_image_url ? (
-                        <div className="absolute inset-0">
-                          <img
-                            src={blog.cover_image_url}
-                            alt={blog.title}
-                            className="w-full h-full object-cover opacity-40 group-hover:opacity-50 
-                              group-hover:scale-[1.02] transition-all duration-700 ease-out"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/60 to-transparent" />
-                        </div>
-                      ) : (
-                        <div className="absolute inset-0 bg-gradient-to-br from-amber-900/20 to-transparent" />
-                      )}
-
-                      {/* Content */}
-                      <div className="relative h-full flex flex-col justify-end p-8">
-                        {/* Meta */}
-                        <div className="flex items-center gap-4 text-[#F5F5F3]/40 text-sm mb-4">
-                          <span className="flex items-center gap-1.5">
-                            <Calendar className="w-4 h-4" />
-                            {formatDate(blog.published_at || blog.created_at)}
-                          </span>
-                          {blog.reading_time_minutes && (
-                            <span className="flex items-center gap-1.5">
-                              <Clock className="w-4 h-4" />
-                              {blog.reading_time_minutes} min read
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Title */}
-                        <h2 className={`font-serif text-[#F5F5F3] tracking-wide mb-3 
-                          group-hover:text-amber-100 transition-colors duration-500
-                          ${index === 0 ? 'text-3xl md:text-4xl lg:text-5xl' : 'text-xl md:text-2xl'}
-                        `}>
-                          {blog.title}
-                        </h2>
-
-                        {/* Excerpt */}
-                        {blog.excerpt && (
-                          <p className={`text-[#F5F5F3]/50 font-light leading-relaxed mb-6
-                            ${index === 0 ? 'text-lg line-clamp-3' : 'text-sm line-clamp-2'}
-                          `}>
-                            {blog.excerpt}
-                          </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {blogs.map((blog, index) => {
+                return (
+                  <motion.div
+                    key={blog.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ 
+                      delay: 0.1 * Math.min(index, 9), 
+                      duration: 0.8, 
+                      ease: luxuryEase 
+                    }}
+                  >
+                    <Link href={`/blog/${blog.slug}`}>
+                      <article
+                        className="group relative overflow-hidden rounded-2xl bg-white/[0.02] border border-white/5 
+                          hover:border-amber-500/30 transition-all duration-300 ease-out flex flex-col h-full"
+                      >
+                        {/* Cover Image */}
+                        {blog.cover_image_url ? (
+                          <div className="w-full h-48 overflow-hidden relative flex-shrink-0">
+                            <img
+                              src={blog.cover_image_url}
+                              alt={blog.title}
+                              className="w-full h-full object-cover opacity-40 group-hover:opacity-60 
+                                transition-opacity duration-300 ease-out"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0A0A0A]/40 to-[#0A0A0A]" />
+                          </div>
+                        ) : (
+                          <div className="w-full h-48 bg-gradient-to-br from-amber-900/20 to-transparent flex-shrink-0" />
                         )}
 
-                        {/* Read More */}
-                        <div className="flex items-center gap-2 text-amber-400/80 text-sm 
-                          group-hover:text-amber-300 transition-colors duration-500"
-                        >
-                          <span className="uppercase tracking-wider">Read Article</span>
-                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-500" />
-                        </div>
-                      </div>
+                        {/* Content */}
+                        <div className="flex-1 p-5 flex flex-col">
+                          {/* Meta */}
+                          <div className="flex items-center gap-4 text-[#F5F5F3]/40 text-xs mb-2">
+                            <span className="flex items-center gap-1.5">
+                              <Calendar className="w-3 h-3" />
+                              {formatDate(blog.published_at || blog.created_at)}
+                            </span>
+                            {blog.reading_time_minutes && (
+                              <span className="flex items-center gap-1.5">
+                                <Clock className="w-3 h-3" />
+                                {blog.reading_time_minutes} min read
+                              </span>
+                            )}
+                          </div>
 
-                      {/* Hover glow effect */}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700
-                        bg-gradient-to-t from-amber-500/5 via-transparent to-transparent pointer-events-none" />
-                    </article>
-                  </Link>
-                </motion.div>
-              ))}
+                          {/* Title */}
+                          <h2 className="font-serif text-[#F5F5F3] tracking-wide mb-2
+                            group-hover:text-amber-100 transition-colors duration-500
+                            text-lg md:text-xl line-clamp-2">
+                            {blog.title}
+                          </h2>
+
+                          {/* Excerpt */}
+                          {blog.excerpt && (
+                            <p className="text-[#F5F5F3]/50 font-light leading-relaxed text-sm line-clamp-2 mb-3">
+                              {blog.excerpt}
+                            </p>
+                          )}
+
+                          {/* Read More */}
+                          <div className="flex items-center gap-2 text-amber-400/80 text-sm mt-auto
+                            group-hover:text-amber-300 transition-colors duration-500"
+                          >
+                            <span className="uppercase tracking-wider">Read Article</span>
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-500" />
+                          </div>
+                        </div>
+
+                        {/* Hover glow effect */}
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700
+                          bg-gradient-to-t from-amber-500/5 via-transparent to-transparent pointer-events-none" />
+                      </article>
+                    </Link>
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </div>
