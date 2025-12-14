@@ -11,7 +11,7 @@ export async function GET() {
   const { data: blogPosts, error } = await supabase
     .from('blog_posts')
     .select('slug, updated_at')
-    .eq('status', 'published')
+    .eq('is_published', true)
     .order('updated_at', { ascending: false });
 
   if (error) {
