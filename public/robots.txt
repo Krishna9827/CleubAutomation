@@ -67,4 +67,4 @@ Disallow: /login
 Disallow: /admin-login
 
 # Sitemap Location
-Sitemap: https://cleubautomation.com/sitemap.xml
+Sitemap: https://www.cleub.com/sitemap.xml
