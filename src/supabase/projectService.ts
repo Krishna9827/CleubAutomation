@@ -1,4 +1,7 @@
-import { supabase } from './config';
+import { supabase as supabaseClient } from './config';
+
+// Cast supabase to any to avoid strict type inference issues
+const supabase = supabaseClient as any;
 
 export interface ProjectData {
   id: string;

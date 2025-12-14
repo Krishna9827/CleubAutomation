@@ -7,110 +7,115 @@
   <!-- Homepage - Highest Priority -->
   <url>
     <loc>https://cleubautomation.com/</loc>
-    <lastmod>2025-12-12</lastmod>
+    <lastmod>2025-12-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
-  <!-- Core Service Pages - High Priority -->
-  <url>
-    <loc>https://cleubautomation.com/services/security-surveillance</loc>
-    <lastmod>2025-12-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <url>
-    <loc>https://cleubautomation.com/services/lighting-switches</loc>
-    <lastmod>2025-12-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <url>
-    <loc>https://cleubautomation.com/services/audio-video-theatres</loc>
-    <lastmod>2025-12-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <url>
-    <loc>https://cleubautomation.com/services/automation</loc>
-    <lastmod>2025-12-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <url>
-    <loc>https://cleubautomation.com/services/digital-locks</loc>
-    <lastmod>2025-12-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <url>
-    <loc>https://cleubautomation.com/services/networking</loc>
-    <lastmod>2025-12-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <url>
-    <loc>https://cleubautomation.com/services/curtain-gate-motor</loc>
-    <lastmod>2025-12-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <url>
-    <loc>https://cleubautomation.com/services/consult-supply</loc>
-    <lastmod>2025-12-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <!-- About & Portfolio - Medium Priority -->
+  <!-- About Page -->
   <url>
     <loc>https://cleubautomation.com/about</loc>
-    <lastmod>2025-12-12</lastmod>
+    <lastmod>2025-12-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
+  <!-- Blog Index -->
   <url>
-    <loc>https://cleubautomation.com/portfolio</loc>
-    <lastmod>2025-12-12</lastmod>
+    <loc>https://cleubautomation.com/blog</loc>
+    <lastmod>2025-12-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- FAQ Page -->
+  <url>
+    <loc>https://cleubautomation.com/faq</loc>
+    <lastmod>2025-12-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Inquiry / Contact Page -->
+  <url>
+    <loc>https://cleubautomation.com/inquiry</loc>
+    <lastmod>2025-12-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Login Page -->
+  <url>
+    <loc>https://cleubautomation.com/login</loc>
+    <lastmod>2025-12-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Project Planning Flow -->
+  <url>
+    <loc>https://cleubautomation.com/project-planning</loc>
+    <lastmod>2025-12-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://cleubautomation.com/inquiry</loc>
-    <lastmod>2025-12-12</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://cleubautomation.com/room-selection</loc>
+    <lastmod>2025-12-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
 
-  <!-- Legal & Contact Pages - Lower Priority -->
+  <url>
+    <loc>https://cleubautomation.com/requirements</loc>
+    <lastmod>2025-12-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://cleubautomation.com/final-review</loc>
+    <lastmod>2025-12-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://cleubautomation.com/planner</loc>
+    <lastmod>2025-12-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- User Dashboard -->
+  <url>
+    <loc>https://cleubautomation.com/my-projects</loc>
+    <lastmod>2025-12-14</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Legal Pages -->
   <url>
     <loc>https://cleubautomation.com/privacy-policy</loc>
-    <lastmod>2025-12-12</lastmod>
+    <lastmod>2025-12-14</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <url>
-    <loc>https://cleubautomation.com/cookie-policy</loc>
-    <lastmod>2025-12-12</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.4</priority>
   </url>
 
   <url>
     <loc>https://cleubautomation.com/terms</loc>
-    <lastmod>2025-12-12</lastmod>
+    <lastmod>2025-12-14</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.4</priority>
+  </url>
+
+  <url>
+    <loc>https://cleubautomation.com/cookie-policy</loc>
+    <lastmod>2025-12-14</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 
 </urlset>

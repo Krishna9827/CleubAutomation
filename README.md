@@ -10,45 +10,67 @@ CleubAutomation is a comprehensive solution for planning and estimating smart ho
 
 - **Project Planning**: Interactive UI for designing home automation layouts
 - **Cost Estimation**: Accurate pricing based on components and complexity
-- **User Authentication**: Secure login with Supabase
+- **User Authentication**: Secure login with Supabase (Email + Google OAuth)
 - **Admin Dashboard**: Manage projects, testimonials, and system settings
 - **Inventory Management**: Track automation components and pricing
 - **PDF Export**: Generate professional project reports and billing documents
+- **Blog System**: Full-featured CMS with markdown support and admin portal
+- **FAQ Management**: Dynamic FAQ system with categories and admin controls
 - **Testimonials**: Showcase client case studies and success stories
+- **SEO Optimized**: Server-side rendering, meta tags, sitemap, structured data
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 
 ## Tech Stack
 
-- **Frontend**: React 18 + TypeScript
-- **Build Tool**: Vite
+- **Framework**: Next.js 15 (App Router)
+- **Frontend**: React 19 + TypeScript
 - **UI Framework**: shadcn-ui + Tailwind CSS
 - **Backend**: Supabase (PostgreSQL + Auth)
 - **Database**: PostgreSQL (via Supabase)
 - **Icons**: Lucide React
-- **State Management**: React Context API + React Query
+- **State Management**: React Context API
 - **PDF Generation**: jsPDF + html2canvas
+- **Content**: Markdown support (react-markdown)
+- **Deployment**: Vercel
 
 ## Project Structure
 
 ```
+app/                    # Next.js App Router pages and layouts
+├── admin/             # Admin dashboard pages
+├── blog/              # Blog system (list, detail, admin)
+├── faq/               # FAQ system (list, admin)
+├── inquiry/           # Contact inquiry pages
+├── layout.tsx         # Root layout with metadata
+├── page.tsx           # Home page (premium landing)
+└── ...                # Other routes (planner, history, etc.)
+
 src/
 ├── components/
-│   ├── admin/          # Admin-specific components
-│   ├── features/       # Feature components (rooms, appliances, billing)
-│   ├── inventory/      # Inventory management components
-│   └── ui/             # Reusable UI components (buttons, dialogs, etc.)
-├── pages/
-│   ├── admin/          # Admin pages
-│   ├── public/         # Public-facing pages (landing, login)
-│   └── user/           # User dashboard and project pages
-├── contexts/           # React Context API (Auth)
-├── services/           # API and service layer
-│   ├── firebase/       # Firebase configuration
-│   └── supabase/       # Supabase services
-├── types/              # TypeScript type definitions
-├── utils/              # Utility functions
-├── constants/          # App-wide constants
-└── hooks/              # Custom React hooks
+│   ├── admin/         # Admin-specific components
+│   ├── features/      # Feature components (rooms, appliances, billing)
+│   ├── inventory/     # Inventory management components
+│   ├── seo/           # SEO components (Schema, metadata)
+│   └── ui/            # Reusable UI components (shadcn-ui)
+├── contexts/          # React Context API (Auth)
+├── supabase/          # Supabase services & types
+│   ├── config.ts      # Client configuration
+│   ├── types.ts       # Database types
+│   ├── userService.ts
+│   ├── projectService.ts
+│   └── adminService.ts
+├── types/             # TypeScript type definitions
+├── utils/             # Utility functions
+├── constants/         # App-wide constants
+└── hooks/             # Custom React hooks
+
+lib/                   # Server-side utilities
+└── supabase/         # SSR Supabase clients
+    ├── client.ts     # Browser client
+    ├── server.ts     # Server client
+    └── middleware.ts # Auth middleware
+
+middleware.ts          # Next.js middleware for route protection
 ```
 
 ## Getting Started
@@ -72,17 +94,18 @@ npm install
 
 # 3. Set up environment variables
 # Create a .env.local file in the project root with your Supabase credentials:
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 ### Development
 
 ```bash
-# Start the development server
+# Start the Next.js development server
 npm run dev
 
-# The app will be available at http://localhost:5173
+# The app will be available at http://localhost:3000
 ```
 
 ### Building for Production
@@ -100,8 +123,9 @@ npm run preview
 Create a `.env.local` file in the project root:
 
 ```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key-here
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 Obtain these from your Supabase project settings.
@@ -127,17 +151,20 @@ Key tables:
 
 ## Key Pages
 
-| Page             | Route               | Description                                 |
-| ---------------- | ------------------- | ------------------------------------------- |
-| Landing          | `/`                 | Premium landing page with services overview |
-| Login            | `/login`            | User authentication                         |
-| Project Planning | `/project-planning` | Start new automation project                |
-| Room Selection   | `/room-selection`   | Select rooms for automation                 |
-| Requirements     | `/requirements`     | Detailed project requirements form          |
-| Final Review     | `/final-review`     | Review and confirm project details          |
-| Planner          | `/planner`          | Interactive project planning tool           |
-| My Projects      | `/my-projects`      | View user's saved projects                  |
-| Admin            | `/admin`            | Admin dashboard (protected)                 |
+| Page             | Route             | Description                                 |
+| ---------------- | ----------------- | ------------------------------------------- |
+| Landing          | `/`               | Premium landing page with services overview |
+| Blog             | `/blog`           | Blog listing with categories                |
+| FAQ              | `/faq`            | Frequently asked questions                  |
+| Inquiry          | `/inquiry`        | Contact form for project inquiries          |
+| Login            | `/login`          | User authentication                         |
+| Project Planning | `/intake`         | Start new automation project                |
+| Room Selection   | `/room-selection` | Select rooms for automation                 |
+| Requirements     | `/requirements`   | Detailed project requirements form          |
+| Final Review     | `/final-review`   | Review and confirm project details          |
+| Planner          | `/planner`        | Interactive project planning tool           |
+| History          | `/history`        | View user's saved projects                  |
+| Admin            | `/admin`          | Admin dashboard (protected)                 |
 
 ## Components
 
@@ -182,19 +209,34 @@ git push origin feature/feature-name
 
 ## Deployment
 
-The project is ready to be deployed to:
+The project is optimized for **Vercel** deployment with Next.js 15:
 
-- **Netlify** (recommended)
-- **Vercel**
-- **GitHub Pages**
-- **Any Node.js hosting provider**
+### Deploy to Vercel (Recommended)
 
-For Netlify:
+1. Push your code to GitHub
+2. Import project in Vercel dashboard
+3. Add environment variables:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your_production_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_production_key
+   NEXT_PUBLIC_SITE_URL=https://yourdomain.com
+   ```
+4. Deploy automatically on push to main
 
-1. Connect your GitHub repo to Netlify
-2. Set build command: `npm run build`
-3. Set publish directory: `dist`
-4. Add environment variables in Netlify dashboard
+### Alternative Platforms
+
+- **Netlify**: Supports Next.js with build command `npm run build`
+- **Self-hosted**: Deploy with `npm run build && npm run start`
+
+For production deployment:
+
+```bash
+# Build for production
+npm run build
+
+# Start production server
+npm run start
+```
 
 ## Contributing
 
@@ -223,10 +265,19 @@ npm install
 ### Build errors
 
 ```bash
-# Clear Vite cache
-rm -rf dist
+# Clear Next.js cache
+rm -rf .next
+npm run build
+
+# Clear all caches and rebuild
+rm -rf .next node_modules
+npm install
 npm run build
 ```
+
+## Migration from Vite
+
+This project was migrated from Vite to Next.js 15. See `MIGRATION_NOTES.md` for full details.
 
 ## Support
 

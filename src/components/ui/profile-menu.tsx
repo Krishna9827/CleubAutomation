@@ -1,6 +1,8 @@
+'use client';
+
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,13 +17,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 
 export const ProfileMenu = () => {
   const { user, userProfile, isAdmin, logout, loading } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  if (!user || loading) return null;
-
-  // Memoize initials to prevent unnecessary recalculations
+  // Memoize initials - MUST be before any conditional returns (Rules of Hooks)
   const initials = useMemo(() => {
     return (
       (userProfile?.first_name?.[0] || '') +
@@ -29,11 +29,14 @@ export const ProfileMenu = () => {
     ).toUpperCase() || 'U';
   }, [userProfile?.first_name, userProfile?.last_name]);
 
+  // Early return AFTER all hooks
+  if (!user || loading) return null;
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
       // Navigate first, then logout (prevents component unmount mid-execution)
-      navigate('/');
+      router.push('/');
       await logout();
     } catch (error) {
       console.error('❌ Logout error:', error);
@@ -72,7 +75,7 @@ export const ProfileMenu = () => {
             View Profile
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => navigate('/profile-settings')}
+            onClick={() => router.push('/profile-settings')}
             className="text-slate-200 cursor-pointer focus:bg-slate-800 focus:text-white"
           >
             <Settings className="w-4 h-4 mr-2" />
@@ -82,7 +85,7 @@ export const ProfileMenu = () => {
             <>
               <DropdownMenuSeparator className="bg-slate-700" />
               <DropdownMenuItem
-                onClick={() => navigate('/admin')}
+                onClick={() => router.push('/admin')}
                 className="text-amber-400 cursor-pointer focus:bg-amber-900/30 focus:text-amber-400"
               >
                 <Shield className="w-4 h-4 mr-2" />
@@ -158,7 +161,7 @@ export const ProfileMenu = () => {
             <button
               onClick={() => {
                 setShowProfileDialog(false);
-                navigate('/profile-settings');
+                router.push('/profile-settings');
               }}
               className="w-full mt-4 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors"
             >

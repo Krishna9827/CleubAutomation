@@ -1,5 +1,8 @@
+'use client';
+
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import ProfileMenu from '@/components/ui/profile-menu';
@@ -20,7 +23,7 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
-  const location = useLocation();
+  const pathname = usePathname();
   const { user, loading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -54,11 +57,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-16 md:left-0 md:bg-black/20 md:backdrop-blur-xl md:border-r md:border-white/10">
           <nav className="flex flex-col gap-1 p-4">
             {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
+              const isActive = pathname === item.href;
               return (
                 <Link
                   key={item.name}
-                  to={item.href}
+                  href={item.href}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                     isActive

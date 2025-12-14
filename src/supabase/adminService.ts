@@ -1,5 +1,8 @@
-import { supabase } from './config';
+import { supabase as supabaseClient } from './config';
 import { InventoryItem } from '@/types/inventory';
+
+// Cast supabase to any to avoid strict type inference issues
+const supabase = supabaseClient as any;
 
 // Database types (snake_case - matches Supabase schema)
 export interface Inquiry {
@@ -72,7 +75,7 @@ export const adminService = {
         .select('id, email, first_name, last_name, is_admin')
         .eq('email', email.toLowerCase().trim())
         .eq('is_admin', true)
-        .single();
+        .single() as { data: { id: string; email: string; first_name: string; last_name: string; is_admin: boolean } | null; error: any };
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -114,11 +117,11 @@ export const adminService = {
         .from('users')
         .select('id, email, first_name, last_name, is_admin')
         .eq('is_admin', true)
-        .order('first_name', { ascending: true });
+        .order('first_name', { ascending: true }) as { data: any[] | null; error: any };
 
       if (error) throw error;
       
-      return (data || []).map(user => ({
+      return (data || []).map((user: any) => ({
         id: user.id,
         email: user.email,
         full_name: `${user.first_name} ${user.last_name}`,
@@ -536,17 +539,26 @@ export const adminService = {
 
   /**
    * Delete testimonial
+   * NOTE: Requires DELETE policy on testimonials table in Supabase
    */
   async deleteTestimonial(testimonialId: string): Promise<void> {
     try {
-      const { error } = await supabase
+      console.log('🗑️ Deleting testimonial:', testimonialId);
+      
+      const { error, count } = await supabase
         .from('testimonials')
         .delete()
         .eq('id', testimonialId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Supabase delete error:', error);
+        throw new Error(`Delete failed: ${error.message}. You may need to add a DELETE policy in Supabase.`);
+      }
+      
+      console.log('✅ Testimonial deleted successfully');
     } catch (error: any) {
-      throw new Error(error.message);
+      console.error('❌ Delete testimonial error:', error);
+      throw new Error(error.message || 'Failed to delete testimonial');
     }
   },
 
@@ -683,14 +695,14 @@ export const adminService = {
         }
 
         return {
-          product_name: (item.product_name || item.name || '').trim(),
-          category: (item.category || 'General').trim(),
-          subcategory: (item.subcategory || item.sub_category || '').trim() || null,
-          price_per_unit: parseFloat(item.price_per_unit || item.price || 0),
-          wattage: item.wattage ? parseInt(item.wattage) : null,
-          notes: (item.notes || '').trim() || null,
-          vendor: (item.vendor || '').trim() || null,
-          protocol: (item.protocol || '').trim() || null,
+          product_name: String(item.product_name || item.name || '').trim(),
+          category: String(item.category || 'General').trim(),
+          subcategory: String(item.subcategory || item.sub_category || '').trim() || null,
+          price_per_unit: parseFloat(String(item.price_per_unit || item.price || 0)) || 0,
+          wattage: item.wattage ? parseInt(String(item.wattage), 10) : null,
+          notes: String(item.notes || '').trim() || null,
+          vendor: String(item.vendor || '').trim() || null,
+          protocol: String(item.protocol || '').trim() || null,
         };
       }).filter(item => item !== null);
 
@@ -701,34 +713,331 @@ export const adminService = {
 
       console.log('📝 Transformed items sample:', JSON.stringify(transformedItems[0], null, 2));
 
-      // Insert with detailed error handling
-      const { data, error, status } = await supabase
-        .from('inventory')
-        .insert(transformedItems)
-        .select();
+      // Insert in batches to avoid timeout issues
+      const batchSize = 50;
+      for (let i = 0; i < transformedItems.length; i += batchSize) {
+        const batch = transformedItems.slice(i, i + batchSize);
+        
+        const { data, error, status } = await supabase
+          .from('inventory')
+          .insert(batch)
+          .select();
 
-      if (error) {
-        console.error('❌ Bulk insert error details:', {
-          status,
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-        });
-        throw new Error(`Database error: ${error.message}`);
+        if (error) {
+          console.error('❌ Bulk insert error details:', {
+            status,
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+          });
+          throw new Error(`Database error: ${error.message}`);
+        }
+
+        console.log(`✅ Inserted batch ${Math.floor(i / batchSize) + 1} of ${Math.ceil(transformedItems.length / batchSize)}`);
       }
 
       console.log('✅ Successfully inserted', transformedItems.length, 'items');
-      if (data) {
-        console.log('📊 First inserted item:', JSON.stringify(data[0], null, 2));
-      }
       return true;
     } catch (error: any) {
       console.error('❌ Bulk insert exception:', {
         message: error.message,
+        name: error.name,
         stack: error.stack,
       });
-      return false;
+      // Re-throw with more context
+      throw new Error(`Failed to create inventory entry: ${error.message}`);
+    }
+  },
+
+  // ============================================
+  // BLOGS
+  // ============================================
+
+  /**
+   * Get all blogs (admin view - includes drafts)
+   */
+  async getAllBlogs(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error: any) {
+      console.error('❌ Error fetching blogs:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get published blogs only (public view)
+   */
+  async getPublishedBlogs(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('*')
+        .eq('is_published', true)
+        .order('published_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error: any) {
+      console.error('❌ Error fetching published blogs:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get single blog by slug
+   */
+  async getBlogBySlug(slug: string): Promise<any | null> {
+    try {
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') return null;
+        throw error;
+      }
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error fetching blog by slug:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Get single blog by ID
+   */
+  async getBlogById(id: string): Promise<any | null> {
+    try {
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') return null;
+        throw error;
+      }
+      return data;
+    } catch (error: any) {
+      console.error('❌ Error fetching blog by ID:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Create blog post
+   */
+  async createBlog(blog: any): Promise<string> {
+    try {
+      const { data, error } = await supabase
+        .from('blogs')
+        .insert(blog)
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      console.log('✅ Blog created:', data?.id);
+      return data?.id || '';
+    } catch (error: any) {
+      console.error('❌ Error creating blog:', error);
+      throw new Error(error.message);
+    }
+  },
+
+  /**
+   * Update blog post
+   */
+  async updateBlog(blogId: string, updates: any): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('blogs')
+        .update(updates)
+        .eq('id', blogId);
+
+      if (error) throw error;
+      console.log('✅ Blog updated:', blogId);
+    } catch (error: any) {
+      console.error('❌ Error updating blog:', error);
+      throw new Error(error.message);
+    }
+  },
+
+  /**
+   * Delete blog post
+   */
+  async deleteBlog(blogId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('blogs')
+        .delete()
+        .eq('id', blogId);
+
+      if (error) throw error;
+      console.log('✅ Blog deleted:', blogId);
+    } catch (error: any) {
+      console.error('❌ Error deleting blog:', error);
+      throw new Error(error.message);
+    }
+  },
+
+  // ============================================
+  // FAQs
+  // ============================================
+
+  /**
+   * Get all FAQs (admin view)
+   */
+  async getAllFaqs(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('faqs')
+        .select('*')
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error: any) {
+      console.error('❌ Error fetching FAQs:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get published FAQs (public view)
+   */
+  async getPublishedFaqs(blogId?: string): Promise<any[]> {
+    try {
+      let query = supabase
+        .from('faqs')
+        .select('*')
+        .eq('is_published', true)
+        .order('order_index', { ascending: true });
+
+      if (blogId) {
+        query = query.eq('blog_id', blogId);
+      } else {
+        query = query.is('blog_id', null);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data || [];
+    } catch (error: any) {
+      console.error('❌ Error fetching published FAQs:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get FAQs for a specific blog
+   */
+  async getFaqsByBlogId(blogId: string): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('faqs')
+        .select('*')
+        .eq('blog_id', blogId)
+        .eq('is_published', true)
+        .order('order_index', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    } catch (error: any) {
+      console.error('❌ Error fetching blog FAQs:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Create FAQ
+   */
+  async createFaq(faq: any): Promise<string> {
+    try {
+      const { data, error } = await supabase
+        .from('faqs')
+        .insert(faq)
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      console.log('✅ FAQ created:', data?.id);
+      return data?.id || '';
+    } catch (error: any) {
+      console.error('❌ Error creating FAQ:', error);
+      throw new Error(error.message);
+    }
+  },
+
+  /**
+   * Update FAQ
+   */
+  async updateFaq(faqId: string, updates: any): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('faqs')
+        .update(updates)
+        .eq('id', faqId);
+
+      if (error) throw error;
+      console.log('✅ FAQ updated:', faqId);
+    } catch (error: any) {
+      console.error('❌ Error updating FAQ:', error);
+      throw new Error(error.message);
+    }
+  },
+
+  /**
+   * Delete FAQ
+   */
+  async deleteFaq(faqId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('faqs')
+        .delete()
+        .eq('id', faqId);
+
+      if (error) throw error;
+      console.log('✅ FAQ deleted:', faqId);
+    } catch (error: any) {
+      console.error('❌ Error deleting FAQ:', error);
+      throw new Error(error.message);
+    }
+  },
+
+  /**
+   * Reorder FAQs
+   */
+  async reorderFaqs(orderedIds: string[]): Promise<void> {
+    try {
+      const updates = orderedIds.map((id, index) => ({
+        id,
+        order_index: index
+      }));
+
+      for (const update of updates) {
+        await supabase
+          .from('faqs')
+          .update({ order_index: update.order_index })
+          .eq('id', update.id);
+      }
+
+      console.log('✅ FAQs reordered');
+    } catch (error: any) {
+      console.error('❌ Error reordering FAQs:', error);
+      throw new Error(error.message);
     }
   },
 };
+

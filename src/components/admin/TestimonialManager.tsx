@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -114,18 +116,22 @@ const TestimonialManager = () => {
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this testimonial? This cannot be undone.')) {
+      return;
+    }
+
     try {
       await adminService.deleteTestimonial(id);
+      setTestimonials(prev => prev.filter(t => t.id !== id));
       toast({
         title: 'Success',
         description: 'Testimonial deleted successfully'
       });
-      await loadTestimonials();
     } catch (error) {
       console.error('Error deleting testimonial:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete testimonial',
+        description: error instanceof Error ? error.message : 'Failed to delete testimonial',
         variant: 'destructive'
       });
     }

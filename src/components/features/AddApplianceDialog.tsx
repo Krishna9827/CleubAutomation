@@ -141,11 +141,9 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
       wattage: undefined
     }));
     setCustomWattage('');
-    // Reset touch panel config if switching away
+    // Reset linked inventory when switching categories
     if (category !== 'Touch Panels') {
-      setPanelType('');
-      setModuleChannels(null);
-      setChannelConfig([]);
+      setLinkedInventoryId('');
     }
   };
 
@@ -156,18 +154,6 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
       subcategory,
       name: prev.name || `${subcategory} - ${roomName}`
     }));
-    // If subcategory is a channel module, auto-set moduleChannels
-    if (appliance.category === 'Touch Panels') {
-      const match = subcategory.match(/(\d+) Channel/);
-      if (match) {
-        const num = parseInt(match[1]);
-        setModuleChannels(num);
-        setChannelConfig(Array(num).fill({ label: '', details: '' }));
-      } else {
-        setModuleChannels(null);
-        setChannelConfig([]);
-      }
-    }
   };
 
   const currentCategory = applianceCategories[appliance.category as keyof typeof applianceCategories];
@@ -323,7 +309,7 @@ const AddApplianceDialog = ({ open, onClose, onAdd, roomName }: AddApplianceDial
             </Button>
             <Button
               type="submit"
-              disabled={!appliance.name.trim() || !appliance.category || (appliance.category === 'Touch Panels' && (!panelType || !moduleChannels || channelConfig.some(c => !c.label)))}
+              disabled={!appliance.name.trim() || !appliance.category}
               className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
             >
               Add Appliance

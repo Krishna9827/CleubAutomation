@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import {
   Dialog,
@@ -119,11 +121,11 @@ const ImportInventoryDialog = ({ open, onClose, onImportSuccess }: ImportInvento
           variant: 'destructive',
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Import error:', error);
       toast({
         title: '❌ Error',
-        description: 'An error occurred during import',
+        description: error?.message || 'An error occurred during import',
         variant: 'destructive',
       });
     } finally {

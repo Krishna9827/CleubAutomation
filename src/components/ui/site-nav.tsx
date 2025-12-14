@@ -1,5 +1,7 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,7 +26,7 @@ interface SiteNavProps {
 }
 
 const SiteNav = ({ brand, links, rightActions }: SiteNavProps) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { user, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -39,7 +41,7 @@ const SiteNav = ({ brand, links, rightActions }: SiteNavProps) => {
       window.location.href = href;
       return;
     }
-    navigate(href);
+    router.push(href);
     setIsMenuOpen(false); // Close mobile menu after navigation
   };
 
@@ -91,7 +93,7 @@ const SiteNav = ({ brand, links, rightActions }: SiteNavProps) => {
             
             {/* About Us Link */}
             <button
-              onClick={() => navigate('/about')}
+              onClick={() => router.push('/about')}
               className="text-slate-300 hover:text-white transition-colors whitespace-nowrap"
             >
               About Us
@@ -104,19 +106,19 @@ const SiteNav = ({ brand, links, rightActions }: SiteNavProps) => {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-slate-900 border-slate-800">
                 <DropdownMenuItem 
-                  onClick={() => navigate('/privacy-policy')}
+                  onClick={() => router.push('/privacy-policy')}
                   className="text-slate-300 hover:text-white cursor-pointer"
                 >
                   Privacy Policy
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => navigate('/cookie-policy')}
+                  onClick={() => router.push('/cookie-policy')}
                   className="text-slate-300 hover:text-white cursor-pointer"
                 >
                   Cookie Policy
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => navigate('/terms')}
+                  onClick={() => router.push('/terms')}
                   className="text-slate-300 hover:text-white cursor-pointer"
                 >
                   Terms & Conditions
@@ -149,7 +151,7 @@ const SiteNav = ({ brand, links, rightActions }: SiteNavProps) => {
               {/* About Us Link - Mobile */}
               <button
                 onClick={() => {
-                  navigate('/about');
+                  router.push('/about');
                   setIsMenuOpen(false);
                 }}
                 className="text-slate-300 hover:text-white transition-colors text-left py-2 px-2 hover:bg-white/5 rounded"
@@ -162,7 +164,7 @@ const SiteNav = ({ brand, links, rightActions }: SiteNavProps) => {
                 <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 px-2">Legal</p>
                 <button
                   onClick={() => {
-                    navigate('/privacy-policy');
+                    router.push('/privacy-policy');
                     setIsMenuOpen(false);
                   }}
                   className="text-slate-300 hover:text-white transition-colors text-left py-2 px-2 hover:bg-white/5 rounded w-full"
@@ -171,7 +173,7 @@ const SiteNav = ({ brand, links, rightActions }: SiteNavProps) => {
                 </button>
                 <button
                   onClick={() => {
-                    navigate('/cookie-policy');
+                    router.push('/cookie-policy');
                     setIsMenuOpen(false);
                   }}
                   className="text-slate-300 hover:text-white transition-colors text-left py-2 px-2 hover:bg-white/5 rounded w-full"
@@ -180,7 +182,7 @@ const SiteNav = ({ brand, links, rightActions }: SiteNavProps) => {
                 </button>
                 <button
                   onClick={() => {
-                    navigate('/terms');
+                    router.push('/terms');
                     setIsMenuOpen(false);
                   }}
                   className="text-slate-300 hover:text-white transition-colors text-left py-2 px-2 hover:bg-white/5 rounded w-full"

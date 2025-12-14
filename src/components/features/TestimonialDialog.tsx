@@ -11,9 +11,9 @@ interface TestimonialCase {
   location: string;
   date: string;
   quote: string;
-  projectDetails: string;
-  features: string[];
-  results: string[];
+  projectDetails?: string;
+  features?: string[];
+  results?: string[];
   videoUrl?: string;
 }
 
@@ -141,6 +141,7 @@ export default function TestimonialDialog({ testimonial }: TestimonialDialogProp
             </div>
 
             {/* Key Features */}
+            {testimonial.features && testimonial.features.length > 0 && (
             <div className="mb-16">
               <h3 className="text-[9px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-6">
                 Key Features Implemented
@@ -158,8 +159,10 @@ export default function TestimonialDialog({ testimonial }: TestimonialDialogProp
                 ))}
               </div>
             </div>
+            )}
 
             {/* Results & Impact */}
+            {testimonial.results && testimonial.results.length > 0 && (
             <div className="mb-16">
               <h3 className="text-[9px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-6">
                 Results & Impact
@@ -175,6 +178,7 @@ export default function TestimonialDialog({ testimonial }: TestimonialDialogProp
                 ))}
               </div>
             </div>
+            )}
 
             {/* Final Quote */}
             <div className="border-t border-[#1A1A1A] pt-12">

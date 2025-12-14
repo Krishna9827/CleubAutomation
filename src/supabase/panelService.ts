@@ -1,5 +1,8 @@
-import { supabase } from './config'
+import { supabase as supabaseClient } from './config'
 import { PanelPreset, PanelComponentConfig } from '@/types/project'
+
+// Cast supabase to any to avoid strict type inference issues
+const supabase = supabaseClient as any;
 
 export const panelService = {
   /**
@@ -122,6 +125,58 @@ export const panelService = {
     } catch (error) {
       console.error('❌ Exception searching panel presets:', error)
       return []
+    }
+  },
+
+  /**
+   * Delete a panel preset by ID
+   * Also deletes the linked inventory item if it exists
+   */
+  async deletePanelPreset(presetId: string): Promise<boolean> {
+    try {
+      console.log('🗑️ Deleting panel preset:', presetId);
+
+      // First, get the preset to find linked inventory ID
+      const { data: preset, error: fetchError } = await supabase
+        .from('panel_presets')
+        .select('linked_inventory_id')
+        .eq('id', presetId)
+        .single();
+
+      if (fetchError) {
+        console.error('❌ Error fetching preset for delete:', fetchError);
+      }
+
+      // Delete the panel preset
+      const { error: deleteError } = await supabase
+        .from('panel_presets')
+        .delete()
+        .eq('id', presetId);
+
+      if (deleteError) {
+        console.error('❌ Error deleting panel preset:', deleteError);
+        throw new Error(deleteError.message);
+      }
+
+      // Also delete linked inventory item if exists
+      if (preset?.linked_inventory_id) {
+        const { error: invError } = await supabase
+          .from('inventory')
+          .delete()
+          .eq('id', preset.linked_inventory_id);
+
+        if (invError) {
+          console.warn('⚠️ Could not delete linked inventory item:', invError.message);
+        } else {
+          console.log('✅ Linked inventory item deleted');
+        }
+      }
+
+      console.log('✅ Panel preset deleted successfully');
+      return true;
+    } catch (error) {
+      console.error('❌ Exception deleting panel preset:', error);
+      throw error;
     }
   }
 }
