@@ -19,6 +19,12 @@ export default function BlogDetailClient({ blog, faqs }: BlogDetailClientProps) 
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const { scrollY } = useScroll();
   
+  // Debug: Log blog content
+  useEffect(() => {
+    console.log('📝 Blog content_markdown:', blog.content_markdown);
+    console.log('📝 Blog content length:', blog.content_markdown?.length);
+  }, [blog]);
+  
   // Parallax effect for hero
   const heroY = useTransform(scrollY, [0, 500], [0, 150]);
   const heroOpacity = useTransform(scrollY, [0, 300], [1, 0]);
@@ -120,27 +126,67 @@ export default function BlogDetailClient({ blog, faqs }: BlogDetailClientProps) 
       </section>
 
       {/* Article Content */}
-      <article className="max-w-3xl mx-auto px-6 py-16">
+      <article className="max-w-4xl mx-auto px-6 py-16">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.8, ease: luxuryEase }}
-          className="prose prose-invert prose-lg max-w-none
-            prose-headings:font-serif prose-headings:tracking-wide prose-headings:text-[#F5F5F3]
-            prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl
-            prose-p:text-[#F5F5F3]/80 prose-p:leading-relaxed prose-p:font-light
-            prose-a:text-amber-400 prose-a:no-underline hover:prose-a:text-amber-300
-            prose-strong:text-[#F5F5F3] prose-strong:font-medium
-            prose-blockquote:border-l-amber-500/50 prose-blockquote:bg-white/[0.02] 
-            prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-lg
-            prose-blockquote:text-[#F5F5F3]/70 prose-blockquote:font-light prose-blockquote:italic
-            prose-code:text-amber-400 prose-code:bg-white/5 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-            prose-pre:bg-white/[0.03] prose-pre:border prose-pre:border-white/10
-            prose-ul:text-[#F5F5F3]/70 prose-ol:text-[#F5F5F3]/70
-            prose-li:marker:text-amber-500/50
+          style={{ color: 'white' }}
+          className="
+            [&_h1]:text-white [&_h1]:text-4xl [&_h1]:font-bold [&_h1]:mt-12 [&_h1]:mb-6 [&_h1]:leading-tight
+            [&_h2]:text-white [&_h2]:text-3xl [&_h2]:font-bold [&_h2]:mt-10 [&_h2]:mb-5 [&_h2]:leading-tight
+            [&_h3]:text-white [&_h3]:text-2xl [&_h3]:font-bold [&_h3]:mt-8 [&_h3]:mb-4
+            [&_h4]:text-white [&_h4]:text-xl [&_h4]:font-bold [&_h4]:mt-6 [&_h4]:mb-3
+            [&_h5]:text-white [&_h5]:text-lg [&_h5]:font-bold [&_h5]:mt-6 [&_h5]:mb-3
+            [&_h6]:text-white [&_h6]:text-base [&_h6]:font-bold [&_h6]:mt-4 [&_h6]:mb-2
+            
+            [&_p]:text-white [&_p]:text-base [&_p]:leading-[1.75] [&_p]:mb-5 [&_p]:mt-0
+            
+            [&_a]:text-white [&_a]:underline [&_a]:decoration-white/50
+            
+            [&_strong]:text-white [&_strong]:font-bold
+            [&_em]:text-white [&_em]:italic
+            [&_b]:text-white [&_b]:font-bold
+            [&_i]:text-white [&_i]:italic
+            
+            [&_blockquote]:border-l-4 [&_blockquote]:border-white/30
+            [&_blockquote]:pl-6 [&_blockquote]:py-2 [&_blockquote]:my-6
+            [&_blockquote]:text-white [&_blockquote]:italic
+            
+            [&_code]:text-white [&_code]:bg-white/10 
+            [&_code]:px-2 [&_code]:py-1 [&_code]:rounded [&_code]:text-sm
+            
+            [&_pre]:bg-white/5 [&_pre]:border [&_pre]:border-white/10 
+            [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:my-6 [&_pre]:overflow-x-auto
+            [&_pre]:text-white
+            [&_pre_code]:bg-transparent [&_pre_code]:p-0
+            
+            [&_ul]:my-6 [&_ul]:pl-6 [&_ul]:space-y-2 [&_ul]:list-disc [&_ul]:text-white
+            [&_ul_li]:text-white [&_ul_li]:leading-[1.75] [&_ul_li]:marker:text-white
+            
+            [&_ol]:my-6 [&_ol]:pl-6 [&_ol]:space-y-2 [&_ol]:list-decimal [&_ol]:text-white
+            [&_ol_li]:text-white [&_ol_li]:leading-[1.75] [&_ol_li]:marker:text-white
+            
+            [&_ul_ul]:mt-2 [&_ul_ul]:mb-0 [&_ul_ul]:list-[circle]
+            [&_ol_ol]:mt-2 [&_ol_ol]:mb-0
+            
+            [&_img]:rounded-lg [&_img]:my-8 [&_img]:border [&_img]:border-white/10 [&_img]:w-full
+            
+            [&_hr]:border-white/20 [&_hr]:my-10
+            
+            [&_table]:text-white [&_table]:border [&_table]:border-white/10 [&_table]:w-full [&_table]:my-6
+            [&_thead]:border-white/20
+            [&_th]:text-white [&_th]:font-semibold [&_th]:border [&_th]:border-white/10 [&_th]:px-4 [&_th]:py-3 [&_th]:bg-white/5
+            [&_td]:text-white [&_td]:border [&_td]:border-white/10 [&_td]:px-4 [&_td]:py-3
           "
         >
-          <ReactMarkdown>{blog.content_markdown}</ReactMarkdown>
+          {blog.content_markdown ? (
+            <ReactMarkdown>{blog.content_markdown}</ReactMarkdown>
+          ) : (
+            <div className="text-white/50 text-center py-12">
+              No content available.
+            </div>
+          )}
         </motion.div>
       </article>
 

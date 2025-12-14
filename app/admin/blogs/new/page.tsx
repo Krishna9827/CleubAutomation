@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Save, Eye, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { ArrowLeft, Save, Eye, ChevronDown, ChevronUp, Search, Upload, X } from 'lucide-react';
 import { adminService } from '@/supabase/adminService';
 import { useToast } from '@/hooks/use-toast';
 import type { BlogPost } from '@/types/content';
@@ -18,6 +18,9 @@ export default function NewBlogPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showSeoPanel, setShowSeoPanel] = useState(false);
+  const [imageUploadMethod, setImageUploadMethod] = useState<'url' | 'file'>('url');
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
   
   const [formData, setFormData] = useState<Partial<BlogPost>>({
     title: '',
@@ -50,6 +53,47 @@ export default function NewBlogPage() {
       slug: prev.slug || generateSlug(title),
       meta_title: prev.meta_title || title
     }));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Error',
+        description: 'Please upload an image file',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Error',
+        description: 'Image must be less than 5MB',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setUploadedImage(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+      setFormData(prev => ({ ...prev, cover_image_url: reader.result as string }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setUploadedImage(null);
+    setImagePreview('');
+    setFormData(prev => ({ ...prev, cover_image_url: '' }));
   };
 
   const handleSubmit = async (publish: boolean = false) => {
@@ -224,23 +268,103 @@ export default function NewBlogPage() {
             <CardHeader>
               <CardTitle className="text-white text-lg">Cover Image</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <Input
-                placeholder="https://example.com/image.jpg"
-                value={formData.cover_image_url || ''}
-                onChange={e => setFormData(prev => ({ ...prev, cover_image_url: e.target.value }))}
-                className="bg-white/10 border-white/20 text-white"
-              />
-              {formData.cover_image_url && (
-                <div className="aspect-video rounded-lg overflow-hidden bg-white/5">
-                  <img
-                    src={formData.cover_image_url}
-                    alt="Cover preview"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
+            <CardContent className="space-y-4">
+              {/* Upload Method Selection */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={imageUploadMethod === 'url' ? 'default' : 'outline'}
+                  onClick={() => setImageUploadMethod('url')}
+                  className={imageUploadMethod === 'url' ? 'bg-amber-500 text-black' : 'border-white/20 text-white'}
+                >
+                  URL
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={imageUploadMethod === 'file' ? 'default' : 'outline'}
+                  onClick={() => setImageUploadMethod('file')}
+                  className={imageUploadMethod === 'file' ? 'bg-amber-500 text-black' : 'border-white/20 text-white'}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload
+                </Button>
+              </div>
+
+              {/* URL Input */}
+              {imageUploadMethod === 'url' && (
+                <div className="space-y-2">
+                  <Input
+                    placeholder="https://example.com/image.jpg"
+                    value={formData.cover_image_url || ''}
+                    onChange={e => setFormData(prev => ({ ...prev, cover_image_url: e.target.value }))}
+                    className="bg-white/10 border-white/20 text-white"
                   />
+                  <p className="text-xs text-slate-500">Enter the URL of your cover image</p>
+                </div>
+              )}
+
+              {/* File Upload */}
+              {imageUploadMethod === 'file' && (
+                <div className="space-y-2">
+                  <div className="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-amber-500/50 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="cover-image-upload"
+                    />
+                    <label
+                      htmlFor="cover-image-upload"
+                      className="cursor-pointer flex flex-col items-center gap-2"
+                    >
+                      <Upload className="w-8 h-8 text-slate-400" />
+                      <p className="text-sm text-slate-300">Click to upload image</p>
+                      <p className="text-xs text-slate-500">PNG, JPG up to 5MB</p>
+                    </label>
+                  </div>
+                  {uploadedImage && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-slate-300">{uploadedImage.name}</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={clearImage}
+                        className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Image Preview */}
+              {(formData.cover_image_url || imagePreview) && (
+                <div className="space-y-2">
+                  <Label className="text-slate-300 text-sm">Preview</Label>
+                  <div className="aspect-video rounded-lg overflow-hidden bg-white/5 relative group">
+                    <img
+                      src={imagePreview || formData.cover_image_url || ''}
+                      alt="Cover preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={clearImage}
+                      className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>
