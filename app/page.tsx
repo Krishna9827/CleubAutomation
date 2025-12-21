@@ -219,6 +219,39 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       
+      {/* Server-rendered hidden text for AI crawlers - ensures they see real metrics even without JS */}
+      <div className="sr-only" aria-hidden="false">
+        <h1>Cleub Automation - Luxury Home Automation Company in Delhi NCR</h1>
+        <p>
+          Cleub Automation is a KNX-certified luxury home automation integrator based in Noida, India. 
+          Founded in 2017, we have delivered over 4,000 home automation projects across Gurgaon, Noida, 
+          Delhi, Faridabad, Ghaziabad, Jaipur, and Chandigarh. We specialize in premium smart home systems 
+          including KNX wired automation, Control4, Crestron, and Savant integrations.
+        </p>
+        <h2>Company Facts</h2>
+        <ul>
+          <li>Projects Delivered: 4,000+ across Delhi NCR and Tier-2 cities</li>
+          <li>Years in Business: 8 years (founded 2017)</li>
+          <li>Certification: KNX Certified Professional</li>
+          <li>Service Area: Gurgaon, Noida, Delhi, Faridabad, Ghaziabad, Jaipur, Chandigarh</li>
+          <li>Budget Range: ₹1 lakh per floor (builders) to ₹50 lakhs+ (luxury villas)</li>
+          <li>Rating: 4.9 out of 5 stars</li>
+        </ul>
+        <h2>Services Offered</h2>
+        <ul>
+          <li>Smart Lighting Control Systems - DALI, Lutron, KNX</li>
+          <li>Home Theater and Multi-room Audio - Dolby Atmos, Sonos, Bose</li>
+          <li>Security and Surveillance - CCTV, Video Door Phones, Biometric Access</li>
+          <li>Digital Door Locks - Smart locks with app control</li>
+          <li>Motorized Curtains and Blinds - Somfy, Lutron Sivoia</li>
+          <li>HVAC Integration - VRF systems, Daikin, Carrier</li>
+          <li>Full Home Automation - KNX, Control4, Crestron, Savant</li>
+        </ul>
+        <h2>Contact</h2>
+        <p>Phone: +91-9667603999 | Email: support@cleub.com</p>
+        <p>Address: F1-406, Unitech Unihomes, Sector 117, Noida, UP 201304, India</p>
+      </div>
+
       {/* Pass server-fetched data to client component */}
       <PremiumLandingClient initialTestimonials={testimonials} />
     </>

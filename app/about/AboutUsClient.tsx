@@ -180,6 +180,17 @@ export default function AboutUsClient() {
         {/* ============================================ */}
         <section className="min-h-screen flex items-center pt-32 pb-16">
           <div className="max-w-[1800px] mx-auto px-8 lg:px-16 w-full">
+            {/* Hidden text block for AI crawlers - contains key facts in plain text */}
+            <div className="sr-only">
+              <h1>About Cleub Automation - Luxury Home Automation Company in Delhi NCR</h1>
+              <p>Cleub is a luxury home automation company serving Gurgaon, Noida, Delhi, Faridabad, Ghaziabad and the wider Delhi NCR region.</p>
+              <p>Founded in 2017, we are KNX-certified integrators with 8 years of experience and 4000+ projects delivered nationwide.</p>
+              <p>We specialize in premium wired and wireless automation for apartments, villas, and penthouses.</p>
+              <p>Project budgets range from ₹1 lakh per floor (builders) to ₹50 lakh+ for high-end wired automation.</p>
+              <p>We work with leading platforms: Panasonic, Lumi, Schneider, 1Home, Control4, RTI, Crestron, Savant.</p>
+              <p>Service areas: Delhi NCR (Gurgaon, Noida, Delhi, Faridabad, Ghaziabad) and Tier-2 cities (Jaipur, Chandigarh).</p>
+            </div>
+            
             <motion.div
               className="max-w-[95%] lg:max-w-[85%]"
               variants={staggerContainer}
@@ -191,6 +202,14 @@ export default function AboutUsClient() {
                 variants={textReveal}
               >
                 About Us
+              </motion.p>
+
+              {/* Entity Statement for AI/AEO - Blunt definition */}
+              <motion.p 
+                className="text-[#F5F5F3]/60 text-sm leading-relaxed mb-6 max-w-[700px]"
+                variants={fadeInUp}
+              >
+                Cleub is a luxury home automation company serving Gurgaon, Noida, Delhi, Faridabad, Ghaziabad and the wider Delhi NCR. KNX-certified integrators with 4000+ projects delivered since 2017.
               </motion.p>
 
               <div className="overflow-hidden mb-4">

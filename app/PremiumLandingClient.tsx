@@ -69,7 +69,7 @@ const shimmer: Variants = {
 // ============================================
 // ANIMATED COUNTER COMPONENT
 // ============================================
-const AnimatedCounter = ({ end, suffix = '', duration = 2 }: { end: number; suffix?: string; duration?: number }) => {
+const AnimatedCounter = ({ end, suffix = '', duration = 2, label = '' }: { end: number; suffix?: string; duration?: number; label?: string }) => {
   const [count, setCount] = useState(0);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
@@ -87,7 +87,14 @@ const AnimatedCounter = ({ end, suffix = '', duration = 2 }: { end: number; suff
     requestAnimationFrame(animate);
   }, [isInView, end, duration]);
   
-  return <span ref={ref}>{count}{suffix}</span>;
+  return (
+    <span ref={ref} aria-label={label || `${end}${suffix}`}>
+      {/* Static value for AI crawlers (hidden visually but readable by bots) */}
+      <span className="sr-only">{end}{suffix}</span>
+      {/* Animated value for users */}
+      <span aria-hidden="true">{count}{suffix}</span>
+    </span>
+  );
 };
 
 // ============================================
@@ -442,6 +449,11 @@ export default function PremiumLandingClient({ initialTestimonials }: PremiumLan
               >
                 Premium Home Automation
               </motion.p>
+
+              {/* Entity Statement for AI/AEO - Hidden from users, visible to crawlers */}
+              <p className="sr-only">
+                Cleub is a luxury home automation company serving Gurgaon, Noida, Delhi, Faridabad, Ghaziabad and the wider Delhi NCR region. KNX-certified integrators delivering premium wired and wireless automation for apartments, villas, and penthouses — from ₹3 lakh to ₹50 lakh+ projects.
+              </p>
 
               {/* Main Title - Extreme Scale Contrast */}
               <div className="max-w-[95%] lg:max-w-[80%]">
@@ -868,6 +880,15 @@ export default function PremiumLandingClient({ initialTestimonials }: PremiumLan
         {/* ============================================ */}
         <AnimatedSection className="py-40" dark={false}>
           <div className="max-w-[1800px] mx-auto px-8">
+            {/* Hidden text block for AI crawlers - contains all stats in plain text */}
+            <div className="sr-only">
+              <h2>Cleub Automation Statistics</h2>
+              <p>4000+ luxury home automation projects delivered across India since 2017.</p>
+              <p>8 years of experience in premium home automation.</p>
+              <p>KNX-certified team serving Delhi NCR: Gurgaon, Noida, Delhi, Faridabad, Ghaziabad.</p>
+              <p>Project budgets range from ₹1 lakh per floor to ₹50 lakh+ for high-end wired automation.</p>
+            </div>
+            
             <div className="relative h-[600px] md:h-[700px]">
               {/* Large Number - Bottom Left */}
               <motion.div 
@@ -875,7 +896,7 @@ export default function PremiumLandingClient({ initialTestimonials }: PremiumLan
                 variants={fadeInUp}
               >
                 <div className="font-serif text-[clamp(6rem,15vw,18rem)] leading-none text-[#0A0A0A] tracking-tight">
-                  <AnimatedCounter end={4000} suffix="+" duration={2.5} />
+                  <AnimatedCounter end={4000} suffix="+" duration={2.5} label="4000+ projects delivered" />
                 </div>
                 <p className="text-[9px] tracking-[0.35em] uppercase text-[#6B6B6B] mt-2 ml-2">
                   Projects Delivered
@@ -901,7 +922,7 @@ export default function PremiumLandingClient({ initialTestimonials }: PremiumLan
                 variants={fadeInUp}
               >
                 <div className="font-serif text-[clamp(3rem,8vw,9rem)] leading-none text-[#0A0A0A] tracking-tight">
-                  <AnimatedCounter end={8} suffix="" duration={2.5} />
+                  <AnimatedCounter end={8} suffix="" duration={2.5} label="8 years experience since 2017" />
                 </div>
                 <p className="text-[9px] tracking-[0.35em] uppercase text-[#6B6B6B] mt-2 ml-2">
                   Years Since 2017
