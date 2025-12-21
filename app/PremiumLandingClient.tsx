@@ -68,26 +68,23 @@ const shimmer: Variants = {
 
 // ============================================
 // ANIMATED COUNTER COMPONENT
-// Server renders the final value (end), then client animates from 0 to end
+// Uses suppressHydrationWarning to show static value on server, animate on client
 // ============================================
 const AnimatedCounter = ({ end, suffix = '', duration = 2, label = '' }: { end: number; suffix?: string; duration?: number; label?: string }) => {
-  // Initialize with final value so SSR outputs the correct number for AI crawlers
-  const [count, setCount] = useState(end);
-  const [hasAnimated, setHasAnimated] = useState(false);
+  const [count, setCount] = useState(end); // Start with end value for SSR
+  const [isMounted, setIsMounted] = useState(false);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   
   useEffect(() => {
-    // On client mount, reset to 0 then animate up
-    if (!hasAnimated) {
-      setCount(0);
-      setHasAnimated(true);
-    }
-  }, [hasAnimated]);
+    setIsMounted(true);
+  }, []);
   
   useEffect(() => {
-    if (!isInView || !hasAnimated) return;
+    if (!isMounted || !isInView) return;
     
+    // Reset to 0 and animate
+    setCount(0);
     let startTime: number;
     const animate = (currentTime: number) => {
       if (!startTime) startTime = currentTime;
@@ -96,10 +93,10 @@ const AnimatedCounter = ({ end, suffix = '', duration = 2, label = '' }: { end: 
       if (progress < 1) requestAnimationFrame(animate);
     };
     requestAnimationFrame(animate);
-  }, [isInView, end, duration, hasAnimated]);
+  }, [isInView, isMounted, end, duration]);
   
   return (
-    <span ref={ref} aria-label={label || `${end}${suffix}`}>
+    <span ref={ref} aria-label={label || `${end}${suffix}`} suppressHydrationWarning>
       {count}{suffix}
     </span>
   );
@@ -450,18 +447,13 @@ export default function PremiumLandingClient({ initialTestimonials }: PremiumLan
               initial="hidden"
               animate="visible"
             >
-              {/* Overline */}
+              {/* Overline with Entity */}
               <motion.p 
                 className="text-[#F5F5F3]/40 text-[10px] tracking-[0.4em] uppercase mb-12"
                 variants={textReveal}
               >
-                Premium Home Automation
+                Luxury Home Automation · Gurgaon · Noida · Delhi NCR
               </motion.p>
-
-              {/* Entity Statement for AI/AEO - Hidden from users, visible to crawlers */}
-              <p className="sr-only">
-                Cleub is a luxury home automation company serving Gurgaon, Noida, Delhi, Faridabad, Ghaziabad and the wider Delhi NCR region. KNX-certified integrators delivering premium wired and wireless automation for apartments, villas, and penthouses — from ₹3 lakh to ₹50 lakh+ projects.
-              </p>
 
               {/* Main Title - Extreme Scale Contrast */}
               <div className="max-w-[95%] lg:max-w-[80%]">
@@ -494,22 +486,19 @@ export default function PremiumLandingClient({ initialTestimonials }: PremiumLan
                 </div>
               </div>
 
-              {/* Value Proposition */}
+              {/* Value Proposition - Concise */}
               <motion.div 
-                className="mt-8 lg:mt-12 max-w-[520px]"
+                className="mt-10 lg:mt-14 max-w-[480px]"
                 variants={fadeInUp}
               >
-                <p className="text-[#F5F5F3]/70 text-sm leading-relaxed tracking-wide">
-                  In a fragmented market, certainty is the ultimate luxury. We provide unbiased, white‑glove expertise—integrating wired and wireless systems to ensure your estate is simply, perfectly automated.
-                </p>
-                <p className="text-[#F5F5F3]/50 text-xs leading-relaxed tracking-wide mt-4">
-                  <span className="text-[#F5F5F3]/80">Cleub Automation</span> — KNX-certified luxury home automation specialists serving Delhi NCR (Gurgaon, Noida, Delhi, Faridabad, Ghaziabad) and Tier-2 cities like Jaipur & Chandigarh. From ₹1L per floor to ₹50L+ high-end wired systems.
+                <p className="text-[#F5F5F3]/60 text-sm leading-relaxed tracking-wide">
+                  Unbiased, white‑glove expertise. KNX-certified integrators delivering premium wired & wireless automation for discerning homeowners.
                 </p>
               </motion.div>
 
               {/* CTA Button */}
               <motion.div 
-                className="flex items-center justify-center gap-6 mt-8 lg:mt-10"
+                className="flex items-center justify-center gap-6 mt-10 lg:mt-12"
                 variants={fadeInUp}
               >
                 <motion.div
@@ -888,14 +877,16 @@ export default function PremiumLandingClient({ initialTestimonials }: PremiumLan
         {/* ============================================ */}
         <AnimatedSection className="py-40" dark={false}>
           <div className="max-w-[1800px] mx-auto px-8">
-            {/* Hidden text block for AI crawlers - contains all stats in plain text */}
-            <div className="sr-only">
-              <h2>Cleub Automation Statistics</h2>
-              <p>4000+ luxury home automation projects delivered across India since 2017.</p>
-              <p>8 years of experience in premium home automation.</p>
-              <p>KNX-certified team serving Delhi NCR: Gurgaon, Noida, Delhi, Faridabad, Ghaziabad.</p>
-              <p>Project budgets range from ₹1 lakh per floor to ₹50 lakh+ for high-end wired automation.</p>
-            </div>
+            {/* Noscript fallback for crawlers that don't execute JS */}
+            <noscript>
+              <div style={{ position: 'absolute', top: 0, left: 0, padding: '20px', background: '#F5F5F3', color: '#0A0A0A' }}>
+                <h2>Cleub Home Automation - NCR Statistics</h2>
+                <p><strong>4000+</strong> luxury home automation projects delivered across Delhi NCR since 2017.</p>
+                <p><strong>8 years</strong> of experience in premium home automation.</p>
+                <p><strong>KNX Certified</strong> team serving Gurgaon, Noida, Delhi, Faridabad, Ghaziabad.</p>
+                <p>Budget range: ₹1 lakh per floor to ₹50 lakh+ for high-end wired automation.</p>
+              </div>
+            </noscript>
             
             <div className="relative h-[600px] md:h-[700px]">
               {/* Large Number - Bottom Left */}
