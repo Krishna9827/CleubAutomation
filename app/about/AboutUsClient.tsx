@@ -211,6 +211,53 @@ export default function AboutUsClient() {
                 </span>
                 <strong className="text-[#F5F5F3]">Cleub Automation</strong> was founded on a simple premise: True luxury is effortless. In a fragmented market where complexity and cheap solutions often lead to disappointment, we provide the definitive answer. We don't chase trends; we establish <strong className="text-[#F5F5F3]">The Cleub Standard</strong>—a benchmark for <strong className="text-[#F5F5F3]">High-Reliability Automation</strong>. We are the <strong className="text-[#F5F5F3]">Certified System Architects</strong> and integrators who remove the guesswork, ensuring that the technology in your exclusive space is felt only in its perfection, never in its failure.
               </motion.p>
+
+              {/* Facts Block - Who, What, When, Where */}
+              <motion.div 
+                className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6"
+                variants={staggerContainer}
+              >
+                <motion.div 
+                  className="bg-[#1A1A1A]/30 border border-[#1A1A1A] p-6 group hover:border-[#F5F5F3]/20 transition-all duration-500"
+                  variants={fadeInUp}
+                >
+                  <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-2">What We Are</p>
+                  <p className="text-[#F5F5F3] text-sm leading-relaxed">
+                    A <strong className="text-[#F5F5F3]">KNX-certified</strong> luxury home automation integrator specializing in wired and wireless systems. We work with leading platforms including Panasonic, Lumi, Schneider, 1Home, Control4, and RTI.
+                  </p>
+                </motion.div>
+
+                <motion.div 
+                  className="bg-[#1A1A1A]/30 border border-[#1A1A1A] p-6 group hover:border-[#F5F5F3]/20 transition-all duration-500"
+                  variants={fadeInUp}
+                >
+                  <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-2">When We Started</p>
+                  <p className="text-[#F5F5F3] text-sm leading-relaxed">
+                    <strong className="text-[#F5F5F3]">Founded in 2017</strong> — 8 years of delivering premium automation for luxury apartments, villas, and penthouses. Over <strong className="text-[#F5F5F3]">4,000+ projects</strong> delivered nationwide.
+                  </p>
+                </motion.div>
+
+                <motion.div 
+                  className="bg-[#1A1A1A]/30 border border-[#1A1A1A] p-6 group hover:border-[#F5F5F3]/20 transition-all duration-500"
+                  variants={fadeInUp}
+                >
+                  <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-2">Where We Serve</p>
+                  <p className="text-[#F5F5F3] text-sm leading-relaxed">
+                    <strong className="text-[#F5F5F3]">Primary:</strong> Delhi NCR — Gurgaon, Noida, Delhi, Faridabad, Ghaziabad<br/>
+                    <strong className="text-[#F5F5F3]">Tier-2:</strong> Jaipur, Chandigarh, and surrounding regions
+                  </p>
+                </motion.div>
+
+                <motion.div 
+                  className="bg-[#1A1A1A]/30 border border-[#1A1A1A] p-6 group hover:border-[#F5F5F3]/20 transition-all duration-500"
+                  variants={fadeInUp}
+                >
+                  <p className="text-[8px] tracking-[0.35em] uppercase text-[#F5F5F3]/40 mb-2">Budget Range</p>
+                  <p className="text-[#F5F5F3] text-sm leading-relaxed">
+                    From <strong className="text-[#F5F5F3]">₹1 Lakh per floor</strong> (builders) to <strong className="text-[#F5F5F3]">₹50 Lakhs+</strong> for high-end wired automation in luxury residences.
+                  </p>
+                </motion.div>
+              </motion.div>
             </motion.div>
           </div>
         </section>

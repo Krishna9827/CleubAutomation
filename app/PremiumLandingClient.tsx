@@ -476,11 +476,14 @@ export default function PremiumLandingClient({ initialTestimonials }: PremiumLan
 
               {/* Value Proposition */}
               <motion.div 
-                className="mt-8 lg:mt-12 max-w-[520px] lg:ml-[35%]"
+                className="mt-8 lg:mt-12 max-w-[520px]"
                 variants={fadeInUp}
               >
                 <p className="text-[#F5F5F3]/70 text-sm leading-relaxed tracking-wide">
                   In a fragmented market, certainty is the ultimate luxury. We provide unbiased, white‑glove expertise—integrating wired and wireless systems to ensure your estate is simply, perfectly automated.
+                </p>
+                <p className="text-[#F5F5F3]/50 text-xs leading-relaxed tracking-wide mt-4">
+                  <span className="text-[#F5F5F3]/80">Cleub Automation</span> — KNX-certified luxury home automation specialists serving Delhi NCR (Gurgaon, Noida, Delhi, Faridabad, Ghaziabad) and Tier-2 cities like Jaipur & Chandigarh. From ₹1L per floor to ₹50L+ high-end wired systems.
                 </p>
               </motion.div>
 
@@ -879,42 +882,42 @@ export default function PremiumLandingClient({ initialTestimonials }: PremiumLan
                 </p>
               </motion.div>
 
-              {/* Medium Number - Top Right */}
+              {/* KNX Certified Badge - Top Right */}
               <motion.div 
                 className="absolute top-[10%] right-[5%] md:right-[15%]"
                 variants={fadeInUp}
               >
-                <div className="font-serif text-[clamp(4rem,10vw,12rem)] leading-none text-[#0A0A0A] tracking-tight">
-                  <AnimatedCounter end={98} suffix="%" duration={2.5} />
+                <div className="font-serif text-[clamp(3rem,8vw,9rem)] leading-none text-[#0A0A0A] tracking-tight">
+                  KNX
                 </div>
                 <p className="text-[9px] tracking-[0.35em] uppercase text-[#6B6B6B] mt-2 ml-2">
-                  Client Satisfaction
+                  Certified Team
                 </p>
               </motion.div>
 
-              {/* Small Number - Middle Right */}
+              {/* Years Experience - Middle Right */}
               <motion.div 
                 className="absolute top-[50%] right-0 md:right-[8%]"
                 variants={fadeInUp}
               >
                 <div className="font-serif text-[clamp(3rem,8vw,9rem)] leading-none text-[#0A0A0A] tracking-tight">
-                  <AnimatedCounter end={8} suffix="+" duration={2.5} />
+                  <AnimatedCounter end={8} suffix="" duration={2.5} />
                 </div>
                 <p className="text-[9px] tracking-[0.35em] uppercase text-[#6B6B6B] mt-2 ml-2">
-                  Years Experience
+                  Years Since 2017
                 </p>
               </motion.div>
 
-              {/* Number - Top Center */}
+              {/* NCR Service Area - Top Center */}
               <motion.div 
                 className="absolute top-[35%] left-[50%] -translate-x-1/2"
                 variants={fadeInUp}
               >
-                <div className="font-serif text-[clamp(3.5rem,9vw,10rem)] leading-none text-[#0A0A0A] tracking-tight">
-                  <AnimatedCounter end={24} suffix="/7" duration={2.5} />
+                <div className="font-serif text-[clamp(2.5rem,6vw,7rem)] leading-none text-[#0A0A0A] tracking-tight text-center">
+                  NCR
                 </div>
                 <p className="text-[9px] tracking-[0.35em] uppercase text-[#6B6B6B] mt-2 text-center">
-                  Concierge Support
+                  Delhi • Gurgaon • Noida
                 </p>
               </motion.div>
             </div>

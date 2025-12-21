@@ -5,12 +5,75 @@ import PremiumLandingClient from './PremiumLandingClient';
 // Testimonials are fetched server-side and passed to client component
 export const revalidate = 3600; // Revalidate every hour for ISR
 
+// LocalBusiness schema for AI/SEO - defines Cleub as a service-area business in NCR
+const localBusinessSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'HomeAndConstructionBusiness',
+  '@id': 'https://cleubautomation.com/#organization',
+  name: 'Cleub Automation',
+  alternateName: 'Cleub',
+  description: 'Cleub Automation is a KNX-certified luxury home automation integrator serving Delhi NCR (Gurgaon, Noida, Delhi, Faridabad, Ghaziabad) and Tier-2 cities like Jaipur and Chandigarh. We design and integrate premium lighting, AV, security, digital locks, curtains, and full-home control systems for apartments, villas, and penthouses. Budgets range from ₹1 lakh per floor (builders) to ₹50 lakhs+ for high-end wired automation. Not to be confused with Club Automation gym software.',
+  url: 'https://cleubautomation.com',
+  logo: 'https://cleubautomation.com/logo.png',
+  image: 'https://cleubautomation.com/images/cleub-automation-hero.jpg',
+  telephone: '+91-9667603999',
+  email: 'support@cleub.com',
+  foundingDate: '2017',
+  priceRange: '₹1L - ₹50L+',
+  currenciesAccepted: 'INR',
+  paymentAccepted: 'Cash, Bank Transfer, UPI',
+  areaServed: [
+    { '@type': 'City', name: 'Gurgaon', containedInPlace: { '@type': 'State', name: 'Haryana', containedInPlace: { '@type': 'Country', name: 'India' } } },
+    { '@type': 'City', name: 'Noida', containedInPlace: { '@type': 'State', name: 'Uttar Pradesh', containedInPlace: { '@type': 'Country', name: 'India' } } },
+    { '@type': 'City', name: 'New Delhi', containedInPlace: { '@type': 'Country', name: 'India' } },
+    { '@type': 'City', name: 'Faridabad', containedInPlace: { '@type': 'State', name: 'Haryana', containedInPlace: { '@type': 'Country', name: 'India' } } },
+    { '@type': 'City', name: 'Ghaziabad', containedInPlace: { '@type': 'State', name: 'Uttar Pradesh', containedInPlace: { '@type': 'Country', name: 'India' } } },
+    { '@type': 'City', name: 'Jaipur', containedInPlace: { '@type': 'State', name: 'Rajasthan', containedInPlace: { '@type': 'Country', name: 'India' } } },
+    { '@type': 'City', name: 'Chandigarh', containedInPlace: { '@type': 'Country', name: 'India' } }
+  ],
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'F1-406, Unitech Unihomes, Sector 117',
+    addressLocality: 'Noida',
+    addressRegion: 'Uttar Pradesh',
+    postalCode: '201304',
+    addressCountry: 'IN'
+  },
+  geo: {
+    '@type': 'GeoCoordinates',
+    latitude: '28.5672',
+    longitude: '77.4249'
+  },
+  hasCredential: {
+    '@type': 'EducationalOccupationalCredential',
+    credentialCategory: 'Professional Certification',
+    name: 'KNX Certified'
+  },
+  knowsAbout: [
+    'Home Automation', 'KNX Systems', 'Smart Lighting', 'Home Theater', 'Security Systems',
+    'Control4', 'Crestron', 'Savant', 'DALI Lighting', 'Motorized Curtains', 'Digital Locks',
+    'Panasonic', 'Lumi', 'Schneider', '1Home', 'RTI'
+  ],
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.9',
+    reviewCount: '4000',
+    bestRating: '5'
+  },
+  sameAs: [
+    'https://www.instagram.com/cleubautomation',
+    'https://www.linkedin.com/company/cleub-automation',
+    'https://twitter.com/cleubautomation',
+    'https://www.facebook.com/cleubautomation'
+  ]
+};
+
 // Service schema for JSON-LD
 const servicesSchema = {
   '@context': 'https://schema.org',
   '@type': 'ItemList',
   name: 'Cleub Automation Services',
-  description: 'Premium home automation services for luxury estates',
+  description: 'Premium home automation services for luxury estates in Delhi NCR',
   itemListElement: [
     {
       '@type': 'Service',
@@ -19,7 +82,7 @@ const servicesSchema = {
       description: 'Intelligent home control systems with KNX, Crestron, Control4, and Savant integration for seamless living.',
       provider: { '@type': 'Organization', name: 'Cleub Automation' },
       serviceType: 'Home Automation',
-      areaServed: 'India',
+      areaServed: 'Delhi NCR',
     },
     {
       '@type': 'Service',
@@ -80,25 +143,33 @@ const servicesSchema = {
   ],
 };
 
-// FAQ Schema for common questions
+// FAQ Schema for common questions - AEO optimized with pricing and NCR focus
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
     {
       '@type': 'Question',
-      name: 'What is luxury home automation?',
+      name: 'How much does complete home automation cost in Delhi NCR?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Luxury home automation integrates intelligent systems for lighting, security, entertainment, and climate control into a seamless experience. At Cleub Automation, we use KNX, Crestron, Control4, and Savant systems to deliver The Cleub Standard of high-reliability automation.',
+        text: 'For luxury homes in Delhi NCR, Cleub Automation projects typically range between ₹1 lakh per floor (for builders) to ₹50 lakhs+ for high-end wired automation. A typical 3-4BHK apartment automation costs ₹3-12 lakh depending on lighting, curtains, home theater, security, and networking scope. We offer both wired (KNX) and wireless solutions to fit various budgets.',
       },
     },
     {
       '@type': 'Question',
-      name: 'Why choose wired automation over WiFi-based systems?',
+      name: 'Can I retrofit home automation without rewiring?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Wired systems like KNX provide true local control that works even without internet connectivity. Unlike WiFi systems that fail when connectivity drops, KNX Twisted Pair and Ethernet backbones ensure your home operates flawlessly 24/7.',
+        text: 'Yes, Cleub Automation offers retrofit solutions using wireless protocols that work without major rewiring. However, for mission-critical reliability in luxury homes, we recommend wired systems like KNX Twisted Pair. Our team assesses your existing electrical infrastructure and recommends the best approach for your Gurgaon, Noida, or Delhi home.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Which smart home brands does Cleub integrate with?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'We are KNX-certified and integrate with premium brands including Control4, Crestron, Savant, Panasonic, Lumi, Schneider, 1Home, and RTI. Our platform-agnostic approach means we recommend the best solution for your needs, not based on vendor incentives.',
       },
     },
     {
@@ -106,7 +177,23 @@ const faqSchema = {
       name: 'What areas does Cleub Automation serve?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Cleub Automation serves ultra-luxury estates across India, with offices in New Delhi, Gurgaon, Noida, and Katra (Jammu & Kashmir). We work with discerning homeowners, architects, and builders nationwide.',
+        text: 'Cleub Automation primarily serves Delhi NCR including Gurgaon, Noida, Delhi, Faridabad, and Ghaziabad. We also extend services to Tier-2 cities like Jaipur and Chandigarh. With 4000+ projects delivered nationwide since 2017, we have experience across diverse residential and commercial projects.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Do you work with architects and interior designers?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Absolutely. Cleub Automation regularly collaborates with architects, interior designers, and builders across Delhi NCR. We provide system audits, lifecycle planning, and integration consulting to ensure automation is seamlessly incorporated into the design phase. Our unbiased advisory helps designers choose the right automation approach for their clients.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Why choose wired automation over WiFi-based systems?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Wired systems like KNX provide true local control that works even without internet connectivity. Unlike WiFi systems that fail when connectivity drops, KNX Twisted Pair and Ethernet backbones ensure your home operates flawlessly 24/7. For luxury homes in NCR, this reliability is essential.',
       },
     },
   ],
@@ -118,7 +205,11 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Inject structured data for SEO */}
+      {/* Inject structured data for SEO - LocalBusiness for AEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(servicesSchema) }}

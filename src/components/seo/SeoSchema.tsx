@@ -1,13 +1,37 @@
 import { useEffect } from 'react';
 
 interface SeoSchemaProps {
-  type: 'organization' | 'service';
+  type: 'organization' | 'service' | 'article';
   serviceName?: string;
   serviceType?: string;
   serviceDescription?: string;
+  // Article-specific props
+  articleTitle?: string;
+  articleDescription?: string;
+  articleDatePublished?: string;
+  articleDateModified?: string;
+  articleAuthor?: string;
+  articleImage?: string;
+  articleUrl?: string;
+  articleWordCount?: number;
+  articleKeywords?: string[];
 }
 
-const SeoSchema = ({ type, serviceName, serviceType, serviceDescription }: SeoSchemaProps) => {
+const SeoSchema = ({ 
+  type, 
+  serviceName, 
+  serviceType, 
+  serviceDescription,
+  articleTitle,
+  articleDescription,
+  articleDatePublished,
+  articleDateModified,
+  articleAuthor = 'Cleub Automation Team',
+  articleImage,
+  articleUrl,
+  articleWordCount,
+  articleKeywords
+}: SeoSchemaProps) => {
   useEffect(() => {
     const organizationSchema = {
       "@context": "https://schema.org",
@@ -16,12 +40,45 @@ const SeoSchema = ({ type, serviceName, serviceType, serviceDescription }: SeoSc
       "alternateName": "Cleub",
       "url": "https://cleubautomation.com",
       "logo": "https://cleubautomation.com/logo.png",
-      "description": "Bespoke AI-driven home automation, intelligent security systems, and seamless luxury theater experiences for discerning clients.",
+      "description": "Cleub Automation is a KNX-certified luxury home automation integrator serving Delhi NCR (Gurgaon, Noida, Delhi, Faridabad, Ghaziabad) and Tier-2 cities. We deliver premium wired and wireless automation for apartments, villas, and penthouses with budgets from ₹1L to ₹50L+. Founded in 2017 with 4000+ projects delivered.",
       "foundingDate": "2017",
-      "areaServed": {
-        "@type": "Place",
-        "name": ["India", "UAE", "Singapore"]
-      },
+      "areaServed": [
+        {
+          "@type": "City",
+          "name": "Gurgaon",
+          "containedInPlace": { "@type": "State", "name": "Haryana" }
+        },
+        {
+          "@type": "City",
+          "name": "Noida",
+          "containedInPlace": { "@type": "State", "name": "Uttar Pradesh" }
+        },
+        {
+          "@type": "City",
+          "name": "New Delhi",
+          "containedInPlace": { "@type": "Country", "name": "India" }
+        },
+        {
+          "@type": "City",
+          "name": "Faridabad",
+          "containedInPlace": { "@type": "State", "name": "Haryana" }
+        },
+        {
+          "@type": "City",
+          "name": "Ghaziabad",
+          "containedInPlace": { "@type": "State", "name": "Uttar Pradesh" }
+        },
+        {
+          "@type": "City",
+          "name": "Jaipur",
+          "containedInPlace": { "@type": "State", "name": "Rajasthan" }
+        },
+        {
+          "@type": "City",
+          "name": "Chandigarh",
+          "containedInPlace": { "@type": "Country", "name": "India" }
+        }
+      ],
       "sameAs": [
         "https://www.instagram.com/cleubautomation",
         "https://www.linkedin.com/company/cleub-automation",
@@ -76,6 +133,23 @@ const SeoSchema = ({ type, serviceName, serviceType, serviceDescription }: SeoSc
         }
       ],
       "priceRange": "₹₹₹₹",
+      "hasCredential": {
+        "@type": "EducationalOccupationalCredential",
+        "credentialCategory": "Professional Certification",
+        "name": "KNX Certified"
+      },
+      "knowsAbout": [
+        "Home Automation",
+        "KNX Systems",
+        "Smart Lighting",
+        "Home Theater",
+        "Security Systems",
+        "Control4",
+        "Crestron",
+        "Savant",
+        "DALI Lighting",
+        "Motorized Curtains"
+      ],
       "aggregateRating": {
         "@type": "AggregateRating",
         "ratingValue": "4.9",
@@ -89,16 +163,21 @@ const SeoSchema = ({ type, serviceName, serviceType, serviceDescription }: SeoSc
       "@type": "Service",
       "serviceType": serviceType || "Home Automation",
       "name": serviceName || "Premium Home Automation",
-      "description": serviceDescription || "Intelligent home automation solutions with seamless integration.",
+      "description": serviceDescription || "KNX-certified intelligent home automation solutions for luxury homes in Delhi NCR. Budgets from ₹1L to ₹50L+.",
       "provider": {
         "@type": "Organization",
         "name": "Cleub Automation",
         "url": "https://cleubautomation.com"
       },
-      "areaServed": {
-        "@type": "Place",
-        "name": ["Global", "India", "UAE", "Singapore"]
-      },
+      "areaServed": [
+        { "@type": "City", "name": "Gurgaon" },
+        { "@type": "City", "name": "Noida" },
+        { "@type": "City", "name": "New Delhi" },
+        { "@type": "City", "name": "Faridabad" },
+        { "@type": "City", "name": "Ghaziabad" },
+        { "@type": "City", "name": "Jaipur" },
+        { "@type": "City", "name": "Chandigarh" }
+      ],
       "hasOfferCatalog": {
         "@type": "OfferCatalog",
         "name": "Home Automation Services",
@@ -155,10 +234,59 @@ const SeoSchema = ({ type, serviceName, serviceType, serviceDescription }: SeoSc
       }
     };
 
-    const schema = type === 'organization' ? organizationSchema : serviceSchema;
+    const articleSchema = {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": articleTitle,
+      "description": articleDescription,
+      "image": articleImage,
+      "datePublished": articleDatePublished,
+      "dateModified": articleDateModified || articleDatePublished,
+      "wordCount": articleWordCount,
+      "keywords": articleKeywords?.join(', '),
+      "url": articleUrl,
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": articleUrl
+      },
+      "author": {
+        "@type": "Organization",
+        "name": articleAuthor,
+        "url": "https://cleubautomation.com",
+        "logo": "https://cleubautomation.com/logo.png"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Cleub Automation",
+        "url": "https://cleubautomation.com",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://cleubautomation.com/logo.png"
+        }
+      },
+      "about": {
+        "@type": "Thing",
+        "name": "Home Automation",
+        "description": "Smart home automation systems for luxury residences in Delhi NCR"
+      },
+      "isPartOf": {
+        "@type": "Blog",
+        "name": "Cleub Automation Blog",
+        "url": "https://cleubautomation.com/blog"
+      }
+    };
+
+    let schema;
+    if (type === 'organization') {
+      schema = organizationSchema;
+    } else if (type === 'article') {
+      schema = articleSchema;
+    } else {
+      schema = serviceSchema;
+    }
 
     // Remove existing schema script if present
-    const existingScript = document.querySelector('script[type="application/ld+json"]');
+    const existingScript = document.querySelector(`script[data-schema-type="${type}"]`);
     if (existingScript) {
       existingScript.remove();
     }
@@ -166,17 +294,18 @@ const SeoSchema = ({ type, serviceName, serviceType, serviceDescription }: SeoSc
     // Add new schema script
     const script = document.createElement('script');
     script.type = 'application/ld+json';
+    script.setAttribute('data-schema-type', type);
     script.text = JSON.stringify(schema);
     document.head.appendChild(script);
 
     return () => {
       // Cleanup on unmount
-      const scriptToRemove = document.querySelector('script[type="application/ld+json"]');
+      const scriptToRemove = document.querySelector(`script[data-schema-type="${type}"]`);
       if (scriptToRemove) {
         scriptToRemove.remove();
       }
     };
-  }, [type, serviceName, serviceType, serviceDescription]);
+  }, [type, serviceName, serviceType, serviceDescription, articleTitle, articleDescription, articleDatePublished, articleDateModified, articleAuthor, articleImage, articleUrl, articleWordCount, articleKeywords]);
 
   return null;
 };
