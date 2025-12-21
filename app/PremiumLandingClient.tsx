@@ -68,14 +68,25 @@ const shimmer: Variants = {
 
 // ============================================
 // ANIMATED COUNTER COMPONENT
+// Server renders the final value (end), then client animates from 0 to end
 // ============================================
 const AnimatedCounter = ({ end, suffix = '', duration = 2, label = '' }: { end: number; suffix?: string; duration?: number; label?: string }) => {
-  const [count, setCount] = useState(0);
+  // Initialize with final value so SSR outputs the correct number for AI crawlers
+  const [count, setCount] = useState(end);
+  const [hasAnimated, setHasAnimated] = useState(false);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   
   useEffect(() => {
-    if (!isInView) return;
+    // On client mount, reset to 0 then animate up
+    if (!hasAnimated) {
+      setCount(0);
+      setHasAnimated(true);
+    }
+  }, [hasAnimated]);
+  
+  useEffect(() => {
+    if (!isInView || !hasAnimated) return;
     
     let startTime: number;
     const animate = (currentTime: number) => {
@@ -85,14 +96,11 @@ const AnimatedCounter = ({ end, suffix = '', duration = 2, label = '' }: { end: 
       if (progress < 1) requestAnimationFrame(animate);
     };
     requestAnimationFrame(animate);
-  }, [isInView, end, duration]);
+  }, [isInView, end, duration, hasAnimated]);
   
   return (
     <span ref={ref} aria-label={label || `${end}${suffix}`}>
-      {/* Static value for AI crawlers (hidden visually but readable by bots) */}
-      <span className="sr-only">{end}{suffix}</span>
-      {/* Animated value for users */}
-      <span aria-hidden="true">{count}{suffix}</span>
+      {count}{suffix}
     </span>
   );
 };

@@ -9,13 +9,14 @@ export const revalidate = 3600; // Revalidate every hour for ISR
 const localBusinessSchema = {
   '@context': 'https://schema.org',
   '@type': 'HomeAndConstructionBusiness',
-  '@id': 'https://cleubautomation.com/#organization',
-  name: 'Cleub Automation',
-  alternateName: 'Cleub',
-  description: 'Cleub Automation is a KNX-certified luxury home automation integrator serving Delhi NCR (Gurgaon, Noida, Delhi, Faridabad, Ghaziabad) and Tier-2 cities like Jaipur and Chandigarh. We design and integrate premium lighting, AV, security, digital locks, curtains, and full-home control systems for apartments, villas, and penthouses. Budgets range from ₹1 lakh per floor (builders) to ₹50 lakhs+ for high-end wired automation. Not to be confused with Club Automation gym software.',
-  url: 'https://cleubautomation.com',
-  logo: 'https://cleubautomation.com/logo.png',
-  image: 'https://cleubautomation.com/images/cleub-automation-hero.jpg',
+  '@id': 'https://www.cleub.com/#organization',
+  name: 'Cleub',
+  alternateName: 'Cleub Automation',
+  description: 'Cleub is a KNX-certified luxury home automation company serving Delhi NCR (Gurgaon, Noida, Delhi, Faridabad, Ghaziabad) and Tier-2 cities like Jaipur and Chandigarh. We design and integrate premium lighting, AV, security, digital locks, curtains, and full-home control systems for apartments, villas, and penthouses. Budgets range from ₹1 lakh per floor (builders) to ₹50 lakhs+ for high-end wired automation. Not to be confused with Club Automation gym software.',
+  url: 'https://www.cleub.com',
+  logo: 'https://www.cleub.com/logo.png',
+  image: 'https://www.cleub.com/images/cleub-automation-hero.jpg',
+  numberOfEmployees: '10-20',
   telephone: '+91-9667603999',
   email: 'support@cleub.com',
   foundingDate: '2017',
@@ -199,6 +200,57 @@ const faqSchema = {
   ],
 };
 
+// Case Study Reviews Schema - structured for AI extraction
+const reviewsSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Cleub Home Automation Case Studies',
+  itemListElement: [
+    {
+      '@type': 'Review',
+      position: 1,
+      author: { '@type': 'Person', name: 'Client, Sector 70 Gurgaon' },
+      itemReviewed: {
+        '@type': 'Product',
+        name: '4BHK Apartment Automation',
+        description: 'Complete home automation for 4BHK apartment in Sector 70, Gurgaon including lighting, curtains, and security'
+      },
+      reviewBody: 'Full-home automation for our 4BHK apartment. Cleub handled lighting, curtains, and security integration perfectly.',
+      reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
+      datePublished: '2024-06-15',
+      locationCreated: { '@type': 'Place', name: 'Sector 70, Gurgaon, Haryana' }
+    },
+    {
+      '@type': 'Review',
+      position: 2,
+      author: { '@type': 'Person', name: 'Client, Supertech Capetown Noida' },
+      itemReviewed: {
+        '@type': 'Product',
+        name: 'Premium Apartment Automation',
+        description: 'KNX wired automation for luxury apartment in Supertech Capetown, Noida'
+      },
+      reviewBody: 'Chose Cleub for their KNX expertise. The wired system works flawlessly even during internet outages.',
+      reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
+      datePublished: '2024-08-20',
+      locationCreated: { '@type': 'Place', name: 'Supertech Capetown, Noida, UP' }
+    },
+    {
+      '@type': 'Review',
+      position: 3,
+      author: { '@type': 'Person', name: 'Client, Janakpuri Delhi' },
+      itemReviewed: {
+        '@type': 'Product',
+        name: '4-Floor Villa Automation',
+        description: 'Complete 4-floor independent house automation in Janakpuri, Delhi with central control'
+      },
+      reviewBody: 'Four floors fully automated with one central control. Cleub managed the entire project from design to installation.',
+      reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
+      datePublished: '2024-10-10',
+      locationCreated: { '@type': 'Place', name: 'Janakpuri, New Delhi' }
+    }
+  ]
+};
+
 export default async function HomePage() {
   // Fetch testimonials server-side (this runs at build time for SSG)
   const testimonials = await getPublishedTestimonials();
@@ -218,15 +270,18 @@ export default async function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewsSchema) }}
+      />
       
       {/* Server-rendered hidden text for AI crawlers - ensures they see real metrics even without JS */}
       <div className="sr-only" aria-hidden="false">
-        <h1>Cleub Automation - Luxury Home Automation Company in Delhi NCR</h1>
+        <h1>Cleub - Luxury Home Automation Company in Gurgaon, Noida, Delhi NCR</h1>
         <p>
-          Cleub Automation is a KNX-certified luxury home automation integrator based in Noida, India. 
-          Founded in 2017, we have delivered over 4,000 home automation projects across Gurgaon, Noida, 
-          Delhi, Faridabad, Ghaziabad, Jaipur, and Chandigarh. We specialize in premium smart home systems 
-          including KNX wired automation, Control4, Crestron, and Savant integrations.
+          Cleub is a luxury home automation company serving Gurgaon, Noida, Delhi, Faridabad, and Ghaziabad.
+          Founded in 2017, Cleub has delivered over 4,000 home automation projects across Delhi NCR and Tier-2 cities.
+          We are KNX-certified integrators specializing in premium wired automation systems including Control4, Crestron, and Savant.
         </p>
         <h2>Company Facts</h2>
         <ul>
