@@ -38,8 +38,8 @@ const SeoSchema = ({
       "@type": "Organization",
       "name": "Cleub Automation",
       "alternateName": "Cleub",
-      "url": "https://cleubautomation.com",
-      "logo": "https://cleubautomation.com/logo.png",
+      "url": "https://www.cleub.com",
+      "logo": "https://www.cleub.com/logo.png",
       "description": "Cleub Automation is a KNX-certified luxury home automation integrator serving Delhi NCR (Gurgaon, Noida, Delhi, Faridabad, Ghaziabad) and Tier-2 cities. We deliver premium wired and wireless automation for apartments, villas, and penthouses with budgets from ₹1L to ₹50L+. Founded in 2017 with 4000+ projects delivered.",
       "foundingDate": "2017",
       "areaServed": [
@@ -167,7 +167,7 @@ const SeoSchema = ({
       "provider": {
         "@type": "Organization",
         "name": "Cleub Automation",
-        "url": "https://cleubautomation.com"
+        "url": "https://www.cleub.com"
       },
       "areaServed": [
         { "@type": "City", "name": "Gurgaon" },
@@ -252,16 +252,16 @@ const SeoSchema = ({
       "author": {
         "@type": "Organization",
         "name": articleAuthor,
-        "url": "https://cleubautomation.com",
-        "logo": "https://cleubautomation.com/logo.png"
+        "url": "https://www.cleub.com",
+        "logo": "https://www.cleub.com/logo.png"
       },
       "publisher": {
         "@type": "Organization",
         "name": "Cleub Automation",
-        "url": "https://cleubautomation.com",
+        "url": "https://www.cleub.com",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://cleubautomation.com/logo.png"
+          "url": "https://www.cleub.com/logo.png"
         }
       },
       "about": {
@@ -272,7 +272,7 @@ const SeoSchema = ({
       "isPartOf": {
         "@type": "Blog",
         "name": "Cleub Automation Blog",
-        "url": "https://cleubautomation.com/blog"
+        "url": "https://www.cleub.com/blog"
       }
     };
 

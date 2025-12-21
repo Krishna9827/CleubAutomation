@@ -15,11 +15,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Inquiry - Get a Quote | Cleub Automation',
     description: 'Submit an inquiry for luxury home automation and smart home solutions. Get personalized consultation from our experts.',
-    url: 'https://cleubautomation.com/inquiry',
+    url: 'https://www.cleub.com/inquiry',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://cleubautomation.com/inquiry',
+    canonical: 'https://www.cleub.com/inquiry',
   },
 };
 

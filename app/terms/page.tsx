@@ -15,11 +15,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Terms & Conditions - Cleub Automation',
     description: 'Read the Terms and Conditions governing the use of Cleub Automation luxury home automation services.',
-    url: 'https://cleubautomation.com/terms',
+    url: 'https://www.cleub.com/terms',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://cleubautomation.com/terms',
+    canonical: 'https://www.cleub.com/terms',
   },
 };
 
@@ -32,7 +32,7 @@ const termsSchema = {
   publisher: {
     '@type': 'Organization',
     name: 'Cleub Automation',
-    url: 'https://cleubautomation.com',
+    url: 'https://www.cleub.com',
   },
   mainEntity: {
     '@type': 'WebPage',

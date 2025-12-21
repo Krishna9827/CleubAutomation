@@ -18,11 +18,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'About Cleub - Leading Luxury Home Automation Experts',
     description: 'Pioneers in AI-driven home automation with 8+ years of excellence. Certified System Architects delivering The Cleub Standard.',
-    url: 'https://cleubautomation.com/about',
+    url: 'https://www.cleub.com/about',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://cleubautomation.com/about',
+    canonical: 'https://www.cleub.com/about',
   },
 };
 

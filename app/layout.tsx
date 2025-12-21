@@ -22,7 +22,7 @@ const montserrat = Montserrat({
 
 // Default metadata for all pages - can be overridden per page
 export const metadata: Metadata = {
-  metadataBase: new URL('https://cleubautomation.com'),
+  metadataBase: new URL('https://www.cleub.com'),
   title: {
     default: 'Cleub Automation - Bespoke Luxury Home Automation & Intelligent Living',
     template: '%s | Cleub Automation',
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     'Control4',
     'Savant',
   ],
-  authors: [{ name: 'Cleub Automation', url: 'https://cleubautomation.com' }],
+  authors: [{ name: 'Cleub Automation', url: 'https://www.cleub.com' }],
   creator: 'Cleub Automation',
   publisher: 'Cleub Automation',
   robots: {
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://cleubautomation.com',
+    url: 'https://www.cleub.com',
     siteName: 'Cleub Automation',
     title: 'Cleub Automation - Bespoke Luxury Home Automation',
     description: 'Seamless AI-driven home automation, intelligent security, and premium audio-visual experiences for ultra-luxury estates. Effortless life, engineered beyond doubt.',
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
     images: ['/images/og-image.jpg'],
   },
   alternates: {
-    canonical: 'https://cleubautomation.com',
+    canonical: 'https://www.cleub.com',
   },
   category: 'Technology',
 };
@@ -99,8 +99,8 @@ const organizationSchema = {
   '@type': 'Organization',
   name: 'Cleub Automation',
   alternateName: 'Cleub',
-  url: 'https://cleubautomation.com',
-  logo: 'https://cleubautomation.com/logo.png',
+  url: 'https://www.cleub.com',
+  logo: 'https://www.cleub.com/logo.png',
   description: 'Certified System Architects delivering bespoke luxury home automation, intelligent security systems, and premium audio-visual experiences for ultra-luxury estates.',
   foundingDate: '2017',
   numberOfEmployees: {

@@ -45,30 +45,30 @@ function generateArticleSchema(blog: {
     '@type': 'Article',
     headline: blog.title,
     description: blog.meta_description || blog.excerpt || `Read about ${blog.title} on Cleub Automation Blog`,
-    image: blog.cover_image_url || 'https://cleubautomation.com/images/blog/default-cover.jpg',
+    image: blog.cover_image_url || 'https://www.cleub.com/images/blog/default-cover.jpg',
     datePublished: blog.published_at,
     dateModified: blog.updated_at || blog.published_at,
     wordCount: wordCount,
     keywords: blog.keywords?.join(', ') || 'home automation, smart home, Delhi NCR',
-    url: `https://cleubautomation.com/blog/${slug}`,
+    url: `https://www.cleub.com/blog/${slug}`,
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `https://cleubautomation.com/blog/${slug}`
+      '@id': `https://www.cleub.com/blog/${slug}`
     },
     author: {
       '@type': 'Organization',
       name: 'Cleub Automation Team',
-      url: 'https://cleubautomation.com',
-      logo: 'https://cleubautomation.com/logo.png',
+      url: 'https://www.cleub.com',
+      logo: 'https://www.cleub.com/logo.png',
       description: 'KNX-certified luxury home automation integrator serving Delhi NCR since 2017'
     },
     publisher: {
       '@type': 'Organization',
       name: 'Cleub Automation',
-      url: 'https://cleubautomation.com',
+      url: 'https://www.cleub.com',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://cleubautomation.com/logo.png'
+        url: 'https://www.cleub.com/logo.png'
       }
     },
     about: {
@@ -79,7 +79,7 @@ function generateArticleSchema(blog: {
     isPartOf: {
       '@type': 'Blog',
       name: 'Cleub Automation Blog',
-      url: 'https://cleubautomation.com/blog',
+      url: 'https://www.cleub.com/blog',
       description: 'Insights on luxury home automation, smart home trends, and integration guides for Delhi NCR homeowners'
     }
   };
@@ -132,7 +132,7 @@ export async function generateMetadata({ params }: BlogDetailPageProps): Promise
       images: blog.cover_image_url ? [blog.cover_image_url] : [],
     },
     alternates: {
-      canonical: blog.canonical_url || `https://cleubautomation.com/blog/${slug}`,
+      canonical: blog.canonical_url || `https://www.cleub.com/blog/${slug}`,
     },
   };
 }

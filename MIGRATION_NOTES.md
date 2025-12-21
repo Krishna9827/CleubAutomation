@@ -178,7 +178,7 @@ git push origin nextjs-migration
 ```
 NEXT_PUBLIC_SUPABASE_URL=your_production_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_production_key
-NEXT_PUBLIC_SITE_URL=https://cleubautomation.com
+NEXT_PUBLIC_SITE_URL=https://www.cleub.com
 ```
 
 ## Rollback Plan

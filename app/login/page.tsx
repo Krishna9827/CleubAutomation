@@ -15,11 +15,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Login - Cleub Automation',
     description: 'Sign in or create an account to access Cleub Automation luxury home automation planning tools.',
-    url: 'https://cleubautomation.com/login',
+    url: 'https://www.cleub.com/login',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://cleubautomation.com/login',
+    canonical: 'https://www.cleub.com/login',
   },
   robots: {
     index: false,

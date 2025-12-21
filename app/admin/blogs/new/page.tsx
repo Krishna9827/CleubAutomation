@@ -448,7 +448,7 @@ export default function NewBlogPage() {
                 <div className="space-y-2">
                   <Label className="text-slate-300 text-sm">Canonical URL</Label>
                   <Input
-                    placeholder="https://cleubautomation.com/blog/..."
+                    placeholder="https://www.cleub.com/blog/..."
                     value={formData.canonical_url || ''}
                     onChange={e => setFormData(prev => ({ ...prev, canonical_url: e.target.value }))}
                     className="bg-white/10 border-white/20 text-white"

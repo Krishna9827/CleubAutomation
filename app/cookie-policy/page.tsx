@@ -16,11 +16,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Cookie Policy - Cleub Automation',
     description: 'Learn how Cleub Automation uses cookies to ensure flawless interaction and security on our luxury home automation platform.',
-    url: 'https://cleubautomation.com/cookie-policy',
+    url: 'https://www.cleub.com/cookie-policy',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://cleubautomation.com/cookie-policy',
+    canonical: 'https://www.cleub.com/cookie-policy',
   },
 };
 
@@ -33,7 +33,7 @@ const cookieSchema = {
   publisher: {
     '@type': 'Organization',
     name: 'Cleub Automation',
-    url: 'https://cleubautomation.com',
+    url: 'https://www.cleub.com',
   },
   mainEntity: {
     '@type': 'WebPage',

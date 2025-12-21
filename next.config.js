@@ -19,7 +19,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'cleubautomation.com',
+        hostname: 'www.cleub.com',
       },
       {
         protocol: 'https',
@@ -38,7 +38,7 @@ const nextConfig = {
 
   // Environment variables that should be available on the client
   env: {
-    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://cleubautomation.com',
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://www.cleub.com',
   },
 
   // Redirects for legacy routes

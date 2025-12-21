@@ -16,11 +16,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Privacy Policy - Cleub Automation',
     description: 'Your privacy is our priority. Learn how Cleub Automation protects your personal and project data with industry-leading security protocols.',
-    url: 'https://cleubautomation.com/privacy-policy',
+    url: 'https://www.cleub.com/privacy-policy',
     type: 'website',
   },
   alternates: {
-    canonical: 'https://cleubautomation.com/privacy-policy',
+    canonical: 'https://www.cleub.com/privacy-policy',
   },
 };
 
@@ -33,7 +33,7 @@ const privacySchema = {
   publisher: {
     '@type': 'Organization',
     name: 'Cleub Automation',
-    url: 'https://cleubautomation.com',
+    url: 'https://www.cleub.com',
   },
   mainEntity: {
     '@type': 'WebPage',
